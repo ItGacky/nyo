@@ -1,0 +1,28 @@
+﻿{
+	"compilerOptions": {
+		"newLine": "LF",
+		"noEmitOnError": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"removeComments": true,
+		"preserveConstEnums": false,
+		"sourceMap": false,
+		"target": "es5"
+	},
+	"files": [
+		"kernel.ts",
+		"graphics.ts",
+		"components.ts",
+		"conf.ts",
+		"data/characters.ts",
+		"data/enchants.ts",
+		"data/items.ts",
+		"data/skills.ts",
+		"model.ts",
+		"title.ts",
+		"town.ts",
+		"combat.ts",
+		"main.ts"
+	]
+}

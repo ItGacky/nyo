@@ -1,0 +1,20 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+	"files.exclude": {
+		"**/.git": true,
+		"**/.DS_Store": true,
+		"**/.vs": true,
+		"**/*.appxmanifest": true,
+		"**/*.exe": true,
+		"**/*.jar": true,
+		"**/*.jsproj": true,
+		"**/*.pfx": true,
+		"**/*.sln": true,
+		"**/*.user": true,
+		"bin": true,
+		"bld": true,
+		"windows": true,
+		"assets/main.js": true
+	},
+	"files.trimTrailingWhitespace": true
+}

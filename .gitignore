@@ -1,0 +1,21 @@
+# Project-specific files
+/bin
+/bld
+
+# Visual Studio
+.vs
+.svn
+*.exe
+*.ilk
+*.jar
+*.lastcodeanalysissucceeded
+*.opensdf
+*.pdb
+*.sdf
+*.suo
+*.user
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
