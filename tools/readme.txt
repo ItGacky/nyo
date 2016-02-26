@@ -1,4 +1,4 @@
-Requried in the folder:
+Required in the folder:
   - compiler.jar (Google Closure Compiler)
 
 Required in the system:

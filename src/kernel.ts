@@ -90,7 +90,7 @@ interface ToJSON<JSON> {
 
 function toJSON<JSON>(arr: ToJSON<JSON>[]): JSON[] {
 	if (arr == null) { return []; }
-	return arr.map(item => (item ? item.toJSON() : null));
+	return arr.map(item => (item != null ? item.toJSON() : null));
 }
 
 interface FromJSON<JSON, TYPE> {
@@ -99,7 +99,7 @@ interface FromJSON<JSON, TYPE> {
 
 function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: JSON[]): TYPE[] {
 	if (arr == null) { return []; }
-	return arr.map(json => (json ? type.fromJSON(json) : null));
+	return arr.map(json => (json != null ? type.fromJSON(json) : null));
 }
 
 function str(value: any): string {
@@ -403,7 +403,7 @@ enum KEY {
 	RIGHT = 39,
 	DOWN = 40,
 	_INSERT = 45,
-	_DELETE = 46,
+	DELETE = 46,
 	$0 = 48, $1, $2, $3, $4, $5, $6, $7, $8, $9,
 	A = 65, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 }

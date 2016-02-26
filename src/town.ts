@@ -248,10 +248,10 @@
 			super();
 		}
 
-		addButton(nth: number, mnemonic: KEY, label: Word, click: Slot): Button {
+		addButton(nth: number, mnemonic: KEY[], label: Word, click: Slot): Button {
 			let x = SCREEN_W - (TOWN_BUTTON_W + MARGIN) * nth;
 			let y = SCREEN_H - TOWN_BUTTON_H - MARGIN;
-			let btn = new Button(x, y, TOWN_BUTTON_W, TOWN_BUTTON_H, new Label(label), click, [mnemonic]);
+			let btn = new Button(x, y, TOWN_BUTTON_W, TOWN_BUTTON_H, new Label(label), click, mnemonic);
 			btn.attach(this);
 			return btn;
 		}
@@ -316,7 +316,7 @@
 				new FadeOut(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin]))).attach(this.parent);
 			}).enabled = data.party.some(ch => ch != null);
 
-			this.addButton(2, KEY.L, _("Town", "Load"), () => {
+			this.addButton(2, [KEY.L], _("Town", "Load"), () => {
 				Dialog.confirm(this, _("Town", "ConfirmLoad"),
 					{
 						label: _("Town", "Load"),
@@ -335,7 +335,7 @@
 					}
 				);
 			});
-			this.addButton(1, KEY.S, _("Town", "Save"), () => {
+			this.addButton(1, [KEY.S], _("Town", "Save"), () => {
 				saveData(this.data);
 				logger.log(_("Town", "NotifySave"));
 			});
@@ -370,7 +370,7 @@
 			let savedParty = data.party.concat();
 			let savedReservers = data.reservers.concat();
 
-			this.addButton(3, KEY.C, _("Town", "Clear"), () => {
+			this.addButton(3, [KEY.C], _("Town", "Clear"), () => {
 				for (let i = 0; i < PARTY_MAX; ++i) {
 					let ch = data.party[i];
 					if (ch) {
@@ -379,12 +379,12 @@
 					}
 				}
 			});
-			this.addButton(2, KEY.R, _("Town", "Revert"), () => {
+			this.addButton(2, [KEY.R], _("Town", "Revert"), () => {
 				// NOTE: keep identities of arrays in data so that ListView and data have the same arrays.
 				Array_overwrite(data.party, savedParty);
 				Array_overwrite(data.reservers, savedReservers);
 			});
-			this.addButton(1, KEY.TAB, _("Town", "Back"), () => this.goTo(Home));
+			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
 
 			new ListView<Character>(TOWN_LISTVIEW_X, TOWN_LISTVIEW_Y, TOWN_LISTVIEW_W, ListView.heightOf(10),
 				createColumnsForCharacters(),
@@ -467,19 +467,19 @@
 			sell.attach(this);
 
 			let btnBuy: Button, btnSell: Button;
-			btnBuy = this.addButton(3, KEY.B, _("Town", "Buy"), () => {
+			btnBuy = this.addButton(3, [KEY.B], _("Town", "Buy"), () => {
 				buy.visible = true;
 				sell.visible = false;
 				btnBuy.enabled = false;
 				btnSell.enabled = true;
 			});
-			btnSell = this.addButton(2, KEY.S, _("Town", "Sell"), () => {
+			btnSell = this.addButton(2, [KEY.S], _("Town", "Sell"), () => {
 				buy.visible = false;
 				sell.visible = true;
 				btnBuy.enabled = true;
 				btnSell.enabled = false;
 			});
-			this.addButton(1, KEY.TAB, _("Town", "Back"), () => this.goTo(Home));
+			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
 
 			btnBuy.click();
 		}
@@ -567,19 +567,19 @@
 			skills.attach(this);
 
 			let btnEquip: Button, btnSkills: Button;
-			btnEquip = this.addButton(3, KEY.E, _("Town", "Equipments"), () => {
+			btnEquip = this.addButton(3, [KEY.E], _("Town", "Equipments"), () => {
 				equipments.visible = true;
 				skills.visible = false;
 				btnSkills.enabled = true;
 				btnEquip.enabled = false;
 			});
-			btnSkills = this.addButton(2, KEY.S, _("Town", "Skills"), () => {
+			btnSkills = this.addButton(2, [KEY.S], _("Town", "Skills"), () => {
 				equipments.visible = false;
 				skills.visible = true;
 				btnSkills.enabled = false;
 				btnEquip.enabled = true;
 			});
-			this.addButton(1, KEY.TAB, _("Town", "Back"), () => this.goTo(Home));
+			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
 
 			btnEquip.click();
 		}

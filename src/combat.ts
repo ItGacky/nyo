@@ -131,8 +131,8 @@
 	const UNIT_MAX_W = CELL_W;			// (px) max width of unit image
 	const UNIT_MAX_H = CELL_W;			// (px) max height of unit image
 	const UNIT_IDLE_CYCLE: Duration = 200;		// cycle of unit idle animation per DEX.
-	const UNIT_IDLE_LO = CELL_H / 8;	// (px)
-	const UNIT_IDLE_UI = CELL_H / 4;	// (px)
+	const UNIT_IDLE_LO: Pixel = 10;
+	const UNIT_IDLE_UI: Pixel = 16;
 	const UNIT_STEP_DURATION: Duration = 100;		// duration per step.
 	const UNIT_STEP_POW = 0.75;			// duration will be reduced for many steps.
 	const UNIT_DYING_DURATION: Duration = 300;	// duration for dying animation.
@@ -250,78 +250,48 @@
 	type Coord = number;
 
 	// Dense hex-coordinate
-	class Hex {
-		constructor(public xH: Coord, public yH: Coord) {
-		}
+	interface Hex {
+		xH: Coord;
+		yH: Coord;
+	}
 
-		near(dir: DIR): Hex {
-			const Hex_shiftX = [[1, 2, 1, -1, -2, -1], [1, 2, 1, -1, -2, -1]];
-			const Hex_shiftY = [[-1, 0, 0, 0, 0, -1], [0, 0, 1, 1, 0, 0]];
-			let odd = (this.xH % 2 === 0 ? 0 : 1);	// avoid minus for nagative xH.
-			return new Hex(this.xH + Hex_shiftX[odd][dir], this.yH + Hex_shiftY[odd][dir]);
-		}
+	function shift({ xH, yH }: Hex, dir: DIR): Hex {
+		let even = (xH % 2 === 0);	// avoid minus for nagative xH.
+		const shiftX = (even ? [1, 2, 1, -1, -2, -1] : [1, 2, 1, -1, -2, -1]);
+		const shiftY = (even ? [-1, 0, 0, 0, 0, -1] : [0, 0, 1, 1, 0, 0]);
+		return {
+			xH: xH + shiftX[dir],
+			yH: yH + shiftY[dir]
+		};
+	}
 
-		static distance(xH1: Coord, yH1: Coord, xH2: Coord, yH2: Coord): number {
-			// dense hex to sparse hex
-			let x = xH2 - xH1;
-			let y = (yH2 * 2 + xH2 % 2) - (yH1 * 2 + xH1 % 2);
-			if (y < 0) {
-				if (y > x) {
-					return (-x - y) / 2;	// NW
-				} else if (y > -x) {
-					return (x - y) / 2;		// NE
-				} else {
-					return -y;				// N
-				}
+	function distance(lhs: Hex, rhs: Hex): number {
+		let xL = lhs.xH;
+		let xR = rhs.xH;
+		// dense to sparse coordinates
+		let x = xR - xL;
+		let y = (rhs.yH * 2 + xR % 2) - (lhs.yH * 2 + xL % 2);
+		if (y < 0) {
+			if (y > x) {
+				return (-x - y) / 2;	// NW
+			} else if (y > -x) {
+				return (x - y) / 2;		// NE
 			} else {
-				if (y < x) {
-					return (x + y) / 2;		// SE
-				} else if (y < -x) {
-					return (-x + y) / 2;	// SW
-				} else {
-					return y;				// S
-				}
+				return -y;				// N
+			}
+		} else {
+			if (y < x) {
+				return (x + y) / 2;		// SE
+			} else if (y < -x) {
+				return (-x + y) / 2;	// SW
+			} else {
+				return y;				// S
 			}
 		}
+	}
 
-		distance(xH: Coord, yH: Coord): number;
-		distance(hex: Hex): number;
-		distance(xH_or_hex: Coord | Hex, yH?: Coord): number {
-			let xH: Coord;
-			if (yH == null) {
-				({ xH, yH } = (xH_or_hex as Hex));
-			} else {
-				xH = xH_or_hex as Coord;
-			}
-			return Hex.distance(this.xH, this.yH, xH, yH);
-		}
-
-		toString(): string {
-			return "(" + this.xH + "," + this.yH + ")";
-		}
-
-		equals(xH: Coord, yH: Coord): boolean;
-		equals(hex: Hex): boolean;
-		equals(xH_or_hex: Coord | Hex, yH?: Coord): boolean {
-			if (xH_or_hex == null) { return false; }
-			let xH: Coord;
-			if (yH == null) {
-				({ xH, yH } = (xH_or_hex as Hex));
-			} else {
-				xH = xH_or_hex as Coord;
-			}
-			return this.xH === xH && this.yH === yH;
-		}
-
-		static is(lhs: Hex, rhs: Hex): boolean {
-			if (lhs === rhs) {
-				return true;
-			} else if (lhs == null || rhs == null) {
-				return false;
-			} else {
-				return lhs.equals(rhs);
-			}
-		}
+	function same(lhs: Hex, rhs: Hex): boolean {
+		return (lhs === rhs) || (!!lhs && !!rhs && lhs.xH === rhs.xH && lhs.yH === rhs.yH);
 	}
 
 	class HexMap<T> {
@@ -341,7 +311,7 @@
 		get minVisibleXH(): Coord { return floor(this.depth); }
 		get maxVisibleXH(): Coord { return 1 + MAP_W + ceil(this.depth); }
 
-		// true if hex is in scene.
+		// true if hex is valid.
 		contains(xH: Coord, yH: Coord): boolean;
 		contains(hex: Hex): boolean;
 		contains(xH_or_hex: Coord | Hex, yH?: Coord): boolean {
@@ -434,21 +404,21 @@
 			}
 		}
 
-		// visit cells straight up to range, excluding the starting hex.
-		straight(from: Hex, to: Hex, range: number, callback: (hex: Hex, distance: number) => void): void {
-			if (from.equals(to)) { return; }
+		// visit cells int the straight line up to range, excluding the starting hex.
+		straight(from: Hex, to: Hex, range: number, callback: (hex: Hex, steps: number) => void): void {
+			if (same(from, to)) { return; }
 
-			let distance = from.distance(to);
 			let xFrom = from.xH;
 			let yFrom = 1 + 2 * (from.yH * 2 + from.xH % 2);
 			let xTo = to.xH;
 			let yTo = 1 + 2 * (to.yH * 2 + to.xH % 2);
-			let xStep = (xTo - xFrom) / distance;
-			let yStep = (yTo - yFrom) / distance;
+			let steps = distance(from, to);
+			let xStep = (xTo - xFrom) / steps;
+			let yStep = (yTo - yFrom) / steps;
 
-			for (let distance = 1; distance <= range; ++distance) {
-				let dx = xFrom + distance * xStep;
-				let dy = yFrom + distance * yStep;
+			for (let i = 1; i <= range; ++i) {
+				let dx = xFrom + i * xStep;
+				let dy = yFrom + i * yStep;
 				let yH2 = floor(dy / 2);
 				let xH: Coord;
 				if (yH2 % 2 === 0) {
@@ -458,33 +428,33 @@
 				}
 				let yH = floor(yH2 / 2);
 				if (this.contains(xH, yH)) {
-					callback(new Hex(xH, yH), distance);
+					callback({ xH, yH }, i);
 				}
 			}
 		}
 
 		// visit cells surround up to range, excluding the center hex.
-		surround(center: Hex, range: number, callback: (hex: Hex, distance: number) => void): void {
+		surround(center: Hex, range: number, callback: (hex: Hex, steps: number) => void): void {
 			if (range === 1) {
 				// fast path for near
 				for (let dir = DIR_BEGIN; dir < DIR_END; ++dir) {
-					let hex = center.near(dir);
+					let hex = shift(center, dir);
 					if (this.contains(hex)) {
 						callback(hex, 1);
 					}
 				}
-			} if (range > 1) {
-				let NE = center.near(DIR.NE);
-				for (let distance = 1; distance <= range; ++distance) {
+			} else if (range > 1) {
+				let NE = shift(center, DIR.NE);
+				for (let i = 1; i <= range; ++i) {
 					let hex = NE;
 					for (let dir of [DIR.SE, DIR.SW, DIR.W, DIR.NW, DIR.NE, DIR.E]) {
-						for (let step = 0; step < distance; ++step, hex = hex.near(dir)) {
+						for (let step = 0; step < i; ++step, hex = shift(hex, dir)) {
 							if (this.contains(hex)) {
-								callback(hex, distance);
+								callback(hex, i);
 							}
 						}
 					}
-					NE = NE.near(DIR.NE);
+					NE = shift(NE, DIR.NE);
 				}
 			}
 		}
@@ -574,14 +544,14 @@
 	}
 
 	class UnitCharge extends UnitState {
-		static durationOf(scene: Scene, hexFrom: Hex, hexTo: Hex): number {
-			let dx = scene.toX(hexFrom) - scene.toX(hexTo);
-			let dy = scene.toY(hexFrom) - scene.toY(hexTo);
-			return 200 + pow(dx * dx + dy * dy, 0.3) / SCREEN_W * 1000;
-		}
-
 		constructor(scene: Scene, private hexFrom: Hex, private hexTo: Hex) {
-			super(UnitCharge.durationOf(scene, hexFrom, hexTo));
+			super(duration(scene, hexFrom, hexTo));
+
+			function duration(scene: Scene, hexFrom: Hex, hexTo: Hex): number {
+				let dx = scene.toX(hexFrom) - scene.toX(hexTo);
+				let dy = scene.toY(hexFrom) - scene.toY(hexTo);
+				return 200 + pow(dx * dx + dy * dy, 0.3) / SCREEN_W * 1000;
+			}
 		}
 
 		private hitsig: Signal;
@@ -601,10 +571,11 @@
 		}
 
 		onGetXY(unit: Unit, scene: Scene, progress: number): XY {
-			let xFrom = scene.toX(this.hexFrom);
-			let yFrom = scene.toY(this.hexFrom);
-			let xTo = scene.toX(this.hexTo);
-			let yTo = scene.toY(this.hexTo);
+			let { hexFrom, hexTo } = this;
+			let xFrom = scene.toX(hexFrom);
+			let yFrom = scene.toY(hexFrom);
+			let xTo = scene.toX(hexTo);
+			let yTo = scene.toY(hexTo);
 			if (progress < 0.5) {
 				progress = progress * 2;
 			} else {
@@ -715,20 +686,15 @@
 		}
 
 		// Check: SP, range, team
-		canTargetFrom(field: Field, fromXH: Coord, fromYH: Coord, toXH: Coord, toYH: Coord): boolean {
-			return this.SP >= this.cost && this.isTarget(field.get(toXH, toYH).unit) && Hex.distance(fromXH, fromYH, toXH, toYH) <= this.range;
-		}
-
-		// Check: SP, range, team
 		canTarget(field: Field, hex: Hex): boolean {
-			if (hex == null) { return false; }
-			let {xH, yH} = this.hex;
-			return this.canTargetFrom(field, xH, yH, hex.xH, hex.yH);
+			return this.SP >= this.cost && this.isTarget(field.get(hex).unit) && distance(this.hex, hex) <= this.range;
 		}
 
 		done(scene: Scene): boolean {
+			let { zoc } = scene;
+			if (!zoc) { return false; }
 			let { hex } = this;
-			return hex && this.SP < this.minCost && this.SP < this.step + scene.zoc[this.team].get(hex);
+			return hex && this.SP < this.minCost && this.SP < this.step + zoc[this.team].get(hex);
 		}
 
 		// Check: team
@@ -795,7 +761,7 @@
 		}
 
 		drawCharacter(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlay?: Color) {
-			let { image }  = this.ch;
+			let { image } = this.ch;
 			let rect = scaleProportionally(image, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
 
 			let wShadow = rect.w;
@@ -833,8 +799,12 @@
 			}
 		}
 
-		drawHP(g: CanvasRenderingContext2D, x: Pixel, y: Pixel, deltaHP?: number): void {
+		drawBars(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, deltaHP?: number, deltaSP?: number): void {
+			let { hex } = this;
+			let x = scene.toX(hex) + UNIT_BAR_X;
+			let y = scene.toY(hex) + UNIT_BAR_Y;
 			drawBar(g, x, y, UNIT_BAR_W, UNIT_BAR_H, this.HP, this.maxHP, deltaHP, BAR_STYLE_HP);
+			drawBar(g, x, y + UNIT_BAR_H, UNIT_BAR_W, UNIT_BAR_H, this.SP, this.maxSP, deltaSP, BAR_STYLE_SP);
 		}
 
 		static compare(lhs: XY, rhs: XY): number {
@@ -894,6 +864,18 @@
 			g.fillRect(x, y, w * ratio, h);
 		}
 		g.restore();
+	}
+
+	function drawHP(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, unit: Unit, hex: Hex) {
+		let x = scene.toX(hex) + UNIT_BAR_X;
+		let y = scene.toY(hex) + UNIT_BAR_Y;
+		drawBar(g, x, y, UNIT_BAR_W, UNIT_BAR_H, unit.HP, unit.maxHP, null, BAR_STYLE_HP);
+	}
+
+	function drawSP(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, unit: Unit, hex: Hex, remainSP: number) {
+		let x = scene.toX(hex) + UNIT_BAR_X;
+		let y = scene.toY(hex) + UNIT_BAR_Y + UNIT_BAR_H;
+		drawBar(g, x, y, UNIT_BAR_W, UNIT_BAR_H, unit.SP, unit.maxSP, remainSP - unit.SP, BAR_STYLE_SP);
 	}
 
 	//================================================================================
@@ -958,7 +940,7 @@
 					if (remain >= stepCost) {
 						remain -= stepCost;
 						for (let dir = DIR_BEGIN; dir < DIR_END; ++dir) {
-							let near = from.near(dir);
+							let near = shift(from, dir);
 							let cell = field.rawget(near);
 							if (cell && cell.type === CELL.NORMAL && !unit.isEnemy(cell.unit)) {
 								let r = this.ensure(near);
@@ -978,81 +960,74 @@
 			if (baseSP >= cost) {
 				this.each(({ SP }, xH, yH) => {
 					if (SP >= cost && field.rawget(xH, yH).empty) {
-						this.expandRange(scene, unit, zoc, new Hex(xH, yH));
+						expandRange.call(this, scene, unit, zoc, { xH, yH });
 					}
 				});
-				this.expandRange(scene, unit, zoc, unit.hex);
+				expandRange.call(this, scene, unit, zoc, unit.hex);
 			}
-		}
 
-		private expandRange(scene: Scene, unit: Unit, zoc: ZoC, from: Hex): void {
-			let { range } = unit;
-			if (range >= 1) {
-				let hexUnit = unit.hex;
-				let { field, numScrollsPerTurn } = scene;
+			function expandRange(scene: Scene, unit: Unit, zoc: ZoC, from: Hex): void {
+				let { range } = unit;
+				if (range >= 1) {
+					let hexUnit = unit.hex;
+					let { field, numScrollsPerTurn } = scene;
 
-				// XXX: This evaluation function can be moved to CPU class.
-				let L = this.get(from);
-				let zL = zoc.get(from);
-				let yL = abs(from.yH * 2 + from.xH % 2 - MAP_H);
-				let edge = field.minXH + numScrollsPerTurn;
-				let edgeL = (from.xH < edge);
-				let better = (rhs: Hex): boolean => {
-					let R = this.get(rhs);
-					if (L.SP > R.SP) { return true; }
-					if (L.SP < R.SP) { return false; }
-					let edgeR = (rhs.xH < edge);
-					if (!edgeL && edgeR) { return true; }
-					if (edgeL && !edgeR) { return false; }
-					let zR = zoc.get(rhs);
-					if (zL < zR) { return true; }
-					if (zL > zR) { return false; }
-					if (from.xH < rhs.xH) { return true; }
-					if (from.xH > rhs.xH) { return false; }
-					return yL < abs(rhs.yH * 2 + rhs.xH % 2 - MAP_H);
-				}
+					// XXX: This evaluation function can be moved to CPU class.
+					let L = this.get(from);
+					let zL = zoc.get(from);
+					let yL = abs(from.yH * 2 + from.xH % 2 - MAP_H);
+					let edge = field.minXH + numScrollsPerTurn;
+					let edgeL = (from.xH < edge);
+					let better = (rhs: Hex): boolean => {
+						let R = this.get(rhs);
+						if (L.SP > R.SP) { return true; }
+						if (L.SP < R.SP) { return false; }
+						let edgeR = (rhs.xH < edge);
+						if (!edgeL && edgeR) { return true; }
+						if (edgeL && !edgeR) { return false; }
+						let zR = zoc.get(rhs);
+						if (zL < zR) { return true; }
+						if (zL > zR) { return false; }
+						if (from.xH < rhs.xH) { return true; }
+						if (from.xH > rhs.xH) { return false; }
+						return yL < abs(rhs.yH * 2 + rhs.xH % 2 - MAP_H);
+					}
 
-				field.surround(from, range, hex => {
-					if (!hex.equals(hexUnit)) {
-						let cell = field.rawget(hex);
-						let r = this.ensure(hex);
-						if (r.shotFrom == null || better(r.shotFrom)) {
-							r.shotFrom = from;
-							if (r.deltaHP == null) {
-								r.deltaHP = unit.trySkill(cell.unit);
+					field.surround(from, range, hex => {
+						if (!same(hex, hexUnit)) {
+							let cell = field.rawget(hex);
+							let r = this.ensure(hex);
+							if (r.shotFrom == null || better(r.shotFrom)) {
+								r.shotFrom = from;
+								if (r.deltaHP == null) {
+									r.deltaHP = unit.trySkill(cell.unit);
+								}
 							}
 						}
-					}
-				});
+					});
+				}
 			}
 		}
 
-		ensure(xH: Coord, yH: Coord): ActionResult;
-		ensure(hex: Hex): ActionResult;
-		ensure(xH_or_hex: Coord | Hex, yH?: Coord): ActionResult {
-			let xH: Coord;
-			if (yH == null) {
-				({ xH, yH } = (xH_or_hex as Hex));
-			} else {
-				xH = xH_or_hex as Coord;
-			}
-			let value = this.rawget(xH, yH);
+		ensure(hex: Hex): ActionResult {
+			let value = this.rawget(hex);
 			if (value == null) {
 				value = { SP: -1 };
-				this.set(value, xH, yH);
+				this.set(value, hex);
 			}
 			return value;
 		}
 
 		// returns path of walking to the hex or to the shootable hex for it.
-		getPath(hex: Hex): Hex[] {
+		getPath(hex: Hex, field: Field): Hex[] {
 			let { deltaHP, comeFrom, shotFrom } = this.get(hex);
-			if (!deltaHP && !comeFrom) { return null; }
 			let path: Hex[];
 			if (deltaHP != null) {
+				if (!field.get(shotFrom).empty) { return null; }
 				path = [shotFrom];
 				({ comeFrom } = this.get(shotFrom));
-			} else {
+			} else if (comeFrom) {
+				if (!field.get(hex).empty) { return null; }
 				path = [hex];
 			}
 			while (comeFrom) {
@@ -1060,74 +1035,6 @@
 				({ comeFrom } = this.get(comeFrom));
 			}
 			return path;
-		}
-	}
-
-	//================================================================================
-	// Memento
-	//================================================================================
-
-	class Memento {
-		private maps: HexMap<ActionMap>;
-		startTime: Timestamp;
-
-		constructor(
-			public scene: Scene,
-			public zoc: ZoC[],
-			public previous?: Memento
-		) {
-			this.maps = new HexMap<ActionMap>(scene.field.depth);
-		}
-
-		private from: Hex;	// initial hex of focus
-		private SP: number;	// initial SP of focus
-		private _focus: Unit;
-		get focus(): Unit { return this._focus; }
-		set focus(value: Unit) {
-			if (value == null) {
-				this._focus = null;
-				this.from = undefined;
-				this.SP = undefined;
-				this.startTime = undefined;
-			} else if (this._focus !== value) {
-				this._focus = value;
-				this.from = value.hex;
-				this.SP = value.SP;
-				this.startTime = now();
-				this.ensure(value);
-			}
-		}
-
-		ensure(unit: Unit): ActionMap {
-			let { hex } = unit;
-			let map = this.maps.rawget(hex);
-			if (map == null) {
-				map = new ActionMap(this.scene, unit, this.zoc[unit.team]);
-				this.maps.set(map, hex);
-			}
-			return map;
-		}
-
-		invalidate(): void {
-			assert(this.from != null);
-			this.maps.set(undefined, this.from);
-			this.startTime = now();
-		}
-
-		undo(scene: Scene): Memento {
-			let { previous } = this;
-			if (previous) {
-				// restore position and SP of the unit.
-				let { focus } = previous;
-				scene.setUnit(focus, previous.from);
-				focus.SP = previous.SP;
-				return previous;
-			} else if (this.focus) {
-				this.focus = null;
-				return this;
-			} else {
-				return null;
-			}
 		}
 	}
 
@@ -1162,13 +1069,7 @@
 					let skill = focus.ch.skills[this.index];
 					if (skill && focus.ch.powerOf(skill) > 0) {
 						focus.skill = skill;
-						let action = this.scene.stack as Memento;
-						do {
-							if (action.focus === focus) {
-								action.invalidate();
-							}
-							action = action.previous;
-						} while (action);
+						scene.onSkillChanged(focus);
 					}
 				}
 			}
@@ -1257,7 +1158,7 @@
 					let name = enemies[rand(enemies.length)];
 					let ch = Character.monster(name);
 					let team = TEAM.ENEMY;
-					unit = new Unit(ch, team, new Hex(xH, yH));
+					unit = new Unit(ch, team, { xH, yH });
 				} else if (xH > XH_HOLE && random() < 0.1) {
 					type = CELL.HOLE;
 				}
@@ -1291,11 +1192,24 @@
 	// Scene
 	//================================================================================
 
+	interface Snapshot {
+		unit: Unit;
+		hex: Hex;
+		SP: number;
+		maps: HexMap<ActionMap>;
+		zoc: ZoC[];
+	}
+
+	interface Controller {
+		visible: boolean;
+		caret: Hex;
+	}
+
 	export class Scene extends Composite {
 		team: TEAM = TEAM.PARTY;
 		field: Field;
 		dying: Unit[];
-		stack: Memento;
+		snapshots: Snapshot[];
 
 		constructor(public data: Data, public stage: Stage) {
 			super();
@@ -1315,11 +1229,12 @@
 				field.setLine(xH, this.stage.generate(field, xH));
 			}
 			let memberButtons: Button[] = [];
-			let location = [new Hex(2, 0), new Hex(2, 1), new Hex(2, 2), new Hex(1, MAP_H - 3), new Hex(1, MAP_H - 2), new Hex(1, MAP_H - 1)];
+			let location = [[2, 0], [2, 1], [2, 2], [1, MAP_H - 3], [1, MAP_H - 2], [1, MAP_H - 1]];
 			for (let i = 0, len = location.length; i < len; ++i) {
 				let ch = members[i];
 				if (ch) {
-					let unit = new Unit(ch, TEAM.PARTY, location[i]);
+					let [xH, yH] = location[i];
+					let unit = new Unit(ch, TEAM.PARTY, { xH, yH });
 					unit.state = new UnitEnter(ch.DEX);
 					field.rawget(unit.hex).unit = unit;
 
@@ -1328,6 +1243,7 @@
 			}
 			this.field = field;
 			this.dying = [];
+			this.snapshots = [];
 			this.startTurn();
 
 			function createMemberButton(index: number, unit: Unit): Button {
@@ -1348,7 +1264,7 @@
 
 			//========= Units =========
 			let drawUnits = new Component();
-			drawUnits.onDraw = (g, when) => this.drawUnits(g, when, this.stack.startTime);
+			drawUnits.onDraw = (g, when) => this.drawUnits(g, when, this.focusTime);
 			drawUnits.attach(this);
 
 			// TODO: TOUCH_ONLY環境用に、マウスの右クリックを使わないで一通りの操作ができるかのテストが必要。
@@ -1374,7 +1290,7 @@
 			}
 
 			createButton(1, _("Combat", "End"), () => this.endTurn()).attach(componentsForHuman);
-			createButton(2, _("Combat", "Undo"), () => this.undo(), () => this.stack.previous != null).attach(componentsForHuman);
+			createButton(2, _("Combat", "Undo"), () => human.undo(), () => human.canUndo).attach(componentsForHuman);
 			createButton(3, _("Combat", "Retire"), () => this.retire()).attach(componentsForHuman);
 
 			//========= Idle =========
@@ -1383,22 +1299,21 @@
 			componentsForIdle.attach(this);
 
 			let drawOnIdle = new Component();
-			drawOnIdle.onDraw = (g) => this.drawBarsOnIdle(g);
+			drawOnIdle.onDraw = (g, when) => this.drawBarsOnIdle(g, when);
 			drawOnIdle.attach(componentsForIdle);
 
 			//========= Focus =========
-			let barsOnFocus = new Component();
-			barsOnFocus.onDraw = (g) => {
-				let { focus } = this;
-				this.drawBarsOnFocus(g, focus, this.mapFor(focus));
-			};
-			defineGetSet(barsOnFocus, "visible", () => this.controller.visible && this.focus != null);
-			barsOnFocus.attach(this);
+			let componentsForFocus = new Composite();
+			defineGetSet(componentsForFocus, "visible", () => this.controller.visible && this.focus != null);
+			componentsForFocus.attach(this);
 
-			let panelOnFocus = new Widget(PANEL_L, PANEL_Y, PANEL_W * 2, PANEL_H);
-			panelOnFocus.onDraw = (g) => this.drawPanel(g, this.focus, panelOnFocus);
-			defineGetSet(barsOnFocus, "visible", () => this.focus != null);
-			panelOnFocus.attach(this);
+			let barsOnFocus = new Component();
+			barsOnFocus.onDraw = (g, when) => this.drawBarsOnFocus(g, when, this.focus, this.controller.caret);
+			barsOnFocus.attach(componentsForFocus);
+
+			let panelForFocus = new Widget(PANEL_L, PANEL_Y, PANEL_W * 2, PANEL_H);
+			panelForFocus.onDraw = (g, when) => this.drawPanel(g, when, this.focus, panelForFocus);
+			panelForFocus.attach(componentsForFocus);
 
 			//========= Skills =========
 			let componentsForSkills = new Composite();
@@ -1416,14 +1331,25 @@
 				).attach(componentsForSkills);
 			}
 
-			//========= Action =========
-			let componentsForAciton = new Composite();
-			defineGetSet(componentsForAciton, "visible", () => human.visible && human.target != null);
-			componentsForAciton.attach(this);
+			//========= Target =========
+			let target = (): Unit => {
+				let map = this.mapFor(this.focus);
+				if (map) {
+					let { caret } = this.controller;
+					if (caret && map.get(caret).deltaHP != null) {
+						return field.get(caret).unit;
+					}
+				}
+				return null;
+			};
 
-			let panelOnAciton = new Widget(PANEL_R, PANEL_Y, PANEL_W, PANEL_H);
-			panelOnAciton.onDraw = (g) => this.drawPanel(g, (this.controller as Human).target, panelOnAciton);
-			panelOnAciton.attach(componentsForAciton);
+			let componentsForTarget = new Composite();
+			defineGetSet(componentsForTarget, "visible", () => target() != null);
+			componentsForTarget.attach(this);
+
+			let panelForTarget = new Widget(PANEL_R, PANEL_Y, PANEL_W, PANEL_H);
+			panelForTarget.onDraw = (g, when) => this.drawPanel(g, when, target(), panelForTarget);
+			panelForTarget.attach(componentsForTarget);
 
 			//========= Fades and others =========
 			let g = System.canvas.getContext("2d");
@@ -1441,14 +1367,31 @@
 			addConfigButton(this);
 		}
 
-		get controller(): Component { return this.children[this.team]; }
+		get controller(): Controller { return this.children[this.team] as any; }
 		get numScrollsPerTurn(): number { return this.stage.numScrollsPerTurn; }
-		get focus(): Unit { return this.stack.focus; }
-		set focus(value: Unit) { this.stack.focus = value; }
+
+		private _focus: Unit;
+		focusTime: Timestamp;
+
+		get focus(): Unit { return this._focus; }
+		set focus(value: Unit) {
+			if (value == null) {
+				this._focus = null;
+				this.focusTime = undefined;
+			} else if (this._focus !== value) {
+				this._focus = value;
+				this.focusTime = now();
+			}
+		}
+
+		enabled = false;
 
 		private _zoc: ZoC[];
 		get zoc(): ZoC[] {
-			if (this._zoc == null) {
+			if (!this.enabled) { return undefined; }
+
+			let { _zoc } = this;
+			if (!_zoc) {
 				let { depth } = this.field;
 				let zocs = [
 					new HexMap<number>(depth, 0),
@@ -1461,13 +1404,61 @@
 						zoc.surround(unit.hex, 1, hex => zoc.set(zoc.get(hex) + costZoC, hex));
 					}
 				});
-				this._zoc = zocs;
+				this._zoc = _zoc = zocs;
 			}
-			return this._zoc;
+			return _zoc;
 		}
 
+		private maps: HexMap<ActionMap>;
 		mapFor(unit: Unit): ActionMap {
-			return (unit ? this.stack.ensure(unit) : undefined);
+			if (!unit || !this.enabled) { return undefined; }
+
+			let { zoc, maps } = this;
+			if (!maps) {
+				this.maps = maps = new HexMap<ActionMap>(this.field.depth);
+			}
+			let { hex } = unit;
+			let map = maps.rawget(hex);
+			if (map == null) {
+				map = new ActionMap(this, unit, zoc[unit.team]);
+				maps.set(map, hex);
+			}
+			return map;
+		}
+
+		onSkillChanged(unit: Unit): void {
+			let { maps, snapshots } = this;
+			if (maps) {
+				maps.set(undefined, unit.hex);
+			}
+			if (snapshots) {
+				for (let snapshot of snapshots) {
+					if (snapshot.unit === unit) {
+						snapshot.maps.set(undefined, snapshot.hex);
+					}
+				}
+			}
+		}
+
+		savepoint(unit: Unit): void {
+			this.snapshots.push({
+				unit: unit,
+				hex: unit.hex,
+				SP: unit.SP,
+				maps: this.maps,
+				zoc: this.zoc
+			});
+		}
+
+		rollback(): void {
+			let snapshot = this.snapshots.pop();
+			assert(snapshot != null);
+			let { unit } = snapshot;
+			this.setUnit(unit, snapshot.hex);
+			unit.SP = snapshot.SP;
+			this._zoc = snapshot.zoc;
+			this.maps = snapshot.maps;
+			this.focus = unit;
 		}
 
 		setUnit(unit: Unit, hex: Hex): void {
@@ -1490,12 +1481,18 @@
 				occupied.hex = null;
 			}
 			cell.unit = unit;
-			this._zoc = undefined;	// invalidate ZoC cache
+			this.invalidate();
+		}
+
+		// invalidate caches of ZoC and ActionMap
+		invalidate(): void {
+			this.zoc = undefined;
+			this.maps = undefined;
 		}
 
 		startTurn(): void {
 			this.eachUnit(unit => { unit.onTurnStart(this); });
-			this.stack = new Memento(this, this.zoc);
+			this.enabled = true;
 			this.controller.visible = true;
 		}
 
@@ -1517,7 +1514,8 @@
 		}
 
 		endTurn(): void {
-			// wait for switching animation
+			this.enabled = false;
+			this.snapshots.length = 0;
 			this.controller.visible = false;
 
 			this.eachUnit(unit => { unit.onTurnEnd(this); });
@@ -1533,9 +1531,9 @@
 							this.kill(unit);
 						}
 					});
-					let depth_base = this.field.depth;
+					let { depth } = this.field;
 					new Animation(FIELD_SCROLL_DURATION * numScrollsPerTurn, (progress) => {
-						this.scrollTo(depth_base + numScrollsPerTurn * progress);
+						this.scrollTo(depth + numScrollsPerTurn * progress);
 					}).attach(this);
 
 					// Check game is over
@@ -1565,18 +1563,16 @@
 			}).attach(this);
 		}
 
-		public enabled = true;	// TODO: better solusions?
-
+		// Caller is responsible to check the action is valid.
 		move(unit: Unit, hex: Hex): Job {
-			if (!this.enabled) { return null; }
-			assert(!hex.equals(unit.hex));
+			assert(this.enabled);
+			assert(!same(hex, unit.hex));
 
-			let finish = (previous?: Memento): void => {
-				let stack = this.stack = new Memento(this, this.zoc, previous);
-				if (!unit.done(this)) {
-					stack.focus = unit;
-				}
+			let finish = (): void => {
 				this.enabled = true;
+				if (unit.done(this)) {
+					this.focus = null;
+				}
 			};
 
 			this.focus = unit;
@@ -1587,7 +1583,11 @@
 				// wait for skill animation
 				this.enabled = false;
 
-				let shoot = (): Job => unit.shoot(this, hex).then(finish);
+				let shoot = (): Job => {
+					this.snapshots.length = 0;
+					this.invalidate();
+					return unit.shoot(this, hex).then(finish);
+				}
 
 				// fast path for shoot only
 				if (unit.canTarget(field, hex)) {
@@ -1595,31 +1595,29 @@
 				}
 
 				// walk and shoot
-				let map = this.mapFor(unit);
-				let path = map.getPath(hex);
+				let path = map.getPath(hex, field);
+				assert(path != null);
 				assert(path.length > 1);
 				let hexWalk = path[path.length - 1];
-				assert(!hexWalk.equals(hex));
-				assert(!hexWalk.equals(unit.hex));
-				assert(unit.canTargetFrom(field, hexWalk.xH, hexWalk.yH, hex.xH, hex.yH));
+				assert(!same(hexWalk, hex));
+				assert(!same(hexWalk, unit.hex));
 				this.setUnit(unit, hexWalk);
 				unit.SP = map.get(hexWalk).SP;
 				let walk = unit.state = new UnitWalk(path);
 				let job = asJob(shoot);
 				walk.then(job);
 				return job;
-			} else if (r.SP >= 0 && field.rawget(hex).empty) {
+			} else {
+				assert(r.SP >= 0 && field.rawget(hex).empty);
 				// walk only
-				let path = map.getPath(hex);
+				let path = map.getPath(hex, field);
+				assert(path != null);
 				assert(path.length > 1);
 				this.setUnit(unit, hex);
 				unit.SP = r.SP;
 				let walk = unit.state = new UnitWalk(path);
-				finish(this.stack);
+				finish();
 				return (config.wait.WALK ? walk : committed);
-			} else {
-				// cannot shoot nor walk.
-				return undefined;
 			}
 		}
 
@@ -1637,7 +1635,7 @@
 				xH = (dx < 0 ? minXH : maxXH - 1);
 				yH = (dy < 0 ? 0 : MAP_H - 1);
 			}
-			for (let i = 1; i < (maxXH - minXH + 1) * MAP_H; ++i) {
+			for (let i = 1, limit = (maxXH - minXH + 1) * MAP_H; i < limit; ++i) {
 				yH += dy;
 				if (yH < 0 || MAP_H <= yH) {
 					if (yH < 0) {
@@ -1653,19 +1651,10 @@
 					}
 				}
 
-				let unit = field.rawget(xH, yH).unit;
+				let { unit } = field.rawget(xH, yH);
 				if (unit && filter(unit)) { return unit; }
 			}
 			return null;	// not found
-		}
-
-		undo(): void {
-			let previous = this.stack.undo(this);
-			if (previous) {
-				this.stack = previous;
-			} else {
-				logger.error(_("Combat", "CannotUndo"));
-			}
 		}
 
 		kill(unit: Unit): void {
@@ -1790,7 +1779,7 @@
 				}
 				if (field.minXH <= xH && xH < field.maxXH) {
 					let yH = floor(yH2 / 2);
-					return new Hex(xH, yH);
+					return { xH, yH };
 				}
 			}
 			return null; // out of scene
@@ -1822,8 +1811,9 @@
 
 			// Markers
 			let { focus } = this;
-			if (focus) {
-				this.drawMarkers(g, when, this.stack.startTime, this.mapFor(focus), focus);
+			let map = this.mapFor(focus);
+			if (map) {
+				this.drawMarkers(g, when, this.focusTime, map, focus);
 			}
 
 			// Other components
@@ -1879,7 +1869,6 @@
 		// Units (Shadows, Characters, Status)
 		private drawUnits(g: CanvasRenderingContext2D, when: Timestamp, startTime: Timestamp): void {
 			let { field, zoc, focus } = this;
-			let map = this.mapFor(focus);
 
 			interface UnitXY extends XY {
 				unit: Unit;
@@ -1910,9 +1899,10 @@
 			let overlayFocus: Color;
 			let overlayHostile: Color;
 			let overlayFriendly: Color;
+			let map = this.mapFor(focus);
 			for (let {unit, x, y} of units) {
 				let overlay: Color;
-				if (focus) {
+				if (map) {
 					if (focus === unit) {
 						overlay = overlayFocus = (overlayFocus ? overlayFocus : colorCycle(UNIT_OVERLAY_FOCUS, when, startTime, UNIT_OVERLAY_CYCLE));
 					} else {
@@ -1928,7 +1918,7 @@
 					}
 				}
 				unit.draw(g, when, x, y, overlay);
-				if (unit.state == null) {
+				if (unit.state == null && zoc) {
 					let { hex, SP, step, cost, team } = unit;
 					if (hex && SP < cost) {
 						if (SP < step) {
@@ -1958,30 +1948,44 @@
 			}
 		}
 
-		private drawBarsOnIdle(g: CanvasRenderingContext2D) {
-			this.eachUnit(unit => {
-				let { hex, SP, maxSP } = unit;
-				let xBar = this.toX(hex) + UNIT_BAR_X;
-				let yBar = this.toY(hex) + UNIT_BAR_Y;
-				unit.drawHP(g, xBar, yBar);
-				drawBar(g, xBar, yBar + UNIT_BAR_H, UNIT_BAR_W, UNIT_BAR_H, unit.SP, unit.maxSP, null, BAR_STYLE_SP);
-			});
+		private drawBarsOnIdle(g: CanvasRenderingContext2D, when: Timestamp) {
+			this.eachUnit(unit => unit.drawBars(g, when, this));
 		}
 
-		private drawBarsOnFocus(g: CanvasRenderingContext2D, unit: Unit, map: ActionMap) {
-			let { field } = this;
-			map.each(({ deltaHP }, xH, yH) => {
-				if (deltaHP != null) {
-					let { unit } = field.get(xH, yH);
-					// TODO: unit が null なら そもそも deltaHP も存在しないでほしい
-					if (unit) {
-						unit.drawHP(g, this.toX(xH, yH) + UNIT_BAR_X, this.toY(xH, yH) + UNIT_BAR_Y, deltaHP);
+		private drawBarsOnFocus(g: CanvasRenderingContext2D, when: Timestamp, unit: Unit, caret: Hex) {
+			let map = this.mapFor(unit);
+			if (map) {
+				let { field } = this;
+				map.each(({ deltaHP }, xH, yH) => {
+					if (deltaHP != null) {
+						field.get(xH, yH).unit.drawBars(g, when, this, deltaHP);
 					}
+				});
+				if (caret) {
+					let r = map.get(caret);
+					if (r.deltaHP != null) {
+						let { shotFrom } = r;
+						if (same(shotFrom, unit.hex)) {
+							unit.drawBars(g, when, this, null, -unit.cost);
+						} else {
+							drawHP(g, when, this, unit, unit.hex);
+							drawSP(g, when, this, unit, shotFrom, map.get(shotFrom).SP - unit.cost);
+						}
+					} else {
+						if (r.SP > 0 && field.get(caret).empty) {
+							drawHP(g, when, this, unit, unit.hex);
+							drawSP(g, when, this, unit, caret, r.SP);
+						} else {
+							unit.drawBars(g, when, this);
+						}
+					}
+				} else {
+					unit.drawBars(g, when, this);
 				}
-			});
+			}
 		}
 
-		private drawPanel(g: CanvasRenderingContext2D, unit: Unit, rect: XYWH): void {
+		private drawPanel(g: CanvasRenderingContext2D, when: Timestamp, unit: Unit, rect: XYWH): void {
 			if (unit) {
 				g.save();
 				switch (unit.team) {
@@ -2001,7 +2005,11 @@
 				fillRect(g, rect);
 				strokeRect(g, rect);
 				g.restore();
-				unit.drawCharacter(g, null, rect.x + CELL_W / 2, rect.y + rect.h - UNIT_IDLE_LO);
+				let { x, y } = rect;
+				let { w, h } = scaleProportionally(unit.ch.image, UNIT_MAX_W, UNIT_MAX_H, true);
+				x += (CELL_W - w) / 2;
+				y += (rect.h - h) / 2;
+				unit.ch.image.draw(g, when, { x, y, w, h });
 
 				function toFixed(n: number): string {
 					return n != null ? n.toFixed(1) : "-";
@@ -2033,8 +2041,10 @@
 		DragAgain	// assume focus is valid. drag already focused unit, and unlock on up.
 	}
 
-	class Human extends Component {
-		private caret: Hex;
+	class Human extends Component implements Controller {
+		constructor() {
+			super();
+		}
 
 		private _mode: Caret = Caret.Unlocked;
 		private get mode(): Caret {
@@ -2048,23 +2058,35 @@
 			this._mode = value;
 		}
 
-		get target(): Unit {
+		private _caret: Hex;
+		get caret(): Hex {
 			if (this.mode >= Caret.Lock) {
-				let { caret } = this;
-				if (caret) {
-					let scene = this.parent as Scene;
-					let { focus } = scene;
-					let { unit } = scene.field.get(caret);
-					if (focus && focus.isTarget(unit) && scene.mapFor(focus).get(caret).shotFrom) {
-						return unit;
-					}
-				}
+				return this._caret;
+			} else {
+				return null;
 			}
-			return null;
+		}
+
+		get canUndo(): boolean {
+			let scene = this.parent as Scene;
+			return scene.snapshots.length > 0 || this.mode >= Caret.Lock;
+		}
+
+		undo(): void {
+			let scene = this.parent as Scene;
+			if (scene.snapshots.length > 0) {
+				scene.rollback();
+				this.moveCaretTo(this._caret);
+			} else if (this.mode >= Caret.Lock) {
+				this.mode = Caret.Unlocked;
+				this.moveCaretTo(this._caret);
+			} else {
+				logger.error(_("Combat", "CannotUndo"));
+			}
 		}
 
 		moveCaretTo(hex: Hex): void {
-			this.caret = hex;
+			this._caret = hex;
 			if (this.mode === Caret.Unlocked) {
 				let scene = this.parent as Scene;
 				scene.focus = (hex ? scene.field.get(hex).unit : null);
@@ -2080,7 +2102,7 @@
 		}
 
 		downCaret(hex: Hex): void {
-			this.caret = hex;
+			this._caret = hex;
 			if (hex) {
 				this.mode = doDown(this.parent as Scene, this.mode, hex);
 			}
@@ -2089,7 +2111,7 @@
 				let { focus } = scene;
 				if (focus) {
 					if (focus.team === scene.team && !focus.done(scene)) {
-						if (mode === Caret.Lock && hex.equals(focus.hex)) {
+						if (mode === Caret.Lock && same(hex, focus.hex)) {
 							return Caret.DragAgain;
 						} else {
 							return Caret.Drag;
@@ -2111,7 +2133,7 @@
 		}
 
 		upCaret(hex: Hex): void {
-			this.caret = hex;
+			this._caret = hex;
 			if (hex) {
 				this.mode = doUp(this.parent as Scene, this.mode, hex);
 			}
@@ -2126,7 +2148,7 @@
 					return Caret.Unlocked;	// click on enemy
 				}
 
-				if (hex.equals(focus.hex)) {
+				if (same(hex, focus.hex)) {
 					if (mode === Caret.Drag) {
 						return Caret.Lock;
 					} else { // enemy or DragAgain
@@ -2134,10 +2156,24 @@
 					}
 				}
 
-				if (!scene.move(focus, hex)) {
+				if (!scene.enabled) {
+					return mode;
+				}
+
+				let r = scene.mapFor(focus).get(hex);
+				if (r.deltaHP != null) {
+					// shoot
+				} else if (r.SP >= 0 && scene.field.rawget(hex).empty) {
+					// walk only, so take a snapshot to undo.
+					scene.savepoint(focus);
+				} else {
+					// cannot shoot nor walk.
 					scene.focus = null;
 					return Caret.Unlocked;
-				} else if (scene.focus) {
+				}
+
+				scene.move(focus, hex);
+				if (scene.focus) {
 					return Caret.Lock;
 				} else {
 					return Caret.Unlocked;
@@ -2153,8 +2189,9 @@
 			let scene = this.parent as Scene;
 			switch (key) {
 				case KEY.TAB:
+				case KEY.DELETE:
 				case KEY.Q:
-					scene.undo();
+					this.undo();
 					break;
 				case KEY.PAGE_DOWN:
 				case KEY.C:
@@ -2165,7 +2202,7 @@
 					break;
 				case KEY.SPACE:
 				case KEY.ENTER:
-					this.click(this.caret);
+					this.click(this._caret);
 					break;
 				case KEY.E:
 					moveCaretFor.call(this, DIR.NE);
@@ -2194,20 +2231,20 @@
 
 			function moveCaretFor(dir: DIR) {
 				let { field } = this.parent as Scene;
-				let { caret } = this;
+				let caret = this._caret;
 				if (caret) {
-					let hex = caret.near(dir);
+					let hex = shift(caret, dir);
 					if (field.contains(hex)) {
 						this.moveCaretTo(hex);
 					}
 				} else {
-					this.moveCaretTo(new Hex(field.minXH, 0));
+					this.moveCaretTo({ xH: field.minXH, yH: 0 });
 				}
 			}
 
 			function seek(next: boolean) {
 				let scene = this.parent as Scene;
-				let { caret } = this;
+				let caret = this._caret;
 				let { team, focus } = scene;
 				let hex = (focus ? focus.hex : caret);
 				let unit = scene.findUnit(hex, next, u => u.team === team && !u.done(scene));
@@ -2234,47 +2271,49 @@
 		}
 
 		onDraw(g: CanvasRenderingContext2D, when: Timestamp): void {
-			let { caret } = this;
+			let caret = this._caret;
 			if (caret) {
 				let scene = this.parent as Scene;
 				let { focus, field } = scene;
 				if (this.mode === Caret.Unlocked) {
 					drawCaret(g, scene, caret, CARET.SELECT);
-				} else if (focus && focus.team === scene.team) {
+				} else if (focus) {
 					let map = scene.mapFor(focus);
-					let r = map.get(caret);
-					// Path to walk
-					let path = map.getPath(caret);
-					if (path && path.length >= 2) {
-						drawPath(g, scene, path);
-					}
-					// Caret(s)
-					if (r.deltaHP != null) {
-						let { skill } = focus;
-						switch (skill.target) {
-							case TARGET.SINGLE_HOSTILE:
-								drawCaret(g, scene, caret, CARET.HOSTILE);
-								break;
-							case TARGET.SINGLE_FRIENDLY:
-								drawCaret(g, scene, caret, CARET.FRIENDLY);
-								break;
-							case TARGET.STRAIGHT_HOSTILE:
-								field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET.HOSTILE));
-								break;
-							case TARGET.STRAIGHT_FRIENDLY:
-								field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET.FRIENDLY));
-								break;
-							case TARGET.SURROUND_HOSTILE:
-								field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET.HOSTILE));
-								break;
-							case TARGET.SURROUND_FRIENDLY:
-								field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET.FRIENDLY));
-								break;
+					if (map) {
+						let r = map.get(caret);
+						// Path to walk
+						let path = map.getPath(caret, field);
+						if (path && path.length >= 2) {
+							drawPath(g, scene, path);
 						}
-					} else if (r.SP >= 0) {
-						drawCaret(g, scene, caret, CARET.WALK);
-					} else {
-						drawCaret(g, scene, caret, CARET.SELECT);
+						// Caret(s)
+						if (r.deltaHP != null) {
+							let { skill } = focus;
+							switch (skill.target) {
+								case TARGET.SINGLE_HOSTILE:
+									drawCaret(g, scene, caret, CARET.HOSTILE);
+									break;
+								case TARGET.SINGLE_FRIENDLY:
+									drawCaret(g, scene, caret, CARET.FRIENDLY);
+									break;
+								case TARGET.STRAIGHT_HOSTILE:
+									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET.HOSTILE));
+									break;
+								case TARGET.STRAIGHT_FRIENDLY:
+									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET.FRIENDLY));
+									break;
+								case TARGET.SURROUND_HOSTILE:
+									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET.HOSTILE));
+									break;
+								case TARGET.SURROUND_FRIENDLY:
+									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET.FRIENDLY));
+									break;
+							}
+						} else if (r.SP >= 0) {
+							drawCaret(g, scene, caret, CARET.WALK);
+						} else {
+							drawCaret(g, scene, caret, CARET.SELECT);
+						}
 					}
 				}
 			}
@@ -2324,10 +2363,12 @@
 				g.lineCap = "butt";
 				g.lineJoin = "round";
 
-				let xPrev = scene.toX(path[path.length - 2]) + CELL_W / 2;
-				let yPrev = scene.toY(path[path.length - 2]) + CELL_H / 2;
-				let xLast = scene.toX(path[path.length - 1]) + CELL_W / 2;
-				let yLast = scene.toY(path[path.length - 1]) + CELL_H / 2;
+				let prev = path[path.length - 2];
+				let last = path[path.length - 1];
+				let xPrev = scene.toX(prev) + CELL_W / 2;
+				let yPrev = scene.toY(prev) + CELL_H / 2;
+				let xLast = scene.toX(last) + CELL_W / 2;
+				let yLast = scene.toY(last) + CELL_H / 2;
 				let angle = atan2(yLast - yPrev, xLast - xPrev);
 
 				g.beginPath();
@@ -2416,13 +2457,15 @@
 		return score;
 	}
 
-	class CPU extends Component {
+	class CPU extends Component implements Controller {
 		private running = false;
 		get visible() { return this.running; }
 		set visible(value: boolean) {
 			this.running = value;
 			if (value) { committed.then(() => this.run([])); }
 		}
+
+		caret: Hex;
 
 		private run(ignored: Unit[]): void {
 			let scene = this.parent as Scene;
@@ -2435,12 +2478,13 @@
 					job.then(() => this.run(ignored));
 					break;
 				}
+				this.caret = null;
 				let unit = pick(scene, ignored);
 				if (unit == null) {
 					scene.endTurn();	// no more actions in this turn.
 					break;
 				}
-				job = move(scene, unit, ignored);
+				job = move.call(this, scene, unit, ignored);
 			}
 
 			function pick(scene: Scene, ignored: Unit[]): Unit {
@@ -2493,12 +2537,12 @@
 
 					if (scoreBest < score) {
 						scoreBest = score;
-						hexBest = new Hex(xH, yH);
+						hexBest = { xH, yH };
 					}
 				});
 
 				// Ignore units don't want further more actions but still have SPs to avoid infinite loops.
-				if (hexBest.equals(hex)) {
+				if (same(hexBest, hex)) {
 					ignored.push(unit);
 					scene.focus = null;
 					return null;
@@ -2506,6 +2550,7 @@
 
 				// Reset ignored list.
 				ignored.length = 0;
+				this.caret = hexBest;
 				let { PICK } = config.wait;
 				if (PICK > 0) {
 					let job = asJob(() => scene.move(unit, hexBest));
@@ -2524,9 +2569,9 @@
 
 	function rearHexOf(field: Field, from: Hex, to: Hex): Hex {
 		let rearHex: Hex = undefined;
-		let rearDistance = from.distance(to) + 1;
-		field.straight(from, to, rearDistance, (hex, distance) => {
-			if (distance === rearDistance && field.get(hex).empty) {
+		let rearStep = distance(from, to) + 1;
+		field.straight(from, to, rearStep, (hex, steps) => {
+			if (steps === rearStep && field.get(hex).empty) {
 				rearHex = hex;
 			}
 		});
@@ -2564,17 +2609,17 @@
 		center: Hex,
 		range: number,
 		outerColor: Color,
-		factor?: (deltaHP: number, distance: number) => number
+		factor?: (deltaHP: number, steps: number) => number
 	): Job {
 		let { field } = scene;
 
 		let effects: Job[] = [];
-		function trySkill(hex: Hex, distance: number) {
+		function trySkill(hex: Hex, steps: number) {
 			let target = field.get(hex).unit;
 			if (unit.isTarget(target)) {
 				let deltaHP = unit.trySkill(target);
 				if (factor) {
-					deltaHP = factor(deltaHP, distance);
+					deltaHP = factor(deltaHP, steps);
 				}
 				let effect = scene.prepareEffect(target, deltaHP);
 				effect.attach(scene);
@@ -2723,7 +2768,7 @@
 			let deltaHP = unit.trySkill(target);
 
 			let action = shootProjectile(scene, unit.hex, target.hex, rgb(255, 128, 0), rgba(255, 128, 0, 0));
-			let nova = asJob(() => standardNova(scene, unit, hex, 1, new Color(1, 0.5, 0), (deltaHP, distance) => floor(deltaHP / (1 + distance))));
+			let nova = asJob(() => standardNova(scene, unit, hex, 1, new Color(1, 0.5, 0), (deltaHP, steps) => floor(deltaHP / (1 + steps))));
 			action.then(nova);
 
 			return nova;
@@ -2777,7 +2822,7 @@
 		},
 		// Aciton for SURROUND
 		Nova: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			return standardNova(scene, unit, unit.hex, unit.skill.range, new Color(1, 0.5, 0), (deltaHP, distance) => floor(deltaHP / distance));
+			return standardNova(scene, unit, unit.hex, unit.skill.range, new Color(1, 0.5, 0));
 		}
 	};
 }

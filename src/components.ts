@@ -48,7 +48,7 @@ const CONFIRM_TEXT_STYLE: TextStyle = {
 //================================================================================
 
 class Animation extends Component implements Job {
-	public start: number;
+	public start: Timestamp;
 	private sig: Signal;
 
 	constructor(
@@ -68,6 +68,11 @@ class Animation extends Component implements Job {
 		} else {
 			return false;
 		}
+	}
+
+	detach(): Composite {
+		this.start = null;
+		return super.detach();
 	}
 
 	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void {
@@ -129,7 +134,6 @@ class FadeIn extends Animation {
 			if (progress > 0) {
 				this.next.onDraw(g, when);
 			}
-			let { canvas } = g;
 			g.save();
 			g.globalAlpha = 1 - progress;
 			g.fillStyle = "black";
@@ -163,7 +167,6 @@ class FadeOut extends Animation {
 		if (progress < 1) {
 			this.prev.onDraw(g, when);
 			if (progress > 0) {
-				let { canvas } = g;
 				g.save();
 				g.globalAlpha = progress;
 				g.fillStyle = "black";
