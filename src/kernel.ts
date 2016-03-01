@@ -2,9 +2,16 @@
 const DEBUG = (typeof NDEBUG === "undefined");
 const TOUCH_ONLY = false;	// set true to emulate touch-only devices.
 
-const DEFAULT_FONT_SIZE = 24;
+//interface Timestamp extends Number { Timestamp; };
+type Timestamp = number;
+//interface Duration extends Number { Duration; };
+type Duration = number;
+//interface Pixel extends Number { Pixel; };
+type Pixel = number;
+
+const DEFAULT_FONT_SIZE: Pixel = 24;
 const DEFAULT_FONT_FAMILY = "Arial";
-const CANVAS_RESIZE_DELAY = 300;
+const CANVAS_RESIZE_DELAY: Duration = 300;
 
 //================================================================================
 
@@ -48,15 +55,6 @@ interface Array<T> {
 
 type Slot = () => void;
 type Signal = Slot | Slot[];
-
-//interface Timestamp extends Number { Timestamp; };
-type Timestamp = number;
-//interface Duration extends Number { Duration; };
-type Duration = number;
-
-// TODO: Pixel should be divided into AbsolutePixel and RelativePixel
-//interface Pixel extends Number { Pixel; };
-type Pixel = number;
 
 const { keys } = Object;
 const { abs, min, max, floor, ceil, round, pow, sin, cos, atan2, PI, random } = Math;
@@ -409,7 +407,8 @@ enum KEY {
 }
 
 class Component {
-	parent: Composite = null;
+	parent: Composite;
+
 	onHover(x: Pixel, y: Pixel): void { }
 	onDrag(x: Pixel, y: Pixel): void { }
 	onDown(x: Pixel, y: Pixel): void { }
@@ -561,17 +560,31 @@ class Composite extends Component {
 
 interface CanvasRenderingContext2D {
 	debugSaveAndRestoreCount: number;
-	debugSaveAndRestore(expected: number): void;
 }
 
 if (DEBUG) {
+	let { save, restore } = CanvasRenderingContext2D.prototype;
+
+	CanvasRenderingContext2D.prototype.save = function() {
+		this.debugSaveAndRestoreCount = (this.debugSaveAndRestoreCount || 0) + 1;
+		save.call(this);
+	}
+
+	CanvasRenderingContext2D.prototype.restore = function() {
+		this.debugSaveAndRestoreCount = this.debugSaveAndRestoreCount - 1;
+		restore.call(this);
+	}
+
 	Composite.prototype.onDraw = function(g: CanvasRenderingContext2D, when: Timestamp): void {
-		let { debugSaveAndRestoreCount } = g;
+		let before = (g.debugSaveAndRestoreCount || 0);
 		let { children } = this;	// keep it in local
 		for (let o of children) {
 			if (o.visible) {
 				o.onDraw(g, when);
-				g.debugSaveAndRestore(debugSaveAndRestoreCount);
+				let after = (g.debugSaveAndRestoreCount || 0);
+				if (after !== before) {
+					throw new Error(`save and restore are not balanced: ${after} but expected ${before}`);
+				}
 			}
 		}
 	}
@@ -587,29 +600,6 @@ interface CanvasConfig {
 }
 
 function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): void {
-	if (DEBUG) {
-		let { save, restore } = CanvasRenderingContext2D.prototype;
-
-		CanvasRenderingContext2D.prototype.debugSaveAndRestore = function(expected: number) {
-			if (expected == null) { expected = 0; }
-			let current = this.debugSaveAndRestoreCount;
-			if (current == null) { current = 0; }
-			if (current !== expected) {
-				throw new Error(`save and restore are not balanced: ${current} but expected ${expected}`);
-			}
-		}
-
-		CanvasRenderingContext2D.prototype.save = function() {
-			this.debugSaveAndRestoreCount = (this.debugSaveAndRestoreCount || 0) + 1;
-			save.call(this);
-		}
-
-		CanvasRenderingContext2D.prototype.restore = function() {
-			this.debugSaveAndRestoreCount = this.debugSaveAndRestoreCount - 1;
-			restore.call(this);
-		}
-	}
-
 	let logicalWidth = canvas.width;
 	assert(logicalWidth > 0);
 	let logicalHeight = canvas.height;

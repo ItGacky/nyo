@@ -77,11 +77,12 @@
 		End: "終了",
 		Done: "END",
 		Retire: "断念",
+		View: "状況",
 		ConfirmRetire: "このエリアの攻略を断念しますか？",
 		GameOver: "全滅しました",
 		PartyTurn: "味方ターン",
 		EnemyTurn: "敵ターン",
-		CannotUndo: "取り消せません。",
+		CannotUndo: "やり直せません。",
 		UnitNotAvailable: "ユニットがありません。"
 	},
 	Character: {

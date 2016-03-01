@@ -1,13 +1,13 @@
 interface ItemDef {
 	tags: TAG[];	// supported skill tag
-	weight: number;
-	price: number;
+	weight: Weight;
+	price: Gold;
 	ATK?: number;	// damage
 	DEF?: number;	// defence 1-100
-	enchants?: string[];
+	enchants?: EnchantID[];
 }
 
-const ITEMS: { [IID: string]: ItemDef } = {
+const ITEMS: { [IID: string/*ItemID*/]: ItemDef } = {
 	// MELLE
 	Dagger: {
 		tags: [TAG.MELEE, TAG.SLASH],

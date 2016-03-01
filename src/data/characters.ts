@@ -2,8 +2,8 @@ interface CharacterDef {
 	INT: number;
 	DEX: number;
 	STR: number;
-	equipments: string[];
-	skills: string[];
+	equipments: ItemID[];
+	skills: SkillID[];
 	image: string;
 }
 

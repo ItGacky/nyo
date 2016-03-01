@@ -33,14 +33,15 @@ function scaleProportionally(wh: WH, wLimit: number, hLimit: number, magnify: bo
 // CanvasRenderingContext2D
 //================================================================================
 
-type CanvasStyle = string | CanvasGradient | CanvasPattern;
-type TextAlign = "left" | "right" | "center";		// TODO: support "start" | "end"
-type TextBaseline = "top" | "middle" | "bottom";	// TODO: support "hanging" | "alphabetic" | "ideographic"
+type CanvasStyleString = string;	// "#...", "rgb(...)", "rgba(...)", "white", etc.
+type CanvasStyle = CanvasStyleString | CanvasGradient | CanvasPattern;
+type TextAlign = "left" | "right" | "center";		// FIXME: support "start" | "end"
+type TextBaseline = "top" | "middle" | "bottom";	// FIXME: support "hanging" | "alphabetic" | "ideographic"
 
 interface RectStyle {
 	fillStyle?: CanvasStyle;
 	strokeStyle?: CanvasStyle;
-	globalAlpha?: number,
+	globalAlpha?: Alpha,
 	lineWidth?: Pixel;
 }
 
@@ -49,7 +50,7 @@ interface TextStyle {
 	fontFamily?: string;
 	fillStyle?: CanvasStyle;
 	strokeStyle?: CanvasStyle;
-	globalAlpha?: number,
+	globalAlpha?: Alpha,
 	lineWidth?: Pixel;
 	textAlign?: TextAlign;
 	textBaseline?: TextBaseline;
@@ -101,7 +102,6 @@ function drawRect(
 		x = x_or_rect as number;
 		y = y_or_style as number;
 	}
-
 	if (w > 0 && h > 0) {
 		g.save();
 		setupStyle(g, style);
@@ -111,7 +111,6 @@ function drawRect(
 	}
 }
 
-// support style and multi-lines.
 function drawText(
 	g: CanvasRenderingContext2D,
 	text: string,
@@ -232,8 +231,8 @@ function fillVerticalGradient(
 	y: Pixel,
 	w: Pixel,
 	h: Pixel,
-	topStyle: string,
-	bottomStyle: string
+	topStyle: CanvasStyleString,
+	bottomStyle: CanvasStyleString
 ): void {
 	if (w > 0 && h > 0) {
 		g.save();
@@ -252,8 +251,8 @@ function fillRadialGradient(
 	y: Pixel,
 	w: Pixel,
 	h: Pixel,
-	innerStyle: string,
-	outerStyle: string,
+	innerStyle: CanvasStyleString,
+	outerStyle: CanvasStyleString,
 	inner: Pixel = 0
 ): void {
 	if (w > 0 && h > 0) {
@@ -273,59 +272,25 @@ function fillRadialGradient(
 // Color
 //================================================================================
 
+type Byte = number;		// integer of [0, 255]
+type Alpha = number;	// real of [0, 1]
+
 function toFixed(n: number, fractionDigits: number): string {
 	return n.toFixed(fractionDigits).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
 }
 
-function rgb(r: number, g: number, b: number): string {
+function rgb(r: Byte, g: Byte, b: Byte): CanvasStyleString {
 	return `rgb(${r},${g},${b})`;
 }
 
-function rgba(r: number, g: number, b: number, a: number): string {
+function rgba(r: Byte, g: Byte, b: Byte, a: Alpha): CanvasStyleString {
 	return `rgba(${r},${g},${b},${toFixed(a, 6)})`;	// NOTE: Edge requires fixed format.
 }
 
-class Color {
-	constructor(
-		public r: number,
-		public g: number,
-		public b: number,
-		public a: number = 1
-	) {
-	}
-
-	get rgb(): string {
-		let r = clamp(0, 255, round(this.r * 255));
-		let g = clamp(0, 255, round(this.g * 255));
-		let b = clamp(0, 255, round(this.b * 255));
-		return rgb(r, g, b);
-	}
-
-	get rgba(): string {
-		let r = clamp(0, 255, round(this.r * 255));
-		let g = clamp(0, 255, round(this.g * 255));
-		let b = clamp(0, 255, round(this.b * 255));
-		let a = clamp(0, 1, this.a);
-		return rgba(r, g, b, a);
-	}
-
-	toString(): string { return this.rgba; }
-
-	static BLACK = new Color(0.0, 0.0, 0.0);
-	static WHITE = new Color(1.0, 1.0, 1.0);
-	static GRAY = new Color(0.5, 0.5, 0.5);
-	static RED = new Color(1.0, 0.0, 0.0);
-	static MAROON = new Color(0.5, 0.0, 0.0);
-	static FUCHSIA = new Color(1.0, 0.0, 1.0);
-	static PURPLE = new Color(0.5, 0.0, 0.5);
-	static LIME = new Color(0.0, 1.0, 0.0);
-	static GREEN = new Color(0.0, 0.5, 0.0);
-	static BLUE = new Color(0.0, 0.0, 1.0);
-	static NAVY = new Color(0.0, 0.0, 0.5);
-	static AQUA = new Color(0.0, 1.0, 1.0);
-	static TEAL = new Color(0.0, 0.5, 0.5);
-	static OLIVE = new Color(0.5, 0.5, 0.0);
-	static YELLOW = new Color(1.0, 1.0, 0.0);
+interface RGB {
+	r: Byte;
+	g: Byte;
+	b: Byte;
 }
 
 //================================================================================
@@ -353,13 +318,13 @@ class Label implements Drawable {
 	) {
 		if (this.textStyle == null) { this.textStyle = {}; }
 		// TODO: textStyle を所有しておらず、参照しているだけのため、直接変更すべきではない。
-		if (this.textStyle.fillStyle == null) {
-			this.textStyle.fillStyle = Color.WHITE.rgba;
+		if (!this.textStyle.fillStyle) {
+			this.textStyle.fillStyle = "white";
 		}
-		if (this.textStyle.textAlign == null) {
+		if (!this.textStyle.textAlign) {
 			this.textStyle.textAlign = "center";
 		}
-		if (this.textStyle.textBaseline == null) {
+		if (!this.textStyle.textBaseline) {
 			this.textStyle.textBaseline = "middle";
 		}
 	}
@@ -414,13 +379,13 @@ class Picture implements Drawable, WH {
 		when: Timestamp,
 		rect: XYWH,
 		overlayStyle?: CanvasStyle,
-		overlayAlpha: number = 0.5
+		overlayAlpha?: Alpha
 	): void {
 		let { image } = this;
 		let { x, y, w, h } = rect;
 		if (image && w > 0 && h > 0) {
 			g.save();
-			if (overlayStyle == null || overlayAlpha <= 0) {
+			if (!overlayStyle || overlayAlpha <= 0) {
 				g.drawImage(image, x, y, w, h);
 			} else {
 				g.globalCompositeOperation = "destination-out";

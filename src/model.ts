@@ -1,3 +1,6 @@
+type Gold = number;
+type Weight = number;
+
 const PARTY_MAX = 6;	// maximum number of active party members.
 const SKILL_MAX = 6;	// maximum number of active skills per character.
 const ITEM_DISCOUNT_TO_SELL = 0.5;
@@ -58,8 +61,10 @@ function isHostile(target: TARGET): boolean {
 // Enchant
 //================================================================================
 
+type EnchantID = string;
+
 interface EnchantArchive {
-	EID: string;
+	EID: EnchantID;
 	value: number;
 }
 
@@ -69,7 +74,7 @@ class Enchant implements ToJSON<EnchantArchive> {
 	public name: Word;
 	public spec: Word;
 
-	constructor(public EID: string) {
+	constructor(public EID: EnchantID) {
 		this.def = ENCHANTS[this.EID];
 		if (this.def == null) {
 			throw new RangeError(`Enchantment not found: "${this.EID}"`);
@@ -90,15 +95,15 @@ class Enchant implements ToJSON<EnchantArchive> {
 		return ATK;
 	}
 
-	static nameOf(EID: string): Word {
+	static nameOf(EID: EnchantID): Word {
 		return _("Enchant", EID, "Name");
 	}
 
-	static specOf(EID: string): Word {
+	static specOf(EID: EnchantID): Word {
 		return _("Enchant", EID, "Spec");
 	}
 
-	static from(EID: string): Enchant {
+	static from(EID: EnchantID): Enchant {
 		return new Enchant(EID);
 	}
 
@@ -118,8 +123,10 @@ class Enchant implements ToJSON<EnchantArchive> {
 // Item
 //================================================================================
 
+type ItemID = string;
+
 interface ItemArchive {
-	IID: string;
+	IID: ItemID;
 	enchants: EnchantArchive[];
 }
 
@@ -130,7 +137,7 @@ class Item implements ToJSON<ItemArchive> {
 	public tagbits: number;
 
 	constructor(
-		public IID: string,
+		public IID: ItemID,
 		public enchants?: Enchant[]
 	) {
 		this.def = ITEMS[this.IID];
@@ -158,7 +165,7 @@ class Item implements ToJSON<ItemArchive> {
 	get tags() { return this.def.tags; }
 	get weight() { return this.def.weight; }
 
-	get priceToSell(): number {
+	get priceToSell(): Gold {
 		let value = this.def.price;
 		for (let e of this.enchants) {
 			value = e.modify(value);
@@ -182,15 +189,15 @@ class Item implements ToJSON<ItemArchive> {
 		return value;
 	}
 
-	static nameOf(IID: string): Word {
+	static nameOf(IID: ItemID): Word {
 		return _("Item", IID, "Name");
 	}
 
-	static specOf(IID: string): Word {
+	static specOf(IID: ItemID): Word {
 		return _("Item", IID, "Spec");
 	}
 
-	static from(IID: string): Item {
+	static from(IID: ItemID): Item {
 		return new Item(IID);
 	}
 
@@ -213,8 +220,10 @@ class Item implements ToJSON<ItemArchive> {
 // Skill
 //================================================================================
 
+type SkillID = string;
+
 interface SkillArchive {
-	SID: string;
+	SID: SkillID;
 	// TODO: skill levels and modifiers
 }
 
@@ -224,7 +233,7 @@ class Skill implements ToJSON<SkillArchive> {
 	public spec: Word;
 	public tagbits: number;
 
-	constructor(public SID: string) {
+	constructor(public SID: SkillID) {
 		this.def = SKILLS[this.SID];
 		if (this.def == null) {
 			throw new RangeError(`Skill not found: "${this.SID}"`);
@@ -246,15 +255,15 @@ class Skill implements ToJSON<SkillArchive> {
 		return (this.tagbits & item.tagbits) === this.tagbits;
 	}
 
-	static nameOf(SID: string): Word {
+	static nameOf(SID: SkillID): Word {
 		return _("Skill", SID, "Name");
 	}
 
-	static specOf(SID: string): Word {
+	static specOf(SID: SkillID): Word {
 		return _("Skill", SID, "Spec");
 	}
 
-	static from(SID: string): Skill {
+	static from(SID: SkillID): Skill {
 		return new Skill(SID);
 	}
 
@@ -299,7 +308,7 @@ interface DrawableWithOverlay extends WH {
 		when: Timestamp,
 		rect: XYWH,
 		overlayStyle?: CanvasStyle,
-		overlayAlpha?: number
+		overlayAlpha?: Alpha
 	): void;
 }
 
@@ -322,15 +331,15 @@ class AnimatedPicture implements DrawableWithOverlay {
 		this.offset = rand(this.cycle);
 	}
 
-	get w(): number { return this.back.w; }
-	get h(): number { return this.back.h; }
+	get w(): Pixel { return this.back.w; }
+	get h(): Pixel { return this.back.h; }
 
 	draw(
 		g: CanvasRenderingContext2D,
 		when: Timestamp,
 		rect: XYWH,
 		overlayStyle?: CanvasStyle,
-		overlayAlpha?: number
+		overlayAlpha?: Alpha
 	): void {
 		this.back.draw(g, when, rect, overlayStyle, overlayAlpha);
 		let eye: number;
@@ -388,9 +397,9 @@ class Character implements ToJSON<CharacterArchive> {
 
 	get step(): number { return (13 - this.DEX); }
 	get ZoC(): number { return (3 + this.DEX); }
-	get maxWeight(): number { return (3 + this.STR) * 10; }
+	get maxWeight(): Weight { return (3 + this.STR) * 10; }
 
-	get weight(): number {
+	get weight(): Weight {
 		return this.equipments.reduce((total, item) => total + item.weight, 0);
 	}
 
@@ -491,14 +500,14 @@ class Character implements ToJSON<CharacterArchive> {
 // Data
 //================================================================================
 
-type IID2Stock = { [IID: string]: number };
+type IID2Stock = { [IID: string/*ItemID*/]: number };
 
 interface Data {
 	shop: IID2Stock;
 	warehouse: Item[];
 	reservers: Character[];
 	party: Character[];
-	gold: number;
+	gold: Gold;
 }
 
 interface DataArchive {
@@ -506,5 +515,5 @@ interface DataArchive {
 	warehouse: ItemArchive[];
 	reservers: CharacterArchive[];
 	party: CharacterArchive[];
-	gold: number;
+	gold: Gold;
 }

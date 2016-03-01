@@ -40,17 +40,17 @@ interface UnitBarStyle {
 }
 
 const BAR_STYLE_HP: UnitBarStyle = {
-	bkgnd: new Color(0, 0, 0, 0.6),
-	delta: new Color(1, 0.2, 0),
-	normal: new Color(0.6, 0.8, 0),
-	full: new Color(0, 0.8, 0.2)
+	bkgnd: rgba(0, 0, 0, 0.6),
+	delta: rgb(255, 51, 0),
+	normal: rgb(153, 204, 0),
+	full: rgb(0, 204, 51)
 }
 
 const BAR_STYLE_SP: UnitBarStyle = {
-	bkgnd: new Color(0, 0, 0, 0.6),
-	delta: new Color(0, 0.2, 0.4),
-	normal: new Color(0, 0.6, 0.8),
-	full: new Color(0, 0.6, 1)
+	bkgnd: rgba(0, 0, 0, 0.6),
+	delta: rgb(0, 51, 102),
+	normal: rgb(0, 153, 204),
+	full: rgb(0, 153, 255)
 }
 
 // config.effects

@@ -1,38 +1,41 @@
 ﻿namespace Combat {
+	//interface Coord extends Number { Coord; };
+	type Coord = number;
+
 	// Number of cells in field
-	const MAP_W = 20;	// (n)
-	const MAP_H = 3;	// (n)
+	const MAP_W: Coord = 20;
+	const MAP_H: Coord = 3;
 
 	// Cell
-	const CELL_W = 128;	// (px)
-	const CELL_H = 80;	// (px)
+	const CELL_W: Pixel = 128;
+	const CELL_H: Pixel = 80;
 
 	// Panel: for unit panel
-	const PANEL_W = SCREEN_W / 2;				// (px)
-	const PANEL_H = CELL_H * 2;					// (px)
-	const PANEL_Y = SCREEN_H - PANEL_H;			// (px)
-	const PANEL_L = SCREEN_W / 2 - PANEL_W;		// (px)
-	const PANEL_R = SCREEN_W / 2;				// (px)
-	const PANEL_NAME_X = CELL_W;				// (px)
-	const PANAL_NAME_Y = MARGIN;				// (px)
+	const PANEL_W: Pixel = SCREEN_W / 2;
+	const PANEL_H: Pixel = CELL_H * 2;
+	const PANEL_Y: Pixel = SCREEN_H - PANEL_H;
+	const PANEL_L: Pixel = SCREEN_W / 2 - PANEL_W;
+	const PANEL_R: Pixel = SCREEN_W / 2;
+	const PANEL_NAME_X: Pixel = CELL_W;
+	const PANAL_NAME_Y: Pixel = MARGIN;
 
-	// Buttons for system
-	const COMBAT_BUTTON_W = PANEL_H - 2 * MARGIN;	// (px) width of system button for combat scene
-	const COMBAT_BUTTON_H = PANEL_H - 2 * MARGIN;	// (px) height of of system button for combat scene
+	// System Buttons
+	const SYSTEM_BUTTON_W: Pixel = PANEL_H - 2 * MARGIN;	// width of system button for combat scene
+	const SYSTEM_BUTTON_H: Pixel = PANEL_H - 2 * MARGIN;	// height of of system button for combat scene
 
-	// Buttons for members
-	const PARTY_BUTTON_X = MARGIN;
-	const PARTY_BUTTON_Y = PANEL_Y + MARGIN;
-	const PARTY_BUTTON_W = 100;
-	const PARTY_BUTTON_H = PANEL_H - MARGIN * 2;
+	// Member Buttons
+	const PARTY_BUTTON_X: Pixel = MARGIN;
+	const PARTY_BUTTON_Y: Pixel = PANEL_Y + MARGIN;
+	const PARTY_BUTTON_W: Pixel = 100;
+	const PARTY_BUTTON_H: Pixel = PANEL_H - MARGIN * 2;
 
 	// Field: Sky + Cells + Fades
-	const SKY_H = SCREEN_H - CELL_H * MAP_H * 2 - PANEL_H;	// (px)
-	const FIELD_W = MAP_W * CELL_W / 2;			// (px)
-	const FIELD_H = SKY_H + MAP_H * CELL_H * 2;	// (px)
-	const FIELD_X = (SCREEN_W - FIELD_W) / 2;	// (px)
-	const FIELD_Y = 0;							// (px)
-	const FADE_W = CELL_W;						// (px)
+	const SKY_H: Pixel = SCREEN_H - CELL_H * MAP_H * 2 - PANEL_H;
+	const FIELD_W: Pixel = MAP_W * CELL_W / 2;
+	const FIELD_H: Pixel = SKY_H + MAP_H * CELL_H * 2;
+	const FIELD_X: Pixel = (SCREEN_W - FIELD_W) / 2;
+	const FIELD_Y: Pixel = 0;
+	const FADE_W: Pixel = CELL_W;
 	const FADE_NEAR = rgba(0, 0, 0, 0);			// (color string)
 	const FADE_FAR = rgba(0, 0, 0, 0.75);		// (color string)
 	const FIELD_SCROLL_DURATION: Duration = 400;	// duration for scroll per cell; usually takes x2 of the value.
@@ -42,25 +45,25 @@
 		inner: CanvasStyle;
 		outer: CanvasStyle;
 	}
-	const CARET_LINE_OUTER = 7;	// (px)
-	const CARET_LINE_INNER = 3;	// (px)
+	const CARET_LINE_OUTER: Pixel = 7;
+	const CARET_LINE_INNER: Pixel = 3;
 
 	const CARET /* : { [name: string]: CaretStyle } */ = {
 		SELECT: {
-			inner: new Color(0.9, 1, 0.7),
-			outer: new Color(0.2, 0.9, 0.2)
+			inner: rgb(230, 255, 180),
+			outer: rgb(51, 230, 51)
 		},
 		WALK: {
-			inner: new Color(0.9, 0.7, 1),
-			outer: new Color(0.2, 0.2, 0.9)
+			inner: rgb(230, 180, 255),
+			outer: rgb(51, 51, 230)
 		},
 		HOSTILE: {
-			inner: new Color(1, 0.7, 0.9),
-			outer: new Color(0.9, 0.2, 0.2)
+			inner: rgb(255, 180, 230),
+			outer: rgb(230, 51, 51)
 		},
 		FRIENDLY: {
-			inner: new Color(0.9, 0.7, 1),
-			outer: new Color(0.2, 0.2, 0.9)
+			inner: rgb(230, 180, 255),
+			outer: rgb(51, 51, 230)
 		}
 	}
 
@@ -68,9 +71,9 @@
 	const MARKER_DURATION: Duration = 300;		// duration for marker's fade-in.
 
 	interface MarkerStyle {
-		inner: Color;
-		outer: Color;
-		bkgnd: Color;
+		inner: CanvasStyle;
+		outer: CanvasStyle;
+		bkgnd: CanvasStyle;
 	}
 
 	interface MarkerTargetStyle {
@@ -80,73 +83,75 @@
 	}
 
 	const MARKER_WALK: MarkerStyle = {
-		outer: new Color(0.25, 0.75, 1),
-		inner: new Color(0.7, 0.9, 1),
-		bkgnd: new Color(0.25, 0.75, 1, 0.3)
+		outer: rgb(64, 192, 255),
+		inner: rgb(180, 232, 255),
+		bkgnd: rgba(64, 192, 255, 0.3)
 	};
 
 	const MARKER_DASH: MarkerStyle = {
-		outer: new Color(1, 0.75, 0.25),
-		inner: new Color(1, 0.9, 0.75),
-		bkgnd: new Color(1, 0.75, 0.25, 0.3)
+		outer: rgb(255, 192, 64),
+		inner: rgb(255, 232, 192),
+		bkgnd: rgba(255, 192, 64, 0.3)
 	};
 
 	const MARKER_HOSTILE: MarkerTargetStyle = {
 		DASH_OR_RANGE: {
-			outer: new Color(1, 0.25, 0.25),
-			inner: new Color(1, 0.7, 0.7),
-			bkgnd: new Color(1, 0.75, 0.25, 0.3)
+			outer: rgb(255, 64, 64),
+			inner: rgb(255, 180, 180),
+			bkgnd: rgba(255, 192, 64, 0.3)
 		},
 		RANGE: {
-			outer: new Color(1, 0.25, 0.25),
-			inner: new Color(1, 0.7, 0.7),
-			bkgnd: new Color(1, 0.5, 0.25, 0.3)
+			outer: rgb(255, 64, 64),
+			inner: rgb(255, 180, 180),
+			bkgnd: rgba(255, 128, 64, 0.3)
 		},
 		TARGET: {
-			outer: new Color(1, 0.1, 0.1),
-			inner: new Color(1, 0.25, 0.25),
-			bkgnd: new Color(1, 0.1, 0.1, 0.3)
+			outer: rgb(255, 24, 24),
+			inner: rgb(255, 64, 64),
+			bkgnd: rgba(255, 24, 24, 0.3)
 		}
 	};
 
 	const MARKER_FRIENDLY: MarkerTargetStyle = {
 		DASH_OR_RANGE: {
-			outer: new Color(0.25, 0.25, 1),
-			inner: new Color(0.7, 0.7, 1),
-			bkgnd: new Color(1, 0.75, 0.25, 0.3)
+			outer: rgb(24, 24, 255),
+			inner: rgb(180, 180, 255),
+			bkgnd: rgba(255, 192, 64, 0.3)
 		},
 		RANGE: {
-			outer: new Color(0.25, 0.25, 1),
-			inner: new Color(0.7, 0.7, 1),
-			bkgnd: new Color(0.25, 0.5, 1, 0.3)
+			outer: rgb(64, 64, 255),
+			inner: rgb(180, 180, 255),
+			bkgnd: rgba(24, 128, 255, 0.3)
 		},
 		TARGET: {
-			outer: new Color(0.1, 0.1, 1),
-			inner: new Color(0.25, 0.25, 1),
-			bkgnd: new Color(0.1, 0.1, 1, 0.3)
+			outer: rgb(24, 24, 255),
+			inner: rgb(64, 64, 255),
+			bkgnd: rgba(24, 24, 255, 0.3)
 		}
 	};
 
 	// Unit
-	const UNIT_MAX_W = CELL_W;			// (px) max width of unit image
-	const UNIT_MAX_H = CELL_W;			// (px) max height of unit image
-	const UNIT_IDLE_CYCLE: Duration = 200;		// cycle of unit idle animation per DEX.
+	const UNIT_MAX_W: Pixel = CELL_W;		// max width of unit image
+	const UNIT_MAX_H: Pixel = CELL_W;		// max height of unit image
+	const UNIT_IDLE_CYCLE: Duration = 200;	// cycle of unit idle animation per DEX.
 	const UNIT_IDLE_LO: Pixel = 10;
 	const UNIT_IDLE_UI: Pixel = 16;
 	const UNIT_STEP_DURATION: Duration = 100;		// duration per step.
 	const UNIT_STEP_POW = 0.75;			// duration will be reduced for many steps.
 	const UNIT_DYING_DURATION: Duration = 300;	// duration for dying animation.
-	const UNIT_OVERLAY_FOCUS = new Color(1, 1, 0, 0.5);	// (color)
-	const UNIT_OVERLAY_HOSTILE = new Color(1, 0, 0, 0.5);	// (color)
-	const UNIT_OVERLAY_FRIENDLY = new Color(0, 0, 1, 0.5);	// (color)
+	const UNIT_OVERLAY_DYING: CanvasStyle = "red";
+	const UNIT_OVERLAY_FOCUS: CanvasStyle = "yellow";
+	const UNIT_OVERLAY_HOSTILE: CanvasStyle = "red";
+	const UNIT_OVERLAY_FRIENDLY: CanvasStyle = "blue";
 	const UNIT_OVERLAY_CYCLE: Duration = 1000;
-	const UNIT_SHADOW_INNER = rgba(0, 0, 0, 0.65);	// (color string)
-	const UNIT_SHADOW_OUTER = rgba(0, 0, 0, 0);	// (color string)
+	const UNIT_OVERLAY_ALPHA = 0.5;
+	const UNIT_SHADOW_INNER: CanvasStyleString = rgba(0, 0, 0, 0.65);
+	const UNIT_SHADOW_OUTER: CanvasStyleString = rgba(0, 0, 0, 0);
 	const UNIT_SHADOW_INNER_R = 0.75;
 	const UNIT_SHADOW_SCALE_Y = 0.2;
 	const UNIT_DAMAGED_DURATION: Duration = 500;		// duration of stagger for damaged unit
 	const UNIT_DAMAGED_CYCLE: Duration = 250;			// cycle of stagger for damaged unit
-	const UNIT_DAMAGED_RADIUS = CELL_H / 4;	// (px) radius of stagger for damaged unit
+	const UNIT_DAMAGED_RADIUS: Pixel = CELL_H / 4;	// radius of stagger for damaged unit
 	const UNIT_DONE_STYLE: TextStyle = {	// cannot move nor shoot because SP lacks.
 		textAlign: "center",
 		textBaseline: "bottom",
@@ -165,53 +170,54 @@
 	};
 
 	// Path
-	const PATH_RADIUS = 20;
-	const PATH_WIDTH = 12;
-	const PATH_STYLE = rgba(255, 0, 0, 0.8);
+	const PATH_RADIUS: Pixel = 20;
+	const PATH_WIDTH: Pixel = 12;
+	const PATH_STYLE: CanvasStyle = rgba(255, 0, 0, 0.8);
 
 	// Unit.HP/SP
-	const UNIT_BAR_W = CELL_W * 3 / 4;
-	const UNIT_BAR_H = 6;		// (px)
-	const UNIT_BAR_X = CELL_W / 2 - UNIT_BAR_W / 2;	// (px)
-	const UNIT_BAR_Y = CELL_H * 3 / 4;	// (px)
-	const UNIT_BAR_BORDER = 1;	// (px)
+	const UNIT_BAR_W: Pixel = CELL_W * 3 / 4;
+	const UNIT_BAR_H: Pixel = 6;
+	const UNIT_BAR_X: Pixel = CELL_W / 2 - UNIT_BAR_W / 2;
+	const UNIT_BAR_Y: Pixel = CELL_H * 3 / 4;
+	const UNIT_BAR_BORDER: Pixel = 1;
 
 	// Popup
 	const POPUP_DURATION: Duration = 600;	// duration for generic popup
-	const POPUP_DY = CELL_H / 2;		// (px) Y-length of popup's run
-	const POPUP_FONT_SIZE = 48;			// (px)
-	const POPUP_COLOR_DAMAGE = new Color(1, 0.7, 0.7);	// (color)
-	const POPUP_COLOR_HEAL = new Color(0.7, 1, 0.7);	// (color)
+	const POPUP_DY: Pixel = CELL_H / 2;		// Y-length of popup's run
+	const POPUP_FONT_SIZE: Pixel = 48;
+	const POPUP_COLOR_DAMAGE: CanvasStyle = rgb(255, 180, 180);
+	const POPUP_COLOR_HEAL: CanvasStyle = rgb(180, 255, 180);
 
 	// Switch
 	const COMBAT_SWITCH_DURATION: Duration = 800;	// turn switch animation
 	interface CombatSwitchStyle {
 		messageID: string;
-		bkgnd: Color;
+		innerStyle: CanvasStyleString;
+		outerStyle: CanvasStyleString;
 		textStyle: TextStyle;
 	}
 	const COMBAT_SWITCH: CombatSwitchStyle[] = [
 		{
 			messageID: "PartyTurn",
-			bkgnd: Color.NAVY,
+			innerStyle: rgb(0, 0, 128),
+			outerStyle: rgba(0, 0, 128, 0),
 			textStyle: {
 				fontSize: 64,
 				fillStyle: "white",
 				textAlign: "center",
 				textBaseline: "middle"
 			}
-
 		},
 		{
 			messageID: "EnemyTurn",
-			bkgnd: Color.MAROON,
+			innerStyle: rgb(128, 0, 0),
+			outerStyle: rgba(128, 0, 0, 0),
 			textStyle: {
 				fontSize: 64,
 				fillStyle: "white",
 				textAlign: "center",
 				textBaseline: "middle"
 			}
-
 		}
 	];
 
@@ -245,9 +251,6 @@
 	//================================================================================
 	// Hex
 	//================================================================================
-
-	//interface Coord extends Number { Coord; };
-	type Coord = number;
 
 	// Dense hex-coordinate
 	interface Hex {
@@ -501,8 +504,8 @@
 
 		protected abstract onGetXY(unit: Unit, scene: Scene, progress: number): XY;
 
-		drawCharacter(unit: Unit, g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlay?: Color): void {
-			unit.drawCharacter(g, when, x, y, overlay);
+		drawCharacter(unit: Unit, g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha): void {
+			unit.drawCharacter(g, when, x, y, overlayStyle, overlayAlpha);
 		}
 	}
 
@@ -616,15 +619,15 @@
 			};
 		}
 
-		drawCharacter(unit: Unit, g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlay?: Color): void {
+		drawCharacter(unit: Unit, g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha): void {
 			if (this.dying) {
 				let progress = Animation.clamp(when, this.start, this.duration);
 				g.save();
 				g.globalAlpha = (1 - progress);
-				super.drawCharacter(unit, g, when, x, y, new Color(1, 0, 0, progress));
+				super.drawCharacter(unit, g, when, x, y, UNIT_OVERLAY_DYING, progress);
 				g.restore();
 			} else {
-				super.drawCharacter(unit, g, when, x, y, overlay);
+				super.drawCharacter(unit, g, when, x, y, overlayStyle, overlayAlpha);
 			}
 		}
 	}
@@ -760,7 +763,7 @@
 			if (state) { state.commit(); }
 		}
 
-		drawCharacter(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlay?: Color) {
+		drawCharacter(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha) {
 			let { image } = this.ch;
 			let rect = scaleProportionally(image, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
 
@@ -786,16 +789,14 @@
 			}
 			rect.x = x - rect.w / 2;
 			rect.y = y - rect.h;
-			let overlayStyle = (overlay ? overlay.rgb : null);
-			let overlayAlpha = (overlay ? overlay.a : null);
 			image.draw(g, when, rect, overlayStyle, overlayAlpha);
 		}
 
-		draw(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlay?: Color) {
+		draw(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha) {
 			if (this.state) {
-				this.state.drawCharacter(this, g, when, x, y, overlay);
+				this.state.drawCharacter(this, g, when, x, y, overlayStyle, overlayAlpha);
 			} else {
-				this.drawCharacter(g, when, x, y, overlay);
+				this.drawCharacter(g, when, x, y, overlayStyle, overlayAlpha);
 			}
 		}
 
@@ -1210,6 +1211,7 @@
 		field: Field;
 		dying: Unit[];
 		snapshots: Snapshot[];
+		enabled = false;
 
 		constructor(public data: Data, public stage: Stage) {
 			super();
@@ -1234,9 +1236,10 @@
 				let ch = members[i];
 				if (ch) {
 					let [xH, yH] = location[i];
-					let unit = new Unit(ch, TEAM.PARTY, { xH, yH });
+					let hex = { xH, yH };
+					let unit = new Unit(ch, TEAM.PARTY, hex);
 					unit.state = new UnitEnter(ch.DEX);
-					field.rawget(unit.hex).unit = unit;
+					field.rawget(hex).unit = unit;
 
 					memberButtons.push(createMemberButton(i, unit));
 				}
@@ -1252,14 +1255,42 @@
 					let { w, h } = scaleProportionally(unit.ch.image, rect.w, rect.h, true);
 					x += (rect.w - w) / 2;
 					y += (rect.h - h) / 2;
+					// TODO: 死んでいる場合はグレースケールで表示する。
 					unit.ch.image.draw(g, when, { x, y, w, h });
 				}
 				return new Button(
 					PARTY_BUTTON_X + index * (PARTY_BUTTON_W + MARGIN), PARTY_BUTTON_Y, PARTY_BUTTON_W, PARTY_BUTTON_H,
 					{ draw },
-					() => human.click(unit.hex),
+					() => human.click(unit.hex),	// TODO: 「生き返り」機能を持たせる。死亡後、数ターン経過後に、フィールド後方から戦線に復帰させる。
 					[KEY.$1 + index]	// TODO: アイドル時以外でも選択の切り替えができるよう、Human側に移すべきかもしれない
 				);
+			}
+
+			//========= Human =========
+			let componentsForHuman = new Composite(memberButtons);
+			defineGetSet(componentsForHuman, "visible", () => human.visible && this.focus == null);
+			componentsForHuman.attach(this);
+
+			addSystemButton(componentsForHuman, 1, _("Combat", "End"), () => this.endTurn());
+			addSystemButton(componentsForHuman, 2, _("Combat", "Undo"), () => human.undo(), () => human.canUndo);
+			addSystemButton(componentsForHuman, 3, _("Combat", "Retire"), () => this.retire());
+			let view = addSystemButton(componentsForHuman, 4, _("Combat", "View"));
+
+			function addSystemButton(
+				parent: Composite,
+				nth: number,
+				label: any,
+				click?: Slot,
+				enabled?: () => boolean
+			): Button {
+				let x = SCREEN_W - (SYSTEM_BUTTON_W + MARGIN) * nth;
+				let y = SCREEN_H - (SYSTEM_BUTTON_H + MARGIN);
+				let btn = new Button(x, y, SYSTEM_BUTTON_W, SYSTEM_BUTTON_H, new Label(label), click);
+				if (enabled) {
+					defineGetSet(btn, "enabled", enabled);
+				}
+				btn.attach(parent);
+				return btn;
 			}
 
 			//========= Units =========
@@ -1267,40 +1298,11 @@
 			drawUnits.onDraw = (g, when) => this.drawUnits(g, when, this.focusTime);
 			drawUnits.attach(this);
 
-			// TODO: TOUCH_ONLY環境用に、マウスの右クリックを使わないで一通りの操作ができるかのテストが必要。
-
-			//========= Human =========
-			let componentsForHuman = new Composite();
-			defineGetSet(componentsForHuman, "visible", () => human.visible && this.focus == null);
-			componentsForHuman.attach(this);
-
-			function createButton(
-				nth: number,
-				label: any,
-				click: Slot,
-				enabled?: () => boolean
-			): Button {
-				let x = SCREEN_W - (COMBAT_BUTTON_W + MARGIN) * nth;
-				let y = SCREEN_H - (COMBAT_BUTTON_H + MARGIN);
-				let btn = new Button(x, y, COMBAT_BUTTON_W, COMBAT_BUTTON_H, new Label(label), click);
-				if (enabled) {
-					defineGetSet(btn, "enabled", enabled);
-				}
-				return btn;
-			}
-
-			createButton(1, _("Combat", "End"), () => this.endTurn()).attach(componentsForHuman);
-			createButton(2, _("Combat", "Undo"), () => human.undo(), () => human.canUndo).attach(componentsForHuman);
-			createButton(3, _("Combat", "Retire"), () => this.retire()).attach(componentsForHuman);
-
-			//========= Idle =========
-			let componentsForIdle = new Composite(memberButtons);
-			defineGetSet(componentsForIdle, "visible", () => this.team === TEAM.PARTY && this.focus == null);
-			componentsForIdle.attach(this);
-
-			let drawOnIdle = new Component();
-			drawOnIdle.onDraw = (g, when) => this.drawBarsOnIdle(g, when);
-			drawOnIdle.attach(componentsForIdle);
+			//========= View =========
+			let drawOnView = new Component();
+			drawOnView.onDraw = (g, when) => this.drawBarsOnView(g, when);
+			defineGetSet(drawOnView, "visible", () => view.visible && view.enabled && (view.hover || view.pressed));
+			drawOnView.attach(this);
 
 			//========= Focus =========
 			let componentsForFocus = new Composite();
@@ -1371,7 +1373,7 @@
 		get numScrollsPerTurn(): number { return this.stage.numScrollsPerTurn; }
 
 		private _focus: Unit;
-		focusTime: Timestamp;
+		private focusTime: Timestamp;
 
 		get focus(): Unit { return this._focus; }
 		set focus(value: Unit) {
@@ -1383,8 +1385,6 @@
 				this.focusTime = now();
 			}
 		}
-
-		enabled = false;
 
 		private _zoc: ZoC[];
 		get zoc(): ZoC[] {
@@ -1546,10 +1546,7 @@
 
 			// Effect on switch
 			let design = COMBAT_SWITCH[this.team];
-			let color = design.bkgnd;
-			let innerStyle = color.rgba;
-			let outerStyle = new Color(color.r, color.g, color.b, 0).rgba;
-			let { textStyle } = design;
+			let { innerStyle, outerStyle, textStyle } = design;
 			let message = _("Combat", design.messageID);
 
 			new Animation(COMBAT_SWITCH_DURATION, (progress, g) => {
@@ -1683,25 +1680,24 @@
 			return this.findUnit(null, true, u => u.team === TEAM.PARTY) == null;
 		}
 
-		createPopup(text: string, color: Color, hex: Hex): Animation {
+		createPopup(text: string, color: CanvasStyle, hex: Hex): Animation {
 			let x = this.toX(hex) + CELL_W / 2;
 			let y = this.toY(hex) + CELL_H;
-			let popup = new Animation(POPUP_DURATION);
-			popup.onAnimation = (progress, g) => {
+			return new Animation(POPUP_DURATION, (progress, g) =>
 				drawText(g, text, x, y - progress * POPUP_DY, {
 					fontSize: POPUP_FONT_SIZE,
 					fillStyle: color,
-					strokeStyle: Color.BLACK,
+					strokeStyle: "black",
 					globalAlpha: sin(PI * progress),
 					lineWidth: 4,
 					textAlign: "center",
 					textBaseline: "bottom"
-				});
-			};
-			return popup;
+				})
+			);
 		}
 
-		prepareEffect(
+		// return an animation that deals or heals target and raises a popup on attach.
+		promiseEffect(
 			target: Unit,
 			deltaHP: number,
 			deltaSP?: number,
@@ -1715,7 +1711,6 @@
 				if (deltaHP < 0 || deltaSP < 0) {
 					target.state = new UnitStagger(target, -deltaHP);
 				}
-				let r = attach.call(popup, parent);
 				target.HP = clamp(0, target.maxHP, target.HP + deltaHP);
 				if (deltaSP != null) {
 					target.SP = clamp(0, target.maxSP, target.SP + deltaSP);
@@ -1723,7 +1718,7 @@
 				if (target.HP <= 0) {
 					this.kill(target);
 				}
-				return r;
+				return attach.call(popup, parent);
 			}
 			return popup;
 		}
@@ -1896,29 +1891,27 @@
 			units.sort(Unit.compare);
 
 			let doneText = _("Combat", "Done").localized;
-			let overlayFocus: Color;
-			let overlayHostile: Color;
-			let overlayFriendly: Color;
+			let overlayAlpha = (1 - cos(2 * PI * Animation.cycle(when, startTime, UNIT_OVERLAY_CYCLE))) / 2 * UNIT_OVERLAY_ALPHA;
 			let map = this.mapFor(focus);
 			for (let {unit, x, y} of units) {
-				let overlay: Color;
+				let overlayStyle: CanvasStyle;
 				if (map) {
 					if (focus === unit) {
-						overlay = overlayFocus = (overlayFocus ? overlayFocus : colorCycle(UNIT_OVERLAY_FOCUS, when, startTime, UNIT_OVERLAY_CYCLE));
+						overlayStyle = UNIT_OVERLAY_FOCUS;
 					} else {
 						let { hex } = unit;
 						if (hex) {
 							let { deltaHP } = map.get(hex);
 							if (deltaHP < 0) {
-								overlay = overlayHostile = (overlayHostile ? overlayHostile : colorCycle(UNIT_OVERLAY_HOSTILE, when, startTime, UNIT_OVERLAY_CYCLE));
+								overlayStyle = UNIT_OVERLAY_HOSTILE;
 							} else if (deltaHP > 0) {
-								overlay = overlayFriendly = (overlayFriendly ? overlayFriendly : colorCycle(UNIT_OVERLAY_FRIENDLY, when, startTime, UNIT_OVERLAY_CYCLE));
+								overlayStyle = UNIT_OVERLAY_FRIENDLY;
 							}
 						}
 					}
 				}
-				unit.draw(g, when, x, y, overlay);
-				if (unit.state == null && zoc) {
+				unit.draw(g, when, x, y, overlayStyle, overlayAlpha);
+				if (!unit.state && zoc) {
 					let { hex, SP, step, cost, team } = unit;
 					if (hex && SP < cost) {
 						if (SP < step) {
@@ -1929,26 +1922,9 @@
 					}
 				}
 			}
-
-			function colorCycle(color: Color, when: Timestamp, startTime: Timestamp, duration: Duration): Color {
-				if (color == null) {
-					return null;
-				} else if (startTime == null) {
-					return color;
-				}
-				let cycle = Animation.cycle(when, startTime, duration);
-				let a = (1 - cos(2 * PI * cycle)) / 2;
-				if (a <= 0) {
-					return null;
-				} else if (1 <= a) {
-					return color;
-				} else {
-					return new Color(color.r, color.g, color.b, color.a * a);
-				}
-			}
 		}
 
-		private drawBarsOnIdle(g: CanvasRenderingContext2D, when: Timestamp) {
+		private drawBarsOnView(g: CanvasRenderingContext2D, when: Timestamp) {
 			this.eachUnit(unit => unit.drawBars(g, when, this));
 		}
 
@@ -2005,6 +1981,7 @@
 				fillRect(g, rect);
 				strokeRect(g, rect);
 				g.restore();
+
 				let { x, y } = rect;
 				let { w, h } = scaleProportionally(unit.ch.image, UNIT_MAX_W, UNIT_MAX_H, true);
 				x += (CELL_W - w) / 2;
@@ -2036,9 +2013,9 @@
 
 	const enum Caret {
 		Unlocked,	// focus tracks units on caret.
-		Lock,		// assume focus is valid. focus won't change.
-		Drag,		// assume focus is valid. drag newly focused unit, and lock on up.
-		DragAgain	// assume focus is valid. drag already focused unit, and unlock on up.
+		Locked,		// assume focus is valid. focus won't be changed on caret's move.
+		Dragged,	// assume focus is valid. dragging newly focused unit, and locked on up.
+		ReDragged	// assume focus is valid. dragging already focused unit, and unlocked on up.
 	}
 
 	class Human extends Component implements Controller {
@@ -2046,63 +2023,48 @@
 			super();
 		}
 
-		private _mode: Caret = Caret.Unlocked;
-		private get mode(): Caret {
-			// need to check focus because focus could be lost on undo.
-			if (this._mode !== Caret.Unlocked && (this.parent as Scene).focus == null) {
-				this._mode = Caret.Unlocked;
-			}
-			return this._mode;
-		}
-		private set mode(value: Caret) {
-			this._mode = value;
-		}
+		private mode: Caret = Caret.Unlocked;
 
 		private _caret: Hex;
-		get caret(): Hex {
-			if (this.mode >= Caret.Lock) {
-				return this._caret;
-			} else {
-				return null;
+		get caret(): Hex { return this._caret; }
+		set caret(value: Hex) {
+			this._caret = value;
+			if (this.mode === Caret.Unlocked) {
+				let scene = this.parent as Scene;
+				scene.focus = (value ? scene.field.get(value).unit : null);
 			}
 		}
 
 		get canUndo(): boolean {
 			let scene = this.parent as Scene;
-			return scene.snapshots.length > 0 || this.mode >= Caret.Lock;
+			return scene.snapshots.length > 0 || this.mode >= Caret.Locked;
 		}
 
 		undo(): void {
 			let scene = this.parent as Scene;
-			if (scene.snapshots.length > 0) {
-				scene.rollback();
-				this.moveCaretTo(this._caret);
-			} else if (this.mode >= Caret.Lock) {
+			let { snapshots } = scene;
+			let { length } = snapshots;
+			let unit = (length > 0 ? snapshots[length - 1].unit : null);
+			if (this.mode >= Caret.Locked && unit !== scene.focus) {
 				this.mode = Caret.Unlocked;
-				this.moveCaretTo(this._caret);
+			} else if (unit) {
+				scene.rollback();
 			} else {
 				logger.error(_("Combat", "CannotUndo"));
 			}
-		}
-
-		moveCaretTo(hex: Hex): void {
-			this._caret = hex;
-			if (this.mode === Caret.Unlocked) {
-				let scene = this.parent as Scene;
-				scene.focus = (hex ? scene.field.get(hex).unit : null);
-			}
+			this.caret = this._caret;
 		}
 
 		onHover(x: Pixel, y: Pixel): void {
-			this.moveCaretTo((this.parent as Scene).toHex(x, y));
+			this.caret = (this.parent as Scene).toHex(x, y);
 		}
 
 		onDrag(x: Pixel, y: Pixel): void {
-			this.moveCaretTo((this.parent as Scene).toHex(x, y));
+			this.caret = (this.parent as Scene).toHex(x, y);
 		}
 
 		downCaret(hex: Hex): void {
-			this._caret = hex;
+			this.caret = hex;
 			if (hex) {
 				this.mode = doDown(this.parent as Scene, this.mode, hex);
 			}
@@ -2111,17 +2073,17 @@
 				let { focus } = scene;
 				if (focus) {
 					if (focus.team === scene.team && !focus.done(scene)) {
-						if (mode === Caret.Lock && same(hex, focus.hex)) {
-							return Caret.DragAgain;
+						if (mode === Caret.Locked && same(hex, focus.hex)) {
+							return Caret.ReDragged;
 						} else {
-							return Caret.Drag;
+							return Caret.Dragged;
 						}
 					}
 				} else {
 					let { unit } = scene.field.get(hex);
 					scene.focus = unit;
 					if (unit) {
-						return Caret.Drag;
+						return Caret.Dragged;
 					}
 				}
 				return Caret.Unlocked;
@@ -2133,13 +2095,13 @@
 		}
 
 		upCaret(hex: Hex): void {
-			this._caret = hex;
+			this.caret = hex;
 			if (hex) {
 				this.mode = doUp(this.parent as Scene, this.mode, hex);
 			}
 
 			function doUp(scene: Scene, mode: Caret, hex: Hex): Caret {
-				if (mode < Caret.Drag) {
+				if (mode < Caret.Dragged) {
 					return mode;	// keep Hover or Locked
 				}
 
@@ -2149,9 +2111,9 @@
 				}
 
 				if (same(hex, focus.hex)) {
-					if (mode === Caret.Drag) {
-						return Caret.Lock;
-					} else { // enemy or DragAgain
+					if (mode === Caret.Dragged) {
+						return Caret.Locked;
+					} else { // enemy or ReDragged
 						return Caret.Unlocked;
 					}
 				}
@@ -2174,7 +2136,7 @@
 
 				scene.move(focus, hex);
 				if (scene.focus) {
-					return Caret.Lock;
+					return Caret.Locked;
 				} else {
 					return Caret.Unlocked;
 				}
@@ -2202,7 +2164,7 @@
 					break;
 				case KEY.SPACE:
 				case KEY.ENTER:
-					this.click(this._caret);
+					this.click(this.caret);
 					break;
 				case KEY.E:
 					moveCaretFor.call(this, DIR.NE);
@@ -2231,20 +2193,20 @@
 
 			function moveCaretFor(dir: DIR) {
 				let { field } = this.parent as Scene;
-				let caret = this._caret;
+				let { caret } = this;
 				if (caret) {
 					let hex = shift(caret, dir);
 					if (field.contains(hex)) {
-						this.moveCaretTo(hex);
+						this.caret = hex;
 					}
 				} else {
-					this.moveCaretTo({ xH: field.minXH, yH: 0 });
+					this.caret = { xH: field.minXH, yH: 0 };
 				}
 			}
 
 			function seek(next: boolean) {
 				let scene = this.parent as Scene;
-				let caret = this._caret;
+				let { caret } = this;
 				let { team, focus } = scene;
 				let hex = (focus ? focus.hex : caret);
 				let unit = scene.findUnit(hex, next, u => u.team === team && !u.done(scene));
@@ -2254,7 +2216,7 @@
 						this.caret = unit.hex;
 					}
 					if (this._mode === Caret.Unlocked) {
-						this.mode = Caret.Lock;
+						this.mode = Caret.Locked;
 					}
 				} else {
 					logger.error(_("Combat", "UnitNotAvailable"));
@@ -2271,7 +2233,7 @@
 		}
 
 		onDraw(g: CanvasRenderingContext2D, when: Timestamp): void {
-			let caret = this._caret;
+			let { caret } = this;
 			if (caret) {
 				let scene = this.parent as Scene;
 				let { focus, field } = scene;
@@ -2578,7 +2540,7 @@
 		return rearHex;
 	}
 
-	function shootProjectile(scene: Scene, hexFrom: Hex, hexTo: Hex, innerStyle: string, outerStyle: string) {
+	function shootProjectile(scene: Scene, hexFrom: Hex, hexTo: Hex, innerStyle: CanvasStyleString, outerStyle: CanvasStyleString): Animation {
 		let dx = scene.toX(hexFrom) - scene.toX(hexTo);
 		let dy = scene.toY(hexFrom) - scene.toY(hexTo);
 		let duration = 100 + pow(dx * dx + dy * dy, 0.5) / SCREEN_W * 400;
@@ -2596,10 +2558,9 @@
 		return action;
 	}
 
-	function standardShoot(scene: Scene, unit: Unit, target: Unit, effect: Animation, innerStyle: string, outerStyle: string) {
+	function standardShoot(scene: Scene, unit: Unit, target: Unit, effect: Animation, innerStyle: CanvasStyleString, outerStyle: CanvasStyleString): Animation {
 		let action = shootProjectile(scene, unit.hex, target.hex, innerStyle, outerStyle);
 		action.then(() => { effect.attach(scene) });
-
 		return (config.wait.POPUP ? effect : action);
 	}
 
@@ -2608,7 +2569,7 @@
 		unit: Unit,
 		center: Hex,
 		range: number,
-		outerColor: Color,
+		color: RGB,
 		factor?: (deltaHP: number, steps: number) => number
 	): Job {
 		let { field } = scene;
@@ -2621,7 +2582,7 @@
 				if (factor) {
 					deltaHP = factor(deltaHP, steps);
 				}
-				let effect = scene.prepareEffect(target, deltaHP);
+				let effect = scene.promiseEffect(target, deltaHP);
 				effect.attach(scene);
 				effects.push(effect);
 			}
@@ -2635,8 +2596,8 @@
 			let y = scene.toY(center) + CELL_H / 2;
 			let w = range * CELL_W * progress;
 			let h = range * CELL_H * progress;
-			let innerStyle = new Color(outerColor.r, outerColor.g, outerColor.b, outerColor.a * (1 - progress)).rgba;
-			let outerStyle = new Color(outerColor.r, outerColor.g, outerColor.b, 0).rgba;
+			let innerStyle = rgba(color.r, color.g, color.b, 1 - progress);
+			let outerStyle = rgba(color.r, color.g, color.b, 0);
 			fillRadialGradient(g, x - w, y - h, w * 2, h * 2, innerStyle, outerStyle, progress);
 		});
 		action.attach(scene);
@@ -2657,7 +2618,7 @@
 			let { field } = scene;
 			let target = field.get(hex).unit;
 			let deltaHP = unit.trySkill(target);
-			let effect = scene.prepareEffect(target, deltaHP);
+			let effect = scene.promiseEffect(target, deltaHP);
 			let action = new UnitCharge(scene, unit.hex, target.hex);
 
 			unit.state = action;
@@ -2675,7 +2636,7 @@
 
 			let target = field.get(hex).unit;
 			let deltaHP = unit.trySkill(target);
-			let effect = scene.prepareEffect(target, deltaHP, null, hexTo);
+			let effect = scene.promiseEffect(target, deltaHP, null, hexTo);
 			let action = new UnitCharge(scene, unit.hex, target.hex);
 			let knockback = new UnitWalk([hex, hexTo]);
 
@@ -2700,7 +2661,7 @@
 			let target = field.get(hex).unit;
 			let deltaHP = unit.trySkill(target);
 
-			let effect = scene.prepareEffect(target, deltaHP);
+			let effect = scene.promiseEffect(target, deltaHP);
 			let action = new UnitWalk([hexFrom, hex]);
 
 			scene.setUnit(unit, hexTo);
@@ -2721,7 +2682,7 @@
 			let target = field.get(hex).unit;
 			let deltaHP = unit.trySkill(target);
 
-			let effect = scene.prepareEffect(target, deltaHP, null, hexTo);
+			let effect = scene.promiseEffect(target, deltaHP, null, hexTo);
 			let action = new UnitWalk([hexFrom, hex]);
 			let knockback = new UnitWalk([hex, hex, hexTo]);	// HACK: use the first hex twice to delay animation
 
@@ -2737,7 +2698,7 @@
 			let { field } = scene;
 			let target = field.get(hex).unit;
 			let deltaHP = unit.trySkill(target);
-			return standardShoot(scene, unit, target, scene.prepareEffect(target, deltaHP), rgb(255, 128, 0), rgba(255, 128, 0, 0));
+			return standardShoot(scene, unit, target, scene.promiseEffect(target, deltaHP), rgb(255, 128, 0), rgba(255, 128, 0, 0));
 		},
 		// Damage to HP, and also the half to SP.
 		Freeze: function(scene: Scene, unit: Unit, hex: Hex): Job {
@@ -2745,7 +2706,7 @@
 			let target = field.get(hex).unit;
 			let deltaHP = unit.trySkill(target);
 			let deltaSP = floor(deltaHP / 2);
-			return standardShoot(scene, unit, target, scene.prepareEffect(target, deltaHP, deltaSP), rgb(0, 128, 255), rgba(0, 128, 255, 0));
+			return standardShoot(scene, unit, target, scene.promiseEffect(target, deltaHP, deltaSP), rgb(0, 128, 255), rgba(0, 128, 255, 0));
 		},
 		// Damage to HP, and heal the caster.
 		Drain: function(scene: Scene, unit: Unit, hex: Hex): Job {
@@ -2753,8 +2714,8 @@
 			let target = field.get(hex).unit;
 			let deltaHP = unit.trySkill(target);
 
-			let damage = scene.prepareEffect(target, deltaHP);
-			let heal = scene.prepareEffect(unit, -deltaHP)
+			let damage = scene.promiseEffect(target, deltaHP);
+			let heal = scene.promiseEffect(unit, -deltaHP)
 			let action = shootProjectile(scene, target.hex, unit.hex, rgb(255, 0, 128), rgba(255, 0, 128, 0));
 			action.then(() => { heal.attach(scene) });
 			damage.attach(scene);
@@ -2768,7 +2729,7 @@
 			let deltaHP = unit.trySkill(target);
 
 			let action = shootProjectile(scene, unit.hex, target.hex, rgb(255, 128, 0), rgba(255, 128, 0, 0));
-			let nova = asJob(() => standardNova(scene, unit, hex, 1, new Color(1, 0.5, 0), (deltaHP, steps) => floor(deltaHP / (1 + steps))));
+			let nova = asJob(() => standardNova(scene, unit, hex, 1, { r: 255, g: 128, b: 0 }, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
 			action.then(nova);
 
 			return nova;
@@ -2785,7 +2746,7 @@
 				let target = field.get(hex).unit;
 				if (unit.isTarget(target)) {
 					let deltaHP = unit.trySkill(target);
-					let effect = scene.prepareEffect(target, deltaHP);
+					let effect = scene.promiseEffect(target, deltaHP);
 					effect.attach(scene);
 					effects.push(effect);
 				}
@@ -2807,7 +2768,7 @@
 				g.lineTo(xTo + xShift, yTo + yShift);
 				g.lineCap = "round";
 				g.lineWidth = progress * CELL_H / 4;
-				g.strokeStyle = new Color(1, 0.5, 0, 1 - progress).rgba;
+				g.strokeStyle = rgba(255, 128, 0, 1 - progress);
 				g.stroke();
 				g.restore();
 			});
@@ -2822,7 +2783,7 @@
 		},
 		// Aciton for SURROUND
 		Nova: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			return standardNova(scene, unit, unit.hex, unit.skill.range, new Color(1, 0.5, 0));
+			return standardNova(scene, unit, unit.hex, unit.skill.range, { r: 255, g: 128, b: 0 });
 		}
 	};
 }

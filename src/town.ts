@@ -1,14 +1,14 @@
 ﻿namespace Town {
-	const TOWN_BUTTON_W = SCREEN_W / 8;		// (px) width of system button for town scenes
-	const TOWN_BUTTON_H = SCREEN_H / 16;	// (px) height of of system button for town scenes
-	const TOWN_SPOT_W = SCREEN_W / 4;		// (px) width of spot button for town home scene
-	const TOWN_SPOT_H = SCREEN_H / 8;		// (px) height of spot button for town home scene
+	const TOWN_BUTTON_W: Pixel = SCREEN_W / 8;	// width of system button for town scenes
+	const TOWN_BUTTON_H: Pixel = SCREEN_H / 16;	// height of of system button for town scenes
+	const TOWN_SPOT_W: Pixel = SCREEN_W / 4;	// width of spot button for town home scene
+	const TOWN_SPOT_H: Pixel = SCREEN_H / 8;	// height of spot button for town home scene
 
-	const PORTRAIT_MARGIN = MARGIN;
-	const PORTRAIT_X = MARGIN;
-	const PORTRAIT_Y = MARGIN;
-	const PORTRAIT_W = 160;
-	const PORTRAIT_H = ((SCREEN_H - PORTRAIT_Y * 2 - PORTRAIT_MARGIN * 2) / 10) * 3;
+	const PORTRAIT_MARGIN: Pixel = MARGIN;
+	const PORTRAIT_X: Pixel = MARGIN;
+	const PORTRAIT_Y: Pixel = MARGIN;
+	const PORTRAIT_W: Pixel = 160;
+	const PORTRAIT_H: Pixel = ((SCREEN_H - PORTRAIT_Y * 2 - PORTRAIT_MARGIN * 2) / 10) * 3;
 
 	const PORTRAIT_CHAR_W = PORTRAIT_W - MARGIN * 2;
 	const PORTRAIT_CHAR_H = PORTRAIT_H - MARGIN * 2;
@@ -212,7 +212,7 @@
 				let hBar = 6;
 				let yHP = y + h - 30;
 				let wHP = (wBar - 2) * HP / maxHP;
-				g.strokeStyle = Color.BLACK;
+				g.strokeStyle = "black";
 				g.fillStyle = BAR_STYLE_HP.full;
 				g.fillRect(xBar, yHP, wHP, hBar)
 				g.strokeRect(xBar, yHP, wHP, hBar)

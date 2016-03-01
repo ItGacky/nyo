@@ -7,7 +7,7 @@ interface SkillDef {
 	aciton: string;
 }
 
-const SKILLS: { [SID: string]: SkillDef } = {
+const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	Dummy: {
 		tags: [],
 		cost: 999,
@@ -151,7 +151,7 @@ const SKILLS: { [SID: string]: SkillDef } = {
 		range: 3,
 		power: 100,
 		target: TARGET.SINGLE_FRIENDLY,
-		aciton: "Charge"
+		aciton: "Shoot"
 	},
 	PartyHeal: {
 		tags: [TAG.MAGIC],

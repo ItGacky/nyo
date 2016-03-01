@@ -77,6 +77,7 @@
 		End: "End Turn",
 		Done: "Done",
 		Retire: "Retire",
+		View: "View",
 		ConfirmRetire: "Do you want to retire the area?",
 		GameOver: "Game Over",
 		PartyTurn: "Your Turn",

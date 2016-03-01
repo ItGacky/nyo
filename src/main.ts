@@ -49,8 +49,8 @@ function addConfigButton(parent: Composite): Button {
 	const CONFIG_ICON_H = 32;
 
 	const CONFIG_CAPTION_STYLE: TextStyle = {
-		fillStyle: Color.WHITE.rgba,
-		strokeStyle: Color.BLACK.rgba,
+		fillStyle: "white",
+		strokeStyle: "black",
 		fontSize: 44,
 		textAlign: "center",
 		textBaseline: "middle"

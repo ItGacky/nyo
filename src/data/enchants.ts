@@ -9,7 +9,7 @@ function enchantAddedATK(value: number, ATK: number): number {
 	return ATK + value;
 }
 
-const ENCHANTS: { [EID: string]: EnchantDef } = {
+const ENCHANTS: { [EID: string/*EnchantID*/]: EnchantDef } = {
 	AddedFire: {
 		tags: [TAG.MELEE, TAG.THROW, TAG.SHOOT],
 		min: 5,

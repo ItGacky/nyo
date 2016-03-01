@@ -1,11 +1,11 @@
 ﻿// Widgets
-const SCENE_TRANSIT = 400;		// duration for fade in/out of scenes.
-const SWAPPABLE_MS = 200;		// duration for swapping of swappable buttons.
+const SCENE_TRANSIT: Duration = 400;	// duration for fade in/out of scenes.
+const SWAPPABLE_MS: Duration = 200;		// duration for swapping of swappable buttons.
 
 // Screen
-const SCREEN_W = 1280;	// (px) default/logical screen width
-const SCREEN_H = 720;	// (px) default/logical screen height
-const MARGIN = 10;		// (px) generic margin for many widgets
+const SCREEN_W: Pixel = 1280;	// default/logical screen width
+const SCREEN_H: Pixel = 720;	// default/logical screen height
+const MARGIN: Pixel = 10;		// generic margin for many widgets
 
 // Logger
 interface Logger {
@@ -23,10 +23,10 @@ const LOG_STYLE: TextStyle = {
 	textBaseline: "top",
 	lineWidth: 2
 };
-const LOG_X = MARGIN;	// (px)
-const LOG_Y = MARGIN;	// (px)
-const LOG_W = SCREEN_W - MARGIN * 2;	// (px)
-const LOG_H = SCREEN_H - MARGIN * 2;	// (px)
+const LOG_X: Pixel = MARGIN;
+const LOG_Y: Pixel = MARGIN;
+const LOG_W: Pixel = SCREEN_W - MARGIN * 2;
+const LOG_H: Pixel = SCREEN_H - MARGIN * 2;
 const LOG_DURATION: Duration = 2000;
 
 // Dialog.confirm
@@ -48,7 +48,7 @@ const CONFIRM_TEXT_STYLE: TextStyle = {
 //================================================================================
 
 class Animation extends Component implements Job {
-	public start: Timestamp;
+	private start: Timestamp;
 	private sig: Signal;
 
 	constructor(
@@ -340,8 +340,8 @@ interface ButtonDesign {
 }
 
 class Button extends Widget {
-	protected _pressed: boolean = false;
-	protected _hover: boolean = false;
+	pressed: boolean;	// 3-state boolean
+	hover: boolean = false;
 
 	constructor(
 		x: Pixel,
@@ -404,7 +404,7 @@ class Button extends Widget {
 					icon.draw(g, when, owner, this.overlay, 0.9);
 					break;
 				case ButtonState.Disabled:
-					icon.draw(g, when, owner, rgba(200, 200, 200, 0.8));
+					icon.draw(g, when, owner, rgb(200, 200, 200), 0.8);
 					break;
 			}
 		}
@@ -412,37 +412,40 @@ class Button extends Widget {
 
 	get enabled(): boolean { return true; }
 	set enabled(value: boolean) { defineProperty(this, "enabled", value); }
-	get pressed() { return this._pressed; }
-	get hover() { return this._hover; }
 
 	get state(): ButtonState {
 		if (!this.enabled) {
 			return ButtonState.Disabled;
-		} else if (!this._hover) {
-			return ButtonState.Normal;
-		} else if (this._pressed) {
+		} else if (this.pressed) {
 			return ButtonState.Pressed;
+		} else if (!this.hover) {
+			return ButtonState.Normal;
 		} else {
 			return ButtonState.Hover;
 		}
 	}
 
 	onHover(x: Pixel, y: Pixel): void {
-		this._hover = this.contains(x, y);
-		this._pressed = false;
+		this.hover = this.contains(x, y);
+		this.pressed = null;
 	}
 
 	onDrag(x: Pixel, y: Pixel): void {
-		this._hover = (this._pressed && this.contains(x, y));
+		if (this.pressed != null) {
+			this.pressed = this.contains(x, y);
+		}
 	}
 
 	onDown(x: Pixel, y: Pixel): void {
-		this._hover = this._pressed = (this.enabled && this.contains(x, y));
+		if (this.enabled && this.contains(x, y)) {
+			this.pressed = true;
+		}
 	}
 
 	onUp(x: Pixel, y: Pixel): void {
-		if (this._pressed) {
-			this._pressed = false;
+		let { pressed } = this;
+		this.pressed = null;
+		if (pressed) {
 			if (this.contains(x, y)) {
 				this.onClick();
 			}
@@ -451,13 +454,15 @@ class Button extends Widget {
 
 	onPress(key: KEY): void {
 		if (this.mnemonic && this.mnemonic.indexOf(key) >= 0 && this.enabled) {
-			this._pressed = false;
+			this.pressed = false;
 			this.onClick();
 		}
 	}
 
 	onClick(): void {
-		committed.then(() => this.click());
+		if (this.click) {
+			committed.then(() => this.click());
+		}
 	}
 
 	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void {
@@ -550,8 +555,8 @@ class SwappableButton extends Button {
 				yTo: yOrig
 			}
 			this.dragged = null;
-			if (this._pressed) {
-				this._pressed = false;
+			if (this.pressed) {
+				this.pressed = false;
 				if (this.contains(x, y) && xOrig <= x && yOrig <= y && x < xOrig + this.w && y < yOrig + this.h) {
 					this.onClick();
 				}
@@ -560,7 +565,7 @@ class SwappableButton extends Button {
 	}
 
 	onSwap(that: SwappableButton, when: Timestamp) {
-		this._pressed = false;
+		this.pressed = false;
 		this.swapping = {
 			start: when,
 			xFrom: this.x,
@@ -617,7 +622,7 @@ interface ListViewColumn<T> {
 	extract: ((row: T) => any) | number | string;	// value extracter
 	compare?: (lhs: T, rhs: T) => number;	// sorter
 	align?: TextAlign;	// row horizontal alignment
-	width?: Pixel;	// (px) row width
+	width?: Pixel;		// row width
 }
 
 class ListView<T> extends Widget {
@@ -644,12 +649,12 @@ class ListView<T> extends Widget {
 	static defaultDesign: ListViewDesign = {
 		rowHeight: 28,
 		rowFont: `20px ${DEFAULT_FONT_FAMILY}`,
-		rowStyle: Color.WHITE.rgb,
+		rowStyle: "white",
 		headerHeight: 24,
 		headerFont: `18px ${DEFAULT_FONT_FAMILY}`,
-		headerStyle: Color.WHITE.rgb,
+		headerStyle: "white",
 		scrollBarWidth: 14,
-		lineStyle: new Color(0.4, 0.4, 0.4).rgba,
+		lineStyle: rgb(102, 102, 102),
 
 		drawHeader: function(g: CanvasRenderingContext2D, x: Pixel, y: Pixel, w: Pixel, h: Pixel): void {
 			g.save();
