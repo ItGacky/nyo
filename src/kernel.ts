@@ -212,6 +212,15 @@ function compareObjects(lhs: any, rhs: any): number {
 	return 0;
 }
 
+function font(fontSize?: Pixel, fontFamily?: string): string {
+	return `${fontSize || DEFAULT_FONT_SIZE}px ${fontFamily || DEFAULT_FONT_FAMILY}`;
+}
+
+function getFontSize(g: CanvasRenderingContext2D, style?: TextStyle): Pixel {
+	// TODO: extract size in g.font.
+	return (style && style.fontSize || DEFAULT_FONT_SIZE);
+}
+
 //================================================================================
 // Job and Signal
 //================================================================================
@@ -266,6 +275,7 @@ function commit(sig: Signal): void {
 	}
 }
 
+// similar to Promise.all()
 class ParallelJob implements Job {
 	private sig: Signal;
 
@@ -729,7 +739,7 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 		let g = canvas.getContext("2d");
 		g.clearRect(0, 0, width, height);
 		g.save();
-		g.font = `${DEFAULT_FONT_SIZE}px ${DEFAULT_FONT_FAMILY}`;
+		g.font = font();
 		if (width !== logicalWidth || height !== logicalHeight) {
 			g.scale(width / logicalWidth, height / logicalHeight);
 		}

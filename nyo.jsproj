@@ -115,8 +115,8 @@
     <Content Include="assets\icon\44x44.png" />
     <Content Include="assets\icon\logo.png" />
     <Content Include="assets\icon\splash.png" />
-    <Content Include="assets\scene\pub.jpg" />
     <Content Include="assets\scene\shop.jpg" />
+    <Content Include="assets\scene\tavern.jpg" />
     <Content Include="assets\scene\title.jpg" />
     <Content Include="assets\scene\town.jpg" />
     <Content Include="index-windows.html" />
@@ -142,7 +142,7 @@
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets')" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.jsproj.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.jsproj.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below then uncomment
-       that target and the DisableFastUpToDateCheck PropertyGroup. 
+       that target and the DisableFastUpToDateCheck PropertyGroup.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

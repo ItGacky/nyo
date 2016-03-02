@@ -11,23 +11,39 @@
 	const CELL_H: Pixel = 80;
 
 	// Panel: for unit panel
-	const PANEL_W: Pixel = SCREEN_W / 2;
 	const PANEL_H: Pixel = CELL_H * 2;
 	const PANEL_Y: Pixel = SCREEN_H - PANEL_H;
-	const PANEL_L: Pixel = SCREEN_W / 2 - PANEL_W;
-	const PANEL_R: Pixel = SCREEN_W / 2;
-	const PANEL_NAME_X: Pixel = CELL_W;
-	const PANAL_NAME_Y: Pixel = MARGIN;
+	const PANEL_LX: Pixel = 0;
+	const PANEL_LW: Pixel = SCREEN_W;
+	const PANEL_RX: Pixel = SCREEN_W / 2;
+	const PANEL_RW: Pixel = SCREEN_W / 2;
+	const PANEL_BKGND_STYLE: ShapeStyle[] = [
+		{
+			lineWidth: 2,
+			fillStyle: rgb(0, 0, 68),
+			strokeStyle: rgb(204, 204, 255)
+		},
+		{
+			lineWidth: 2,
+			fillStyle: rgb(68, 0, 0),
+			strokeStyle: rgb(255, 204, 204)
+		}
+	];
+	const PANEL_TEXT_STYLE: TextStyle = {
+		fillStyle: "white",
+		textAlign: "left",
+		textBaseline: "top"
+	};
 
 	// System Buttons
-	const SYSTEM_BUTTON_W: Pixel = PANEL_H - 2 * MARGIN;	// width of system button for combat scene
-	const SYSTEM_BUTTON_H: Pixel = PANEL_H - 2 * MARGIN;	// height of of system button for combat scene
+	const SYSTEM_BUTTON_W: Pixel = PANEL_H - 2 * MARGIN;
+	const SYSTEM_BUTTON_H: Pixel = PANEL_H - 2 * MARGIN;
 
-	// Member Buttons
-	const PARTY_BUTTON_X: Pixel = MARGIN;
-	const PARTY_BUTTON_Y: Pixel = PANEL_Y + MARGIN;
-	const PARTY_BUTTON_W: Pixel = 100;
-	const PARTY_BUTTON_H: Pixel = PANEL_H - MARGIN * 2;
+	// Ally Buttons
+	const ALLY_BUTTON_X: Pixel = MARGIN;
+	const ALLY_BUTTON_Y: Pixel = PANEL_Y + MARGIN;
+	const ALLY_BUTTON_W: Pixel = 100;
+	const ALLY_BUTTON_H: Pixel = PANEL_H - MARGIN * 2;
 
 	// Field: Sky + Cells + Fades
 	const SKY_H: Pixel = SCREEN_H - CELL_H * MAP_H * 2 - PANEL_H;
@@ -36,8 +52,8 @@
 	const FIELD_X: Pixel = (SCREEN_W - FIELD_W) / 2;
 	const FIELD_Y: Pixel = 0;
 	const FADE_W: Pixel = CELL_W;
-	const FADE_NEAR = rgba(0, 0, 0, 0);			// (color string)
-	const FADE_FAR = rgba(0, 0, 0, 0.75);		// (color string)
+	const FADE_NEAR: CanvasStyleString = rgba(0, 0, 0, 0);
+	const FADE_FAR: CanvasStyleString = rgba(0, 0, 0, 0.75);
 	const FIELD_SCROLL_DURATION: Duration = 400;	// duration for scroll per cell; usually takes x2 of the value.
 
 	// Caret
@@ -48,24 +64,22 @@
 	const CARET_LINE_OUTER: Pixel = 7;
 	const CARET_LINE_INNER: Pixel = 3;
 
-	const CARET /* : { [name: string]: CaretStyle } */ = {
-		SELECT: {
-			inner: rgb(230, 255, 180),
-			outer: rgb(51, 230, 51)
-		},
-		WALK: {
-			inner: rgb(230, 180, 255),
-			outer: rgb(51, 51, 230)
-		},
-		HOSTILE: {
-			inner: rgb(255, 180, 230),
-			outer: rgb(230, 51, 51)
-		},
-		FRIENDLY: {
-			inner: rgb(230, 180, 255),
-			outer: rgb(51, 51, 230)
-		}
-	}
+	const CARET_SELECT: CaretStyle = {
+		inner: rgb(230, 255, 180),
+		outer: rgb(51, 230, 51)
+	};
+	const CARET_WALK: CaretStyle = {
+		inner: rgb(230, 180, 255),
+		outer: rgb(51, 51, 230)
+	};
+	const CARET_HOSTILE: CaretStyle = {
+		inner: rgb(255, 180, 230),
+		outer: rgb(230, 51, 51)
+	};
+	const CARET_FRIENDLY: CaretStyle = {
+		inner: rgb(230, 180, 255),
+		outer: rgb(51, 51, 230)
+	};
 
 	// Marker
 	const MARKER_DURATION: Duration = 300;		// duration for marker's fade-in.
@@ -144,13 +158,13 @@
 	const UNIT_OVERLAY_HOSTILE: CanvasStyle = "red";
 	const UNIT_OVERLAY_FRIENDLY: CanvasStyle = "blue";
 	const UNIT_OVERLAY_CYCLE: Duration = 1000;
-	const UNIT_OVERLAY_ALPHA = 0.5;
+	const UNIT_OVERLAY_ALPHA: Alpha = 0.5;
 	const UNIT_SHADOW_INNER: CanvasStyleString = rgba(0, 0, 0, 0.65);
 	const UNIT_SHADOW_OUTER: CanvasStyleString = rgba(0, 0, 0, 0);
 	const UNIT_SHADOW_INNER_R = 0.75;
 	const UNIT_SHADOW_SCALE_Y = 0.2;
-	const UNIT_DAMAGED_DURATION: Duration = 500;		// duration of stagger for damaged unit
-	const UNIT_DAMAGED_CYCLE: Duration = 250;			// cycle of stagger for damaged unit
+	const UNIT_DAMAGED_DURATION: Duration = 500;	// duration of stagger for damaged unit
+	const UNIT_DAMAGED_CYCLE: Duration = 250;		// cycle of stagger for damaged unit
 	const UNIT_DAMAGED_RADIUS: Pixel = CELL_H / 4;	// radius of stagger for damaged unit
 	const UNIT_DONE_STYLE: TextStyle = {	// cannot move nor shoot because SP lacks.
 		textAlign: "center",
@@ -223,7 +237,7 @@
 
 	// Skills
 	const SKILL_ROWS = 2;
-	const SKILL_X = PANEL_L + 400;
+	const SKILL_X = PANEL_LX + 400;
 	const SKILL_Y = PANEL_Y + MARGIN;
 	const SKILL_W = 160;
 	const SKILL_H = (PANEL_H - MARGIN * (1 + SKILL_ROWS)) / SKILL_ROWS;
@@ -650,10 +664,6 @@
 			this.skill = (ch.skills.find(skill => ch.powerOf(skill) != null) || Skill.DUMMY);
 		}
 
-		toString(): string {
-			return `Unit(name=${this.name}, hex=${this.hex})`;
-		}
-
 		get name(): string { return this.ch.name; }
 		get maxHP(): number { return this.ch.HP; }
 		get maxSP(): number { return this.ch.SP; }
@@ -764,8 +774,8 @@
 		}
 
 		drawCharacter(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha) {
-			let { image } = this.ch;
-			let rect = scaleProportionally(image, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
+			let { ch } = this;
+			let rect = scaleProportionally(ch, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
 
 			let wShadow = rect.w;
 			let hShadow = wShadow * UNIT_SHADOW_SCALE_Y;
@@ -782,14 +792,14 @@
 
 			// idle animation
 			if (when) {
-				let cycle = UNIT_IDLE_CYCLE * (12 - this.ch.DEX);
+				let cycle = UNIT_IDLE_CYCLE * (12 - ch.DEX);
 				let theta = this.idleOffset + (when % cycle) / cycle;
 				let progress = max(0, sin(2 * PI * theta));
 				y -= (UNIT_IDLE_UI * progress + UNIT_IDLE_LO * (1 - progress));
 			}
 			rect.x = x - rect.w / 2;
 			rect.y = y - rect.h;
-			image.draw(g, when, rect, overlayStyle, overlayAlpha);
+			ch.draw(g, when, rect, overlayStyle, overlayAlpha);
 		}
 
 		draw(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha) {
@@ -1137,18 +1147,18 @@
 			const XH_ENEMY = MAP_W - 8;
 			const XH_HOLE = 6;
 
-			let numMembers = 0;
+			let numAllies = 0;
 			let numEnemies = 0;
 			field.each(({ unit }) => {
 				if (unit) {
 					if (unit.team === TEAM.PARTY) {
-						++numMembers;
+						++numAllies;
 					} else {
 						++numEnemies;
 					}
 				}
 			});
-			let enemyRatio = (numMembers === 0 ? ENEMY_RATIO : ENEMY_RATIO * pow(1.1, numMembers - numEnemies));
+			let enemyRatio = (numAllies === 0 ? ENEMY_RATIO : ENEMY_RATIO * pow(1.1, numAllies - numEnemies));
 
 			let line: Cell[] = new Array(MAP_H);
 			let enemies = keys(MONSTERS);
@@ -1172,12 +1182,15 @@
 			let { field } = scene;
 
 			// Sky
-			g.save();
-			let offsetX = field.depth * CELL_W / 2;
-			g.fillStyle = this.imgSky.createPattern(g, "repeat");
-			g.translate(-offsetX, 0);
-			g.fillRect(FIELD_X + offsetX, FIELD_Y, FIELD_W, SKY_H);
-			g.restore();
+			let { image } = this.imgSky;
+			if (image) {
+				g.save();
+				let offsetX = field.depth * CELL_W / 2;
+				g.fillStyle = g.createPattern(image, "repeat");
+				g.translate(-offsetX, 0);
+				g.fillRect(FIELD_X + offsetX, FIELD_Y, FIELD_W, SKY_H);
+				g.restore();
+			}
 
 			// Field
 			let rect = { x: 0, y: 0, w: CELL_W, h: CELL_H };
@@ -1225,15 +1238,15 @@
 			cpu.visible = false;
 
 			// Field
-			let members = data.party;
+			let allies = data.party;
 			let field = new HexMap<Cell>(0, Cell.DUMMY);
 			for (let xH = field.minVisibleXH, maxXH = field.maxVisibleXH; xH < maxXH; ++xH) {
 				field.setLine(xH, this.stage.generate(field, xH));
 			}
-			let memberButtons: Button[] = [];
+			let allyButtons: Button[] = [];
 			let location = [[2, 0], [2, 1], [2, 2], [1, MAP_H - 3], [1, MAP_H - 2], [1, MAP_H - 1]];
 			for (let i = 0, len = location.length; i < len; ++i) {
-				let ch = members[i];
+				let ch = allies[i];
 				if (ch) {
 					let [xH, yH] = location[i];
 					let hex = { xH, yH };
@@ -1241,7 +1254,7 @@
 					unit.state = new UnitEnter(ch.DEX);
 					field.rawget(hex).unit = unit;
 
-					memberButtons.push(createMemberButton(i, unit));
+					allyButtons.push(createAllyButton(i, unit));
 				}
 			}
 			this.field = field;
@@ -1249,25 +1262,29 @@
 			this.snapshots = [];
 			this.startTurn();
 
-			function createMemberButton(index: number, unit: Unit): Button {
+			function createAllyButton(index: number, unit: Unit): Button {
 				function draw(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH): void {
+					let { ch } = unit;
 					let { x, y } = rect;
-					let { w, h } = scaleProportionally(unit.ch.image, rect.w, rect.h, true);
+					let { w, h } = scaleProportionally(ch, rect.w, rect.h, true);
 					x += (rect.w - w) / 2;
 					y += (rect.h - h) / 2;
-					// TODO: 死んでいる場合はグレースケールで表示する。
-					unit.ch.image.draw(g, when, { x, y, w, h });
+					if (!unit.hex && ch.images[CharacterImage.CLOSED]) {
+						ch.images[CharacterImage.CLOSED].draw(g, when, { x, y, w, h });
+					} else {
+						ch.draw(g, when, { x, y, w, h });
+					}
 				}
 				return new Button(
-					PARTY_BUTTON_X + index * (PARTY_BUTTON_W + MARGIN), PARTY_BUTTON_Y, PARTY_BUTTON_W, PARTY_BUTTON_H,
+					ALLY_BUTTON_X + index * (ALLY_BUTTON_W + MARGIN), ALLY_BUTTON_Y, ALLY_BUTTON_W, ALLY_BUTTON_H,
 					{ draw },
 					() => human.click(unit.hex),	// TODO: 「生き返り」機能を持たせる。死亡後、数ターン経過後に、フィールド後方から戦線に復帰させる。
-					[KEY.$1 + index]	// TODO: アイドル時以外でも選択の切り替えができるよう、Human側に移すべきかもしれない
+					[KEY.$1 + index]
 				);
 			}
 
 			//========= Human =========
-			let componentsForHuman = new Composite(memberButtons);
+			let componentsForHuman = new Composite(allyButtons);
 			defineGetSet(componentsForHuman, "visible", () => human.visible && this.focus == null);
 			componentsForHuman.attach(this);
 
@@ -1301,19 +1318,19 @@
 			//========= View =========
 			let drawOnView = new Component();
 			drawOnView.onDraw = (g, when) => this.drawBarsOnView(g, when);
-			defineGetSet(drawOnView, "visible", () => view.visible && view.enabled && (view.hover || view.pressed));
+			defineGetSet(drawOnView, "visible", () => componentsForHuman.visible && (view.hover || view.pressed));
 			drawOnView.attach(this);
 
 			//========= Focus =========
 			let componentsForFocus = new Composite();
-			defineGetSet(componentsForFocus, "visible", () => this.controller.visible && this.focus != null);
+			defineGetSet(componentsForFocus, "visible", () => this.focus != null);
 			componentsForFocus.attach(this);
 
 			let barsOnFocus = new Component();
 			barsOnFocus.onDraw = (g, when) => this.drawBarsOnFocus(g, when, this.focus, this.controller.caret);
 			barsOnFocus.attach(componentsForFocus);
 
-			let panelForFocus = new Widget(PANEL_L, PANEL_Y, PANEL_W * 2, PANEL_H);
+			let panelForFocus = new Widget(PANEL_LX, PANEL_Y, PANEL_LW, PANEL_H);
 			panelForFocus.onDraw = (g, when) => this.drawPanel(g, when, this.focus, panelForFocus);
 			panelForFocus.attach(componentsForFocus);
 
@@ -1345,26 +1362,19 @@
 				return null;
 			};
 
-			let componentsForTarget = new Composite();
-			defineGetSet(componentsForTarget, "visible", () => target() != null);
-			componentsForTarget.attach(this);
-
-			let panelForTarget = new Widget(PANEL_R, PANEL_Y, PANEL_W, PANEL_H);
+			let panelForTarget = new Widget(PANEL_RX, PANEL_Y, PANEL_RW, PANEL_H);
+			defineGetSet(panelForTarget, "visible", () => target() != null);
 			panelForTarget.onDraw = (g, when) => this.drawPanel(g, when, target(), panelForTarget);
-			panelForTarget.attach(componentsForTarget);
+			panelForTarget.attach(this);
 
-			//========= Fades and others =========
+			//========= Fades and Others =========
 			let g = System.canvas.getContext("2d");
-
-			let fadeL = g.createLinearGradient(FIELD_X, FIELD_Y, FIELD_X + FADE_W, FIELD_Y);
-			fadeL.addColorStop(0, FADE_FAR);
-			fadeL.addColorStop(1, FADE_NEAR);
-			new Gallery(FIELD_X, FIELD_Y, FADE_W, FIELD_H, new Box({ fillStyle: fadeL })).attach(this);
-
-			let fadeR = g.createLinearGradient(FIELD_X + FIELD_W - FADE_W, FIELD_Y, FIELD_X + FIELD_W, FIELD_Y);
-			fadeR.addColorStop(0, FADE_NEAR);
-			fadeR.addColorStop(1, FADE_FAR);
-			new Gallery(FIELD_X + FIELD_W - FADE_W, FIELD_Y, FIELD_W, FIELD_H, new Box({ fillStyle: fadeR })).attach(this);
+			new Gallery(FIELD_X, FIELD_Y, FADE_W, FIELD_H, new Box({
+				fillStyle: createLinearGradient(g, FIELD_X, FIELD_Y, FIELD_X + FADE_W, FIELD_Y, FADE_FAR, FADE_NEAR)
+			})).attach(this);
+			new Gallery(FIELD_X + FIELD_W - FADE_W, FIELD_Y, FIELD_W, FIELD_H, new Box({
+				fillStyle: createLinearGradient(g, FIELD_X + FIELD_W - FADE_W, FIELD_Y, FIELD_X + FIELD_W, FIELD_Y, FADE_NEAR, FADE_FAR)
+			})).attach(this);
 
 			addConfigButton(this);
 		}
@@ -1963,46 +1973,29 @@
 
 		private drawPanel(g: CanvasRenderingContext2D, when: Timestamp, unit: Unit, rect: XYWH): void {
 			if (unit) {
-				g.save();
-				switch (unit.team) {
-					case TEAM.PARTY:
-						g.fillStyle = "#000044";
-						g.strokeStyle = "#CCCCFF";
-						break;
-					case TEAM.ENEMY:
-						g.fillStyle = "#440000";
-						g.strokeStyle = "#FFCCCC";
-						break;
-					default:
-						g.fillStyle = "#004400";
-						g.strokeStyle = "#CCFFCC";
-						break;
-				}
-				fillRect(g, rect);
-				strokeRect(g, rect);
-				g.restore();
+				drawRect(g, rect, PANEL_BKGND_STYLE[unit.team]);
 
-				let { x, y } = rect;
-				let { w, h } = scaleProportionally(unit.ch.image, UNIT_MAX_W, UNIT_MAX_H, true);
-				x += (CELL_W - w) / 2;
-				y += (rect.h - h) / 2;
-				unit.ch.image.draw(g, when, { x, y, w, h });
+				let { ch } = unit;
+				let chRect = scaleProportionally(ch, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
+				chRect.x = rect.x + MARGIN + (CELL_W - chRect.w) / 2;
+				chRect.y = rect.y + (rect.h - chRect.h) / 2;
+				ch.draw(g, when, chRect);
 
 				function toFixed(n: number): string {
 					return n != null ? n.toFixed(1) : "-";
 				}
 
-				g.save();
-				g.fillStyle = "#FFFFFF";
-				g.textAlign = "left";
-				g.textBaseline = "top";
-				g.fillText(unit.name, rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y);
-				g.fillText(`HP: ${unit.HP} / ${unit.maxHP}`, rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y + 30);
+				const PANEL_NAME_X: Pixel = UNIT_MAX_W + MARGIN * 2;
+				const PANAL_NAME_Y: Pixel = MARGIN;
 				let MVW = (unit.SP >= unit.cost ? floor((unit.SP - unit.cost) / unit.step) : "-");
-				g.fillText(`SP: ${unit.SP} / ${unit.maxSP}`, rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y + 60);
-				g.fillText(`MOVE: ${MVW}/${floor(unit.SP / unit.step)}`, rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y + 90);
-				g.fillText(`ATK/DEF: ${toFixed(unit.ATK)} / ${unit.DEF.toFixed(1)}`, rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y + 120);
-				g.restore();
+				drawText(g,
+					`${unit.name}\n` +
+					`HP: ${unit.HP} / ${unit.maxHP}\n` +
+					`SP: ${unit.SP} / ${unit.maxSP}\n` +
+					`MOVE: ${MVW}/${floor(unit.SP / unit.step)}\n` +
+					`ATK/DEF: ${toFixed(unit.ATK)} / ${unit.DEF.toFixed(1)}`,
+					rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y, PANEL_TEXT_STYLE
+				);
 			}
 		}
 	}
@@ -2065,29 +2058,29 @@
 
 		downCaret(hex: Hex): void {
 			this.caret = hex;
-			if (hex) {
-				this.mode = doDown(this.parent as Scene, this.mode, hex);
-			}
+			if (!hex) { return; }
 
-			function doDown(scene: Scene, mode: Caret, hex: Hex): Caret {
-				let { focus } = scene;
-				if (focus) {
-					if (focus.team === scene.team && !focus.done(scene)) {
-						if (mode === Caret.Locked && same(hex, focus.hex)) {
-							return Caret.ReDragged;
-						} else {
-							return Caret.Dragged;
-						}
+			let scene = this.parent as Scene;
+			let { mode } = this;
+			let { focus } = scene;
+			if (focus) {
+				if (focus.team === scene.team && !focus.done(scene)) {
+					if (mode === Caret.Locked && same(hex, focus.hex)) {
+						this.mode = Caret.ReDragged;
+					} else {
+						this.mode = Caret.Dragged;
 					}
-				} else {
-					let { unit } = scene.field.get(hex);
-					scene.focus = unit;
-					if (unit) {
-						return Caret.Dragged;
-					}
+					return;
 				}
-				return Caret.Unlocked;
+			} else {
+				let { unit } = scene.field.get(hex);
+				scene.focus = unit;
+				if (unit) {
+					this.mode = Caret.Dragged;
+					return;
+				}
 			}
+			this.mode = Caret.Unlocked;
 		}
 
 		onDown(x: Pixel, y: Pixel): void {
@@ -2096,50 +2089,50 @@
 
 		upCaret(hex: Hex): void {
 			this.caret = hex;
-			if (hex) {
-				this.mode = doUp(this.parent as Scene, this.mode, hex);
+			if (!hex) { return; }
+
+			let scene = this.parent as Scene;
+			let { mode } = this;
+
+			if (!scene.enabled || mode < Caret.Dragged) {
+				return;	// keep Hover or Locked
 			}
 
-			function doUp(scene: Scene, mode: Caret, hex: Hex): Caret {
-				if (mode < Caret.Dragged) {
-					return mode;	// keep Hover or Locked
-				}
+			let { focus } = scene;
+			if (focus == null || scene.team != focus.team) {
+				this.mode = Caret.Unlocked;	// click on enemy
+				return;
+			}
 
-				let { focus } = scene;
-				if (focus == null || scene.team != focus.team) {
-					return Caret.Unlocked;	// click on enemy
-				}
+			if (same(hex, focus.hex)) {
+				this.mode = (mode === Caret.Dragged ? Caret.Locked : Caret.Unlocked);
+				return;
+			}
 
-				if (same(hex, focus.hex)) {
-					if (mode === Caret.Dragged) {
-						return Caret.Locked;
-					} else { // enemy or ReDragged
-						return Caret.Unlocked;
-					}
-				}
+			let r = scene.mapFor(focus).get(hex);
+			if (r.deltaHP != null) {
+				// shoot
+			} else if (r.SP >= 0 && scene.field.rawget(hex).empty) {
+				// walk only, so take a snapshot to undo.
+				scene.savepoint(focus);
+			} else {
+				// cannot shoot nor walk.
+				scene.focus = null;
+				this.mode = Caret.Unlocked;
+				return;
+			}
 
-				if (!scene.enabled) {
-					return mode;
+			this.mode = Caret.Locked;
+			let job = scene.move(focus, hex);
+			let checkFocus = () => {
+				if (scene.focus == null) {
+					this.mode = Caret.Unlocked;
 				}
-
-				let r = scene.mapFor(focus).get(hex);
-				if (r.deltaHP != null) {
-					// shoot
-				} else if (r.SP >= 0 && scene.field.rawget(hex).empty) {
-					// walk only, so take a snapshot to undo.
-					scene.savepoint(focus);
-				} else {
-					// cannot shoot nor walk.
-					scene.focus = null;
-					return Caret.Unlocked;
-				}
-
-				scene.move(focus, hex);
-				if (scene.focus) {
-					return Caret.Locked;
-				} else {
-					return Caret.Unlocked;
-				}
+			};
+			if (scene.enabled) {
+				checkFocus();
+			} else {
+				job.then(checkFocus);
 			}
 		}
 
@@ -2238,7 +2231,7 @@
 				let scene = this.parent as Scene;
 				let { focus, field } = scene;
 				if (this.mode === Caret.Unlocked) {
-					drawCaret(g, scene, caret, CARET.SELECT);
+					drawCaret(g, scene, caret, CARET_SELECT);
 				} else if (focus) {
 					let map = scene.mapFor(focus);
 					if (map) {
@@ -2253,28 +2246,28 @@
 							let { skill } = focus;
 							switch (skill.target) {
 								case TARGET.SINGLE_HOSTILE:
-									drawCaret(g, scene, caret, CARET.HOSTILE);
+									drawCaret(g, scene, caret, CARET_HOSTILE);
 									break;
 								case TARGET.SINGLE_FRIENDLY:
-									drawCaret(g, scene, caret, CARET.FRIENDLY);
+									drawCaret(g, scene, caret, CARET_FRIENDLY);
 									break;
 								case TARGET.STRAIGHT_HOSTILE:
-									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET.HOSTILE));
+									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
 									break;
 								case TARGET.STRAIGHT_FRIENDLY:
-									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET.FRIENDLY));
+									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
 									break;
 								case TARGET.SURROUND_HOSTILE:
-									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET.HOSTILE));
+									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
 									break;
 								case TARGET.SURROUND_FRIENDLY:
-									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET.FRIENDLY));
+									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
 									break;
 							}
 						} else if (r.SP >= 0) {
-							drawCaret(g, scene, caret, CARET.WALK);
+							drawCaret(g, scene, caret, CARET_WALK);
 						} else {
-							drawCaret(g, scene, caret, CARET.SELECT);
+							drawCaret(g, scene, caret, CARET_SELECT);
 						}
 					}
 				}

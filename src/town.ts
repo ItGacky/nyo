@@ -197,8 +197,8 @@
 			g.save();
 			if (ch) {
 				// image
-				let sz = scaleProportionally(ch.image, PORTRAIT_CHAR_W, PORTRAIT_CHAR_H);
-				ch.image.draw(g, when, {
+				let sz = scaleProportionally(ch, PORTRAIT_CHAR_W, PORTRAIT_CHAR_H);
+				ch.draw(g, when, {
 					x: x + w / 2 - sz.w / 2,
 					y: y + PORTRAIT_CHAR_H / 2 - sz.h / 2,
 					w: sz.w,
@@ -276,7 +276,7 @@
 			let portraits: SwappableButton[] = [];
 			for (let i = 0; i < PARTY_MAX; ++i) {
 				let c = floor(i / (PARTY_MAX / 2));
-				let r = floor(i % (PARTY_MAX / 2));
+				let r = i % (PARTY_MAX / 2);
 				let x = PORTRAIT_X + (PORTRAIT_W + PORTRAIT_MARGIN) * (1 - c);
 				let y = PORTRAIT_Y + (PORTRAIT_H + PORTRAIT_MARGIN) * r + DH * c;
 				new SwappableButton(x, y, PORTRAIT_W, PORTRAIT_H, portraits,
@@ -290,7 +290,8 @@
 						// swap index and character
 						[party[L.index], party[R.index]] = [party[R.index], party[L.index]];
 						[L.index, R.index] = [R.index, L.index];
-					}
+					},
+					[KEY.$1 + i]
 				).attach(this);
 			}
 		}
@@ -307,12 +308,12 @@
 			const SKINS = ["grass", "moss"];
 			let skin = rand(SKINS.length);
 
-			// TODO: 他の施設？ 宿屋 (Inn), 病院/寺院 (Temple)
-			this.addSpot(5, KEY.G, "Guild", () => { }).enabled = false;		// TODO: 冒険者ギルド, Training Grounds? 新しいキャラクターの作成
-			this.addSpot(4, KEY.P, "Pub", () => this.goTo(Pub));		// TODO: Pub or Tavern?
-			this.addSpot(3, KEY.T, "Shop", () => this.goTo(Shop));		// TODO: Shop or Trading Post?
-			this.addSpot(2, KEY.S, "Smith", () => { }).enabled = false;	// TODO: Smith (鍛冶屋) を追加する。武器や防具に Enchant を追加できる。
-			this.addSpot(1, KEY.D, "Dungeon", () => {
+			// TODO: 他の施設？ 病院/寺院 (Temple)
+			this.addSpot(5, KEY.A, "Guild", () => { }).enabled = false;	// TODO: Training Grounds? 新しいキャラクターの作成
+			this.addSpot(4, KEY.B, "Tavern", () => this.goTo(Tavern));
+			this.addSpot(3, KEY.C, "Shop", () => this.goTo(Shop));		// TODO: Shop or Trading Post?
+			this.addSpot(2, KEY.D, "Smith", () => { }).enabled = false;	// TODO: 武器や防具に Enchant を追加できる。
+			this.addSpot(1, KEY.E, "Dungeon", () => {
 				new FadeOut(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin]))).attach(this.parent);
 			}).enabled = data.party.some(ch => ch != null);
 
@@ -359,9 +360,9 @@
 
 	//================================================================================
 
-	class Pub extends SceneWithPortraits {
+	class Tavern extends SceneWithPortraits {
 		constructor(data: Data) {
-			super(data, "pub.jpg");
+			super(data, "tavern.jpg");
 
 			function Array_overwrite<T>(lhs: T[], rhs: T[]): void {
 				Array.prototype.splice.call(lhs, 0, lhs.length, ...rhs);
@@ -485,7 +486,7 @@
 		}
 
 		onPortraitClick(index: number): void {
-			logger.log("Shop.onPortraitClick: " + index);
+			logger.log("TODO: Shop.onPortraitClick: " + index);
 		}
 	}
 
@@ -512,8 +513,8 @@
 			super(data);
 			let { warehouse } = data;
 
-			let sz = scaleProportionally(ch.image, SCREEN_W, SCREEN_H, true);
-			new Gallery(0, 0, sz.w, sz.h, ch.image).attach(this);	// character large image
+			let sz = scaleProportionally(ch, SCREEN_W, SCREEN_H, true);
+			new Gallery(0, 0, sz.w, sz.h, ch).attach(this);	// character large image
 			new Gallery(0, 0, 200, 40, new Label(ch.name)).attach(this);
 			new Gallery(0, 40, 200, 40, new Label("INT: " + ch.INT)).attach(this);
 			new Gallery(100, 40, 200, 40, new Label("DEX: " + ch.DEX)).attach(this);
@@ -582,6 +583,8 @@
 			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
 
 			btnEquip.click();
+
+			// TODO: Add buttons and mnemonics to switch another character.
 		}
 	}
 }

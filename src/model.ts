@@ -299,83 +299,22 @@ const BLINK_SEQUENCE = [1, 2, 3, 4, 5, 5, 5, 5, 4, 3, 2, 1];
 const BLINK_DURATION: Duration = 450;
 const BLINK_CYCLE: Duration = 4500;
 const BLINK_CYCLE_PER_INT: Duration = 100;
-const NUM_BLINKS = BLINK_SEQUENCE.reduce((prev, value) => max(prev, value), 0);
 
-interface DrawableWithOverlay extends WH {
-	src: string;
-	draw(
-		g: CanvasRenderingContext2D,
-		when: Timestamp,
-		rect: XYWH,
-		overlayStyle?: CanvasStyle,
-		overlayAlpha?: Alpha
-	): void;
-}
-
-class AnimatedPicture implements DrawableWithOverlay {
-	private back: Picture;
-	private eyes: Picture[];
-	private fore: Picture;
-	private cycle: Duration;
-	private offset: Duration;
-
-	constructor(public src: string, INT: number) {
-		this.back = new Picture(src + "/back.png");
-		let eyes: Picture[] = [new Picture(src + "/eye.png")];
-		for (let i = 1; i <= NUM_BLINKS; ++i) {
-			eyes.push(new Picture(src + `/eye${i}.png`));
-		}
-		this.eyes = eyes;
-		this.fore = new Picture(src + "/fore.png");
-		this.cycle = BLINK_CYCLE + BLINK_CYCLE_PER_INT * INT;
-		this.offset = rand(this.cycle);
-	}
-
-	get w(): Pixel { return this.back.w; }
-	get h(): Pixel { return this.back.h; }
-
-	draw(
-		g: CanvasRenderingContext2D,
-		when: Timestamp,
-		rect: XYWH,
-		overlayStyle?: CanvasStyle,
-		overlayAlpha?: Alpha
-	): void {
-		this.back.draw(g, when, rect, overlayStyle, overlayAlpha);
-		let eye: number;
-		let cycle = ((when + this.offset) % this.cycle);
-		if (cycle < BLINK_DURATION) {
-			eye = BLINK_SEQUENCE[floor(cycle / BLINK_DURATION * BLINK_SEQUENCE.length)];
-		} else {
-			eye = 0;
-		}
-		this.eyes[eye].draw(g, when, rect, overlayStyle, overlayAlpha);
-		this.fore.draw(g, when, rect, overlayStyle, overlayAlpha);
-	}
-}
-
-function drawableFromPath(src: string, INT: number): DrawableWithOverlay {
-	if (src.indexOf("/") < 0) {
-		src = URL_CHAR + src;
-	}
-	if (src.endsWith(".png")) {
-		return new Picture(src);
-	} else {
-		return new AnimatedPicture(src, INT);
-	}
-}
-
-function pathFromDrawable(obj: DrawableWithOverlay): string {
-	let src = obj.src;
-	if (src.startsWith(URL_CHAR)) {
-		return src.substr(URL_CHAR.length);
-	} else {
-		return src;
-	}
+enum CharacterImage {
+	DEFAULT,
+	BLINK_1,
+	BLINK_2,
+	BLINK_3,
+	BLINK_4,
+	CLOSED
 }
 
 // TODO: 装備変更までキャッシュ可能な値について、必要性を確認する。
-class Character implements ToJSON<CharacterArchive> {
+class Character implements ToJSON<CharacterArchive>, WH {
+	images: Picture[];
+	private blinkCycle: Duration;
+	private blinkOffset: Duration;
+
 	constructor(
 		public name: string,
 		public INT: number,
@@ -384,8 +323,82 @@ class Character implements ToJSON<CharacterArchive> {
 		public equipments: Item[],
 		public skills: Skill[],
 		public known: Skill[],
-		public image: DrawableWithOverlay
+		public src: string
 	) {
+		let images: Picture[] = [];
+		let path = (src.indexOf("/") < 0 ? URL_CHAR + src : src);
+		if (src.endsWith(".png")) {
+			let image = new Picture(path);
+			images[0] = image;
+		} else {
+			let parts = [
+				new Picture(path + "/back.png"),
+				new Picture(path + "/eye.png"),
+				new Picture(path + "/eye1.png"),
+				new Picture(path + "/eye2.png"),
+				new Picture(path + "/eye3.png"),
+				new Picture(path + "/eye4.png"),
+				new Picture(path + "/eye5.png"),
+				new Picture(path + "/fore.png")
+			];
+
+			new ParallelJob(parts).then(() => images.push(
+				compose(parts[0], parts[1], parts[7]),
+				compose(parts[0], parts[2], parts[7]),
+				compose(parts[0], parts[3], parts[7]),
+				compose(parts[0], parts[4], parts[7]),
+				compose(parts[0], parts[5], parts[7]),
+				compose(parts[0], parts[6], parts[7])
+			));
+
+			function compose(...images: Picture[]): Picture {
+				if (images.length <= 0) { return null; }
+				let { w, h } = images[0];
+				let canvas = document.createElement("canvas");
+				canvas.width = w;
+				canvas.height = h;
+				let g = canvas.getContext("2d");
+				let rect = { x: 0, y: 0, w, h };
+				for (let image of images) {
+					image.draw(g, null, rect);
+				}
+				return Picture.from(canvas);
+			}
+		}
+		this.images = images;
+		this.blinkCycle = BLINK_CYCLE + BLINK_CYCLE_PER_INT * INT;
+		this.blinkOffset = rand(this.blinkCycle);
+	}
+
+	get w(): Pixel {
+		let image = this.images[0];
+		return image ? image.w : 1;
+	}
+
+	get h(): Pixel {
+		let image = this.images[0];
+		return image ? image.h : 1;
+	}
+
+	draw(
+		g: CanvasRenderingContext2D,
+		when: Timestamp,
+		rect: XYWH,
+		overlayStyle?: CanvasStyle,
+		overlayAlpha?: Alpha
+	): void {
+		let index: number;
+		let cycle = ((when + this.blinkOffset) % this.blinkCycle);
+		if (cycle < BLINK_DURATION) {
+			index = BLINK_SEQUENCE[floor(cycle / BLINK_DURATION * BLINK_SEQUENCE.length)];
+		} else {
+			index = 0;
+		}
+		let { images } = this;
+		let image = (images[index] || images[CharacterImage.DEFAULT]);
+		if (image) {
+			image.draw(g, when, rect, overlayStyle, overlayAlpha);
+		}
 	}
 
 	get HP(): number { return (3 + this.STR) * 10; }
@@ -465,7 +478,7 @@ class Character implements ToJSON<CharacterArchive> {
 			def.equipments.map(Item.from),
 			def.skills.map(Skill.from),
 			[],
-			drawableFromPath(def.image, def.INT)
+			def.image
 		);
 	}
 
@@ -478,7 +491,7 @@ class Character implements ToJSON<CharacterArchive> {
 			fromJSON(Item, o.equipments),
 			fromJSON(Skill, o.skills),
 			fromJSON(Skill, o.known),
-			drawableFromPath(o.image, o.INT)
+			o.image
 		);
 	}
 
@@ -491,7 +504,7 @@ class Character implements ToJSON<CharacterArchive> {
 			equipments: toJSON(this.equipments),
 			skills: toJSON(this.skills),
 			known: toJSON(this.known),
-			image: pathFromDrawable(this.image)
+			image: this.src
 		};
 	}
 }

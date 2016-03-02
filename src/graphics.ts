@@ -23,10 +23,8 @@ function scaleProportionally(wh: WH, wLimit: number, hLimit: number, magnify: bo
 			w /= rh;
 			h = hLimit;
 		}
-		return { w, h };
-	} else {
-		return wh;
 	}
+	return { w, h };	// return always a new object.
 }
 
 //================================================================================
@@ -38,20 +36,16 @@ type CanvasStyle = CanvasStyleString | CanvasGradient | CanvasPattern;
 type TextAlign = "left" | "right" | "center";		// FIXME: support "start" | "end"
 type TextBaseline = "top" | "middle" | "bottom";	// FIXME: support "hanging" | "alphabetic" | "ideographic"
 
-interface RectStyle {
+interface ShapeStyle {
 	fillStyle?: CanvasStyle;
 	strokeStyle?: CanvasStyle;
 	globalAlpha?: Alpha,
 	lineWidth?: Pixel;
 }
 
-interface TextStyle {
+interface TextStyle extends ShapeStyle {
 	fontSize?: Pixel;
 	fontFamily?: string;
-	fillStyle?: CanvasStyle;
-	strokeStyle?: CanvasStyle;
-	globalAlpha?: Alpha,
-	lineWidth?: Pixel;
 	textAlign?: TextAlign;
 	textBaseline?: TextBaseline;
 }
@@ -61,11 +55,11 @@ function setupStyle(g: CanvasRenderingContext2D, style: any) {
 	for (let key in style) {
 		switch (key) {
 			case "fontSize":
-				g.font = `${style.fontSize}px ${style.fontFamily || DEFAULT_FONT_FAMILY}`;
+				g.font = font(style.fontSize, style.fontFamily);
 				break;
 			case "fontFamily":
 				if (style.fontSize == null) {
-					g.font = `${DEFAULT_FONT_SIZE}px ${style.fontFamily}`;
+					g.font = font(null, style.fontFamily);
 				}
 				break;
 			default:
@@ -83,21 +77,21 @@ function fillRect(g: CanvasRenderingContext2D, rect: XYWH): void {
 	g.fillRect(rect.x, rect.y, rect.w, rect.h);
 }
 
-function drawRect(g: CanvasRenderingContext2D, rect: XYWH, style?: RectStyle): void;
-function drawRect(g: CanvasRenderingContext2D, x: Pixel, y: Pixel, w: Pixel, h: Pixel, style?: RectStyle): void;
+function drawRect(g: CanvasRenderingContext2D, rect: XYWH, style?: ShapeStyle): void;
+function drawRect(g: CanvasRenderingContext2D, x: Pixel, y: Pixel, w: Pixel, h: Pixel, style?: ShapeStyle): void;
 function drawRect(
 	g: CanvasRenderingContext2D,
 	x_or_rect?: Pixel | XYWH,
-	y_or_style?: Pixel | RectStyle,
+	y_or_style?: Pixel | ShapeStyle,
 	w?: Pixel,
 	h?: Pixel,
-	style?: RectStyle
+	style?: ShapeStyle
 ): void {
 	let x: Pixel;
 	let y: Pixel;
 	if (w == null) {
 		({ x, y, w, h } = x_or_rect as XYWH);
-		style = y_or_style as RectStyle;
+		style = y_or_style as ShapeStyle;
 	} else {
 		x = x_or_rect as number;
 		y = y_or_style as number;
@@ -105,6 +99,11 @@ function drawRect(
 	if (w > 0 && h > 0) {
 		g.save();
 		setupStyle(g, style);
+		let lineWidth = (g.lineWidth || 0);
+		x += lineWidth / 2;
+		y += lineWidth / 2;
+		w -= lineWidth;
+		h -= lineWidth;
 		if (!style || style.fillStyle) { g.fillRect(x, y, w, h); }
 		if (!style || style.strokeStyle) { g.strokeRect(x, y, w, h); }
 		g.restore();
@@ -130,25 +129,25 @@ function drawText(
 		draw(g, text, x, y, style);
 	} else {
 		let lines = text.split("\n");
-		let fontSize = (style && style.fontSize || DEFAULT_FONT_SIZE);
+		let stride = 1.2 * getFontSize(g, style);
 		switch (g.textBaseline) {
 			case "top":
 				for (let line of lines) {
 					draw(g, line, x, y, style);
-					y += fontSize;
+					y += stride;
 				}
 				break;
 			case "middle":
-				y -= (fontSize * (lines.length - 1)) / 2;
+				y -= (stride * (lines.length - 1)) / 2;
 				for (let line of lines) {
 					draw(g, line, x, y, style);
-					y += fontSize;
+					y += stride;
 				}
 				break;
 			case "bottom":
 				for (let line of lines.reverse()) {
 					draw(g, line, x, y, style);
-					y -= fontSize;
+					y -= stride;
 				}
 				break;
 		}
@@ -204,13 +203,13 @@ function drawTextBox(
 		draw(g, text, tx, ty, w, style);
 	} else {
 		let lines = text.split("\n");
-		let fontSize = (style && style.fontSize || DEFAULT_FONT_SIZE);
+		let stride = 1.2 * getFontSize(g, style);
 		switch (g.textBaseline) {
 			case "middle":
-				ty = y + (h - fontSize * (lines.length - 1)) / 2;
+				ty = y + (h - stride * (lines.length - 1)) / 2;
 				break;
 			case "bottom":
-				ty = y + h - fontSize * (lines.length - 1);
+				ty = y + h - stride * (lines.length - 1);
 				break;
 			case "top":
 			default:
@@ -219,10 +218,25 @@ function drawTextBox(
 		}
 		for (let line of lines) {
 			draw(g, line, tx, ty, w, style);
-			ty += fontSize;
+			ty += stride;
 		}
 	}
 	g.restore();
+}
+
+function createLinearGradient(
+	g: CanvasRenderingContext2D,
+	x0: Pixel,
+	y0: Pixel,
+	x1: Pixel,
+	y1: Pixel,
+	startStyle: CanvasStyleString,
+	stopStyle: CanvasStyleString
+): CanvasGradient {
+	let gradient = g.createLinearGradient(x0, y0, x1, y1);
+	gradient.addColorStop(0, startStyle);
+	gradient.addColorStop(1, stopStyle);
+	return gradient;
 }
 
 function fillVerticalGradient(
@@ -236,10 +250,7 @@ function fillVerticalGradient(
 ): void {
 	if (w > 0 && h > 0) {
 		g.save();
-		let gradient = g.createLinearGradient(x, y, x, y + h);
-		gradient.addColorStop(0, topStyle);
-		gradient.addColorStop(1, bottomStyle);
-		g.fillStyle = gradient;
+		g.fillStyle = createLinearGradient(g, x, y, x, y + h, topStyle, bottomStyle);
 		g.fillRect(x, y, w, h);
 		g.restore();
 	}
@@ -253,7 +264,7 @@ function fillRadialGradient(
 	h: Pixel,
 	innerStyle: CanvasStyleString,
 	outerStyle: CanvasStyleString,
-	inner: Pixel = 0
+	inner: number = 0	// 0..1
 ): void {
 	if (w > 0 && h > 0) {
 		g.save();
@@ -302,7 +313,7 @@ interface Drawable {
 }
 
 class Box implements Drawable {
-	constructor(public rectStyle: RectStyle) {
+	constructor(public rectStyle: ShapeStyle) {
 	}
 
 	draw(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH): void {
@@ -314,18 +325,20 @@ class Label implements Drawable {
 	constructor(
 		public value: any,
 		public textStyle?: TextStyle,
-		public rectStyle?: RectStyle
+		public rectStyle?: ShapeStyle
 	) {
-		if (this.textStyle == null) { this.textStyle = {}; }
-		// TODO: textStyle を所有しておらず、参照しているだけのため、直接変更すべきではない。
-		if (!this.textStyle.fillStyle) {
-			this.textStyle.fillStyle = "white";
-		}
-		if (!this.textStyle.textAlign) {
-			this.textStyle.textAlign = "center";
-		}
-		if (!this.textStyle.textBaseline) {
-			this.textStyle.textBaseline = "middle";
+		if (!textStyle || !textStyle.fillStyle || !textStyle.textAlign || !textStyle.textBaseline) {
+			let defaults: TextStyle = Object.create(textStyle || null);
+			if (!textStyle || !textStyle.fillStyle) {
+				defaults.fillStyle = "white";
+			}
+			if (!textStyle || !textStyle.textAlign) {
+				defaults.textAlign = "center";
+			}
+			if (!textStyle || !textStyle.textBaseline) {
+				defaults.textBaseline = "middle";
+			}
+			this.textStyle = defaults;
 		}
 	}
 
@@ -346,21 +359,51 @@ class Label implements Drawable {
 	}
 }
 
-class Picture implements Drawable, WH {
+type DrawableElement = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
+
+class Picture implements Drawable, WH, Job {
 	static DUMMY: HTMLImageElement = null;
-	private _image: HTMLImageElement = undefined;
+	private _image: DrawableElement = undefined;
 
 	constructor(public src: string) {
 	}
 
-	get image(): HTMLImageElement {
+	static from(elem: DrawableElement): Picture {
+		let self = new Picture(undefined);
+		self._image = elem;
+		return self;
+	}
+
+	private sig: Signal;
+
+	then(slot: Slot): this {
 		if (this._image === undefined) {
-			this._image = null;	// now loading
-			let image = new Image();
-			image.addEventListener("load", () => { this._image = image; });
-			image.addEventListener("error", () => { this._image = Picture.DUMMY; })
-			image.src = this.src;
+			this.sig = connect(this.sig, slot);
+			this.preload();	// kick to load
+		} else {
+			committed.then(slot);
 		}
+		return this;
+	}
+
+	preload(): void {
+		assert(this._image === undefined);
+
+		let assign = (image: HTMLImageElement) => {
+			this._image = image;
+			commit(this.sig);
+			this.sig = undefined;
+		};
+
+		this._image = null;	// now loading
+		let image = new Image();
+		image.addEventListener("load", () => assign(image));
+		image.addEventListener("error", () => assign(Picture.DUMMY));
+		image.src = this.src;
+	}
+
+	get image(): DrawableElement {
+		if (this._image === undefined) { this.preload(); }
 		return this._image;
 	}
 
@@ -400,15 +443,6 @@ class Picture implements Drawable, WH {
 				}
 			}
 			g.restore();
-		}
-	}
-
-	createPattern(g: CanvasRenderingContext2D, repetition: string): CanvasStyle {
-		let { image } = this;
-		if (image) {
-			return g.createPattern(image, repetition);
-		} else {
-			return rgba(0, 0, 0, 0);
 		}
 	}
 }

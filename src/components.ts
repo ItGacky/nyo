@@ -30,7 +30,7 @@ const LOG_H: Pixel = SCREEN_H - MARGIN * 2;
 const LOG_DURATION: Duration = 2000;
 
 // Dialog.confirm
-const DLG_BKGND_STYLE: RectStyle = {
+const DLG_BKGND_STYLE: ShapeStyle = {
 	fillStyle: rgba(0, 0, 0, 0.8)
 };
 const CONFIRM_BUTTON_H = SCREEN_H / 8;
@@ -479,7 +479,7 @@ class SwappableButton extends Button {
 	};
 
 	private swapping: {
-		start: Timestamp;	// (time) starting time of swapping animation
+		start: Timestamp;
 		xFrom: Pixel;
 		yFrom: Pixel;
 		xTo: Pixel;
@@ -556,7 +556,7 @@ class SwappableButton extends Button {
 			}
 			this.dragged = null;
 			if (this.pressed) {
-				this.pressed = false;
+				this.pressed = null;
 				if (this.contains(x, y) && xOrig <= x && yOrig <= y && x < xOrig + this.w && y < yOrig + this.h) {
 					this.onClick();
 				}
@@ -565,7 +565,7 @@ class SwappableButton extends Button {
 	}
 
 	onSwap(that: SwappableButton, when: Timestamp) {
-		this.pressed = false;
+		this.pressed = null;
 		this.swapping = {
 			start: when,
 			xFrom: this.x,
@@ -628,7 +628,7 @@ interface ListViewColumn<T> {
 class ListView<T> extends Widget {
 	private dragged: number;	// (row index)
 	private hover: number;		// (row index)
-	private scrolling: number;	// (px in local corrdinate)
+	private scrolling: Pixel;
 	private topRow: number = 0;	// (row index) top row index to display
 	private sortkeys: number[];	// array of +- (column index + 1); nagative means desc order.
 	public selected: T;
@@ -1059,7 +1059,7 @@ class Slider extends Widget {
 			});
 			// Knob
 			let knob = owner.knob;
-			let style: RectStyle = {
+			let style: ShapeStyle = {
 				strokeStyle: "white",
 				lineWidth: 4
 			};
@@ -1141,7 +1141,7 @@ class Slider extends Widget {
 class ScreenLogger extends Widget implements Logger {
 	logs: {
 		message: string;
-		when: Timestamp;		// (time)
+		when: Timestamp;
 	}[];
 
 	constructor(x: Pixel, y: Pixel, w: Pixel, h: Pixel, public duration: Duration, public style: TextStyle) {
@@ -1162,10 +1162,10 @@ class ScreenLogger extends Widget implements Logger {
 			let len = logs.length;
 			if (len > 0) {
 				let { style } = this;
-				let fontSize = coalesce(style.fontSize, DEFAULT_FONT_SIZE);
+				let stride = 1.2 * getFontSize(g, style);
 				for (let i = 0; i < len; ++i) {
 					let { message } = logs[i];
-					drawTextBox(g, message, this.x, this.y + i * fontSize, this.w, fontSize, style);
+					drawTextBox(g, message, this.x, this.y + i * stride, this.w, stride, style);
 				}
 			}
 		}

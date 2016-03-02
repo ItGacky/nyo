@@ -39,7 +39,7 @@
 
 		Guild: "Guild",
 
-		Pub: "Pub",
+		Tavern: "Tavern",
 		Clear: "Clear",
 		Revert: "Revert",
 		PartyFull: "Party is full.",

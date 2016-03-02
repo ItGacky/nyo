@@ -39,7 +39,7 @@
 
 		Guild: "登録所",
 
-		Pub: "酒場",
+		Tavern: "酒場",
 		Clear: "全員を外す",
 		Revert: "元に戻す",
 		PartyFull: "パーティがいっぱいです。",
