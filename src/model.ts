@@ -286,6 +286,7 @@ class Skill implements ToJSON<SkillArchive> {
 
 interface CharacterArchive {
 	name: string;
+	level: number;
 	INT: number;
 	DEX: number;
 	STR: number;
@@ -317,6 +318,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 
 	constructor(
 		public name: string,
+		public level: number,
 		public INT: number,
 		public DEX: number,
 		public STR: number,
@@ -458,20 +460,21 @@ class Character implements ToJSON<CharacterArchive>, WH {
 		if (def == null) {
 			throw new RangeError(`Adventurer not found: "${key}"`);
 		}
-		return Character.from(_("Adventurer", key), def);
+		return Character.from(_("Adventurer", key), 0, def);
 	}
 
-	static monster(key: string): Character {
+	static monster(key: string, level: number): Character {
 		let def = MONSTERS[key];
 		if (def == null) {
 			throw new RangeError(`Monster not found: "${key}"`);
 		}
-		return Character.from(_("Monster", key), def);
+		return Character.from(_("Monster", key), level, def);
 	}
 
-	static from(name: Word, def: CharacterDef): Character {
+	static from(name: Word, level: number, def: CharacterDef): Character {
 		return new Character(
 			name.localized,
+			level,
 			def.INT,
 			def.DEX,
 			def.STR,
@@ -485,6 +488,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 	static fromJSON(o: CharacterArchive): Character {
 		return new Character(
 			o.name,
+			o.level || 0,
 			o.INT,
 			o.DEX,
 			o.STR,
@@ -498,6 +502,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 	toJSON(): CharacterArchive {
 		return {
 			name: this.name,
+			level: this.level,
 			INT: this.INT,
 			DEX: this.DEX,
 			STR: this.STR,

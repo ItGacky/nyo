@@ -202,6 +202,10 @@ System.main = function(canvas: HTMLCanvasElement, resume: boolean): void {
 	Picture.DUMMY = dummy;
 
 	let root = new Composite();
+
+	// TODO: If resume === true, should restore components. It requires deserialize from class name.
+	//root.children = fromJSON(Component, parse(System.getLocalStorage(CHECKPOINT_KEY)));
+
 	let scene = new Composite();
 	scene.attach(root);
 	let log = new ScreenLogger(LOG_X, LOG_Y, LOG_W, LOG_H, LOG_DURATION, LOG_STYLE);
@@ -220,17 +224,14 @@ System.main = function(canvas: HTMLCanvasElement, resume: boolean): void {
 
 	loadConfig();
 
-	// TODO: If resume === true, should restore components. It requires deserialize from class name.
-	// this.components = parse(getLocalStorage(...)).components.map(deserialize)
-
 	reset();
 	run(canvas, root, config);
-}
 
-System.checkpoint = function(): void {
-	saveConfig();
-	// TODO: This should save components. It requires serialize with class name.
-	// System.setLocalStorage(..., stringify( { components: this.components.map(serialize) } ));
+	System.checkpoint = function(): void {
+		saveConfig();
+		// TODO: This should save components. It requires serialize with class name.
+		//System.setLocalStorage(CHECKPOINT_KEY, stringify( { root: toJSON(root.children) } ));
+	}
 }
 
 //================================================================================

@@ -308,13 +308,12 @@
 			const SKINS = ["grass", "moss"];
 			let skin = rand(SKINS.length);
 
-			// TODO: 他の施設？ 病院/寺院 (Temple)
 			this.addSpot(5, KEY.A, "Guild", () => { }).enabled = false;	// TODO: Training Grounds? 新しいキャラクターの作成
 			this.addSpot(4, KEY.B, "Tavern", () => this.goTo(Tavern));
 			this.addSpot(3, KEY.C, "Shop", () => this.goTo(Shop));		// TODO: Shop or Trading Post?
 			this.addSpot(2, KEY.D, "Smith", () => { }).enabled = false;	// TODO: 武器や防具に Enchant を追加できる。
 			this.addSpot(1, KEY.E, "Dungeon", () => {
-				new FadeOut(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin]))).attach(this.parent);
+				new FadeOut(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin], 0))).attach(this.parent);
 			}).enabled = data.party.some(ch => ch != null);
 
 			this.addButton(2, [KEY.L], _("Town", "Load"), () => {
@@ -515,7 +514,7 @@
 
 			let sz = scaleProportionally(ch, SCREEN_W, SCREEN_H, true);
 			new Gallery(0, 0, sz.w, sz.h, ch).attach(this);	// character large image
-			new Gallery(0, 0, 200, 40, new Label(ch.name)).attach(this);
+			new Gallery(0, 0, 200, 40, new Label(`${ch.name} / Lv: ${ch.level}`)).attach(this);
 			new Gallery(0, 40, 200, 40, new Label("INT: " + ch.INT)).attach(this);
 			new Gallery(100, 40, 200, 40, new Label("DEX: " + ch.DEX)).attach(this);
 			new Gallery(200, 40, 200, 40, new Label("STR: " + ch.STR)).attach(this);

@@ -103,8 +103,8 @@ const MONSTERS: { [key: string]: CharacterDef } = {
 		INT: 3,
 		DEX: 3,
 		STR: 3,
-		equipments: ["LongBow", "LetherArmor"],
-		skills: ["Shoot"],
+		equipments: ["Wand", "LetherArmor"],
+		skills: ["Heal"],
 		image: "snail.png"
 	},
 	Sword: {
@@ -116,8 +116,8 @@ const MONSTERS: { [key: string]: CharacterDef } = {
 		image: "sword.png"
 	},
 	Wall: {
-		INT: 3,
-		DEX: 3,
+		INT: 2,
+		DEX: 2,
 		STR: 6,
 		equipments: ["Mace", "LetherArmor"],
 		skills: ["Swing"],

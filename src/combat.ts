@@ -1,4 +1,10 @@
 ﻿namespace Combat {
+	// Model
+	const LEVEL_PER_DEPTH = 0.1;
+	const BASE_FOR_LEVEL = pow(2, 0.1);	// twice power per 10 differece of levels.
+	const UNIT_REGEN_ON_DEAD = 0.1;		// regenerated HP on dead.
+	const UNIT_REVIVE_HP = 0.5;			// threshold to revive.
+
 	//interface Coord extends Number { Coord; };
 	type Coord = number;
 
@@ -254,12 +260,12 @@
 	const DIR_END: DIR = DIR.NW + 1;
 
 	const enum TEAM {
-		PARTY,
+		ALLY,
 		ENEMY
 	}
 
 	function enemyOf(team: TEAM): TEAM {
-		return team === TEAM.PARTY ? TEAM.ENEMY : TEAM.PARTY;
+		return team === TEAM.ALLY ? TEAM.ENEMY : TEAM.ALLY;
 	}
 
 	//================================================================================
@@ -665,6 +671,7 @@
 		}
 
 		get name(): string { return this.ch.name; }
+		get level(): number { return this.ch.level; }
 		get maxHP(): number { return this.ch.HP; }
 		get maxSP(): number { return this.ch.SP; }
 		get step(): number { return this.ch.step; }
@@ -711,14 +718,14 @@
 		}
 
 		// Check: team
-		trySkill(target: Unit): number {
+		trySkill(scene: Scene, target: Unit): number {
 			// TODO: これらのHP変化量の計算は、スキルごとのメソッドに転送されるべきである。
 			if (!this.isTarget(target)) {
 				return null;
 			} else if (this.skill.hostile) {
-				return -ceil(this.ATK * (100 - target.DEF) / 100);
+				return -ceil(this.ATK * (100 - target.DEF) / 100 * pow(BASE_FOR_LEVEL, this.level - target.level));
 			} else {
-				return this.ATK;
+				return ceil(this.ATK * pow(BASE_FOR_LEVEL, this.level - scene.level));
 			}
 		}
 
@@ -1011,7 +1018,7 @@
 							if (r.shotFrom == null || better(r.shotFrom)) {
 								r.shotFrom = from;
 								if (r.deltaHP == null) {
-									r.deltaHP = unit.trySkill(cell.unit);
+									r.deltaHP = unit.trySkill(scene, cell.unit);
 								}
 							}
 						}
@@ -1120,8 +1127,9 @@
 	//================================================================================
 
 	export interface Stage {
+		level: number;
 		numScrollsPerTurn: number;
-		generate(field: Field, xH: Coord): Cell[];
+		generate(scene: Scene, xH: Coord): Cell[];
 		draw(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene): void;
 	}
 
@@ -1133,6 +1141,7 @@
 
 		constructor(
 			skin: string,
+			public level: number,
 			public numScrollsPerTurn: number = 2
 		) {
 			let URL_TILESET = URL_ASSETS + `level/${skin}/`;
@@ -1143,19 +1152,17 @@
 			];
 		}
 
-		generate(field: Field, xH: Coord): Cell[] {
+		generate(scene: Scene, xH: Coord): Cell[] {
 			const XH_ENEMY = MAP_W - 8;
 			const XH_HOLE = 6;
 
 			let numAllies = 0;
 			let numEnemies = 0;
-			field.each(({ unit }) => {
-				if (unit) {
-					if (unit.team === TEAM.PARTY) {
-						++numAllies;
-					} else {
-						++numEnemies;
-					}
+			scene.eachUnit(({ team }) => {
+				if (team === TEAM.ALLY) {
+					++numAllies;
+				} else {
+					++numEnemies;
 				}
 			});
 			let enemyRatio = (numAllies === 0 ? ENEMY_RATIO : ENEMY_RATIO * pow(1.1, numAllies - numEnemies));
@@ -1167,7 +1174,7 @@
 				let type = CELL.NORMAL;
 				if (xH > XH_ENEMY && random() < enemyRatio) {
 					let name = enemies[rand(enemies.length)];
-					let ch = Character.monster(name);
+					let ch = Character.monster(name, scene.level);
 					let team = TEAM.ENEMY;
 					unit = new Unit(ch, team, { xH, yH });
 				} else if (xH > XH_HOLE && random() < 0.1) {
@@ -1220,14 +1227,19 @@
 	}
 
 	export class Scene extends Composite {
-		team: TEAM = TEAM.PARTY;
+		team: TEAM = TEAM.ALLY;
 		field: Field;
 		dying: Unit[];
+		deads: Unit[];
 		snapshots: Snapshot[];
 		enabled = false;
 
 		constructor(public data: Data, public stage: Stage) {
 			super();
+			let field = this.field = new HexMap<Cell>(0, Cell.DUMMY);
+			this.dying = [];
+			this.deads = [];
+			this.snapshots = [];
 
 			// Controllers must be the 1st and 2nd children.
 			let human = new Human();
@@ -1238,47 +1250,74 @@
 			cpu.visible = false;
 
 			// Field
-			let allies = data.party;
-			let field = new HexMap<Cell>(0, Cell.DUMMY);
 			for (let xH = field.minVisibleXH, maxXH = field.maxVisibleXH; xH < maxXH; ++xH) {
-				field.setLine(xH, this.stage.generate(field, xH));
+				field.setLine(xH, this.stage.generate(this, xH));
 			}
 			let allyButtons: Button[] = [];
 			let location = [[2, 0], [2, 1], [2, 2], [1, MAP_H - 3], [1, MAP_H - 2], [1, MAP_H - 1]];
+			let { party } = data;
 			for (let i = 0, len = location.length; i < len; ++i) {
-				let ch = allies[i];
+				let ch = party[i];
 				if (ch) {
 					let [xH, yH] = location[i];
 					let hex = { xH, yH };
-					let unit = new Unit(ch, TEAM.PARTY, hex);
+					let unit = new Unit(ch, TEAM.ALLY, hex);
 					unit.state = new UnitEnter(ch.DEX);
 					field.rawget(hex).unit = unit;
 
-					allyButtons.push(createAllyButton(i, unit));
+					allyButtons.push(createAllyButton(this, i, unit));
 				}
 			}
-			this.field = field;
-			this.dying = [];
-			this.snapshots = [];
-			this.startTurn();
 
-			function createAllyButton(index: number, unit: Unit): Button {
+			function createAllyButton(scene: Scene, index: number, unit: Unit): Button {
 				function draw(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH): void {
 					let { ch } = unit;
 					let { x, y } = rect;
 					let { w, h } = scaleProportionally(ch, rect.w, rect.h, true);
 					x += (rect.w - w) / 2;
 					y += (rect.h - h) / 2;
-					if (!unit.hex && ch.images[CharacterImage.CLOSED]) {
-						ch.images[CharacterImage.CLOSED].draw(g, when, { x, y, w, h });
-					} else {
+					if (unit.hex) {
 						ch.draw(g, when, { x, y, w, h });
+					} else {
+						let ratio = unit.HP / unit.maxHP;
+						if (ratio >= UNIT_REVIVE_HP) {
+							ch.draw(g, when, { x, y, w, h });
+						} else {
+							let image = (ch.images[CharacterImage.CLOSED] || ch.images[CharacterImage.DEFAULT]);
+							image.draw(g, when, { x, y, w, h });
+						}
+						drawTextBox(g, floor(ratio * 100).toFixed(0) + "%", rect.x, rect.y, rect.w, rect.h, {
+							fillStyle: "white",
+							strokeStyle: "black",
+							textAlign: "center",
+							textBaseline: "bottom"
+						});
+					}
+				}
+				function click() {
+					if (unit.hex) {
+						() => human.click(unit.hex);
+					} else {
+						if (unit.HP / unit.maxHP >= UNIT_REVIVE_HP) {
+							let xH = field.minXH;
+							let yH = index % 3;
+							for (let i = 0; i < MAP_H; ++i) {
+								if (field.get(xH, yH).empty) {
+									scene.revive(unit, { xH, yH });
+									return;
+								}
+								yH = (yH + 1) % MAP_H;
+							}
+							logger.error(_("Combat", "NoSpaceToRevive"));
+						} else {
+							logger.error(_("Combat", "CannotRevive"));
+						}
 					}
 				}
 				return new Button(
 					ALLY_BUTTON_X + index * (ALLY_BUTTON_W + MARGIN), ALLY_BUTTON_Y, ALLY_BUTTON_W, ALLY_BUTTON_H,
 					{ draw },
-					() => human.click(unit.hex),	// TODO: 「生き返り」機能を持たせる。死亡後、数ターン経過後に、フィールド後方から戦線に復帰させる。
+					click,
 					[KEY.$1 + index]
 				);
 			}
@@ -1377,9 +1416,19 @@
 			})).attach(this);
 
 			addConfigButton(this);
+
+			//========= start the combat =========
+			this.startTurn();
 		}
 
 		get controller(): Controller { return this.children[this.team] as any; }
+		get level(): number {
+			let { level, numScrollsPerTurn } = this.stage;
+			if (numScrollsPerTurn > 0) {
+				level += (this.field.depth / numScrollsPerTurn) * LEVEL_PER_DEPTH;
+			}
+			return level;
+		}
 		get numScrollsPerTurn(): number { return this.stage.numScrollsPerTurn; }
 
 		private _focus: Unit;
@@ -1494,6 +1543,18 @@
 			this.invalidate();
 		}
 
+		revive(unit: Unit, hex: Hex): void {
+			assert(unit.HP > 0);
+			let { deads } = this;
+			let index = deads.indexOf(unit);
+			assert(index >= 0);
+			deads.splice(index, 1);
+			unit.SP = unit.maxSP;
+			unit.state = new UnitEnter(unit.ch.DEX);
+			this.setUnit(unit, hex);
+			this.snapshots.length = 0;
+		}
+
 		// invalidate caches of ZoC and ActionMap
 		invalidate(): void {
 			this._zoc = undefined;
@@ -1501,7 +1562,14 @@
 		}
 
 		startTurn(): void {
-			this.eachUnit(unit => { unit.onTurnStart(this); });
+			let { team } = this;
+			for (let dead of this.deads) {
+				if (dead.team === team) {	// dead
+					let regen = floor(dead.maxHP * UNIT_REGEN_ON_DEAD);
+					dead.HP = min(dead.maxHP, dead.HP + regen);
+				}
+			}
+			this.eachUnit(unit => unit.onTurnStart(this));
 			this.enabled = true;
 			this.controller.visible = true;
 		}
@@ -1530,7 +1598,7 @@
 
 			this.eachUnit(unit => { unit.onTurnEnd(this); });
 
-			if (this.team === TEAM.PARTY) {
+			if (this.team === TEAM.ALLY) {
 				let { numScrollsPerTurn } = this;
 				if (numScrollsPerTurn > 0) {
 					// kill units scrolled out.
@@ -1632,7 +1700,7 @@
 		findUnit(hex: Hex, next: boolean, filter: (unit: Unit) => boolean): Unit {
 			let { field } = this;
 			let { minXH, maxXH } = field;
-			let dx = ((this.team === TEAM.PARTY ? next : !next) ? 1 : -1);
+			let dx = ((this.team === TEAM.ALLY ? next : !next) ? 1 : -1);
 			let dy = (next ? 1 : -1);
 			let xH: Coord;
 			let yH: Coord;
@@ -1670,24 +1738,27 @@
 			this.dying.push(unit);
 
 			// Check any party unit remains.
-			if (unit.team === TEAM.PARTY && this.parent && this.isGameOver) {
-				this.controller.visible = false;
-				(unit.state || committed).then(() => {
-					Dialog.confirm(this, _("Combat", "GameOver"),
-						{
-							label: _("Combat", "Retire"),
-							click: () => {
-								new FadeOut(this, new Town.Home(this.data)).attach(this.parent);
-							},
-							mnemonic: MNEMONIC_OK
-						}
-					);
-				});
+			if (unit.team === TEAM.ALLY) {
+				this.deads.push(unit);
+				if (this.parent && this.isGameOver) {
+					this.controller.visible = false;
+					(unit.state || committed).then(() => {
+						Dialog.confirm(this, _("Combat", "GameOver"),
+							{
+								label: _("Combat", "Retire"),
+								click: () => {
+									new FadeOut(this, new Town.Home(this.data)).attach(this.parent);
+								},
+								mnemonic: MNEMONIC_OK
+							}
+						);
+					});
+				}
 			}
 		}
 
 		get isGameOver(): boolean {
-			return this.findUnit(null, true, u => u.team === TEAM.PARTY) == null;
+			return this.findUnit(null, true, u => u.team === TEAM.ALLY) == null;
 		}
 
 		createPopup(text: string, color: CanvasStyle, hex: Hex): Animation {
@@ -1805,7 +1876,7 @@
 				}
 				// ensure field in display
 				for (let xH = max(minXH2, maxXH1); xH < maxXH2; ++xH) {
-					field.setLine(xH, this.stage.generate(field, xH));
+					field.setLine(xH, this.stage.generate(this, xH));
 				}
 			}
 		}
@@ -1989,7 +2060,7 @@
 				const PANAL_NAME_Y: Pixel = MARGIN;
 				let MVW = (unit.SP >= unit.cost ? floor((unit.SP - unit.cost) / unit.step) : "-");
 				drawText(g,
-					`${unit.name}\n` +
+					`${unit.name} / Lv: ${toFixed(unit.level)}\n` +
 					`HP: ${unit.HP} / ${unit.maxHP}\n` +
 					`SP: ${unit.SP} / ${unit.maxSP}\n` +
 					`MOVE: ${MVW}/${floor(unit.SP / unit.step)}\n` +
@@ -2353,13 +2424,12 @@
 	//================================================================================
 
 	// TODO: Support units with multiple skills.
-	// TODO: Support skills other than targeting hostile single.
+	// TODO: Improve scoring of skills with multiple-targets.
 
 	const CPU_X_BONUS = 10;			// positional bonus for X-axis per cell X (max<200)
 	const CPU_Y_BONUS = 10;			// positional bonus for Y-axis per cell X (max=20)
 	const CPU_SP_BONUS = 40;		// bonus for remaining SP.
-	const CPU_SKILL_BONUS = 400;	// bonus on using skill.
-	const CPU_DAMAGE_BONUS = 600;	// bonus on dealing damage.
+	const CPU_SKILL_BONUS = 1000;	// bonus on effective use of skill.
 	const CPU_FAVOR_EDGE = 0.1;		// factor for edge of map (<1 means avoid edge)
 	const CPU_SEARCH_SP = 999;		// enough SP to search far units.
 
@@ -2392,24 +2462,34 @@
 		return CPU_SP_BONUS * SP / maxSP;
 	}
 
-	function scoreSkill(field: Field, unit: Unit, xH: Coord, yH: Coord, deltaHP: number): number {
-		assert(unit != null);
-		let score = CPU_SKILL_BONUS;
-		let target = field.rawget(xH, yH).unit;
-		let DMG = -target.trySkill(unit);
-		let { HP } = target;
-		let myDMG = -deltaHP;
-		let myMHP = unit.maxHP;
-		if (DMG > 0 && myDMG > 0) {
-			if (HP <= myDMG) {
-				// can kill this attack; bonus for dealt damage.
-				score += CPU_DAMAGE_BONUS * max(1, DMG / myMHP);
+	function valueOfUnit(scene: Scene, me: Unit, you: Unit): number {
+		let { ch } = me;
+		let best = 0;
+		for (let skill of ch.skills) {
+			let power = ch.powerOf(skill);
+			let value: number;
+			if (skill.hostile) {
+				value = power * (100 - you.DEF) / 100 * pow(BASE_FOR_LEVEL, me.level - you.level) / you.HP;
 			} else {
-				// cannot kill this attack; bonus for dealt damage and dealing damage.
-				score += CPU_DAMAGE_BONUS * max(1, DMG / myMHP) * max(1, myDMG / HP);
+				value = power * pow(BASE_FOR_LEVEL, me.level - scene.level) / me.maxHP;
 			}
+			best = max(value, value);
 		}
-		return score;
+		return min(1, best);
+	}
+
+	function scoreSkill(scene: Scene, me: Unit, xH: Coord, yH: Coord, deltaHP: number): number {
+		assert(me != null);
+		let you = scene.field.rawget(xH, yH).unit;
+		assert(you != null);
+
+		let yourValue = valueOfUnit(scene, you, me);
+		let effectiveHP = (deltaHP < 0
+			? -deltaHP
+			: min(deltaHP, you.maxHP - you.HP)
+		);
+		let myValue = min(1, effectiveHP / you.HP);
+		return CPU_SKILL_BONUS * yourValue * myValue;
 	}
 
 	class CPU extends Component implements Controller {
@@ -2486,7 +2566,7 @@
 					}
 				}
 
-				// Ignore units don't want further more actions but still have SPs to avoid infinite loops.
+				// Ignore units that don't want further actions to avoid infinite loops.
 				if (same(hex, unit.hex)) {
 					ignored.push(unit);
 					scene.focus = null;
@@ -2525,10 +2605,10 @@
 						// Walk and use skill; Score the position shot from.
 						score = scorePosition(unit, shotFrom.xH, shotFrom.yH, minXH, maxXH, edge);
 						// Score the shot at destionation.
-						score += scoreSkill(field, unit, xH, yH, deltaHP);
+						score += scoreSkill(scene, unit, xH, yH, deltaHP);
 						// Calc remaining SP.
 						SP = map.get(shotFrom).SP - cost;
-					} else if (SP >= 0 && field.rawget(xH, yH).empty) {
+					} else if (SP >= 0 && field.get(xH, yH).empty) {
 						// Walk only; Score the position walking to.
 						score = scorePosition(unit, xH, yH, minXH, maxXH, edge);
 					} else {
@@ -2602,7 +2682,7 @@
 		function trySkill(hex: Hex, steps: number) {
 			let target = field.get(hex).unit;
 			if (unit.isTarget(target)) {
-				let deltaHP = unit.trySkill(target);
+				let deltaHP = unit.trySkill(scene, target);
 				if (factor) {
 					deltaHP = factor(deltaHP, steps);
 				}
@@ -2641,7 +2721,7 @@
 		Charge: function(scene: Scene, unit: Unit, hex: Hex): Job {
 			let { field } = scene;
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 			let effect = scene.promiseEffect(target, deltaHP);
 			let action = new UnitCharge(scene, unit.hex, target.hex);
 
@@ -2659,7 +2739,7 @@
 			}
 
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 			let effect = scene.promiseEffect(target, deltaHP, null, hexTo);
 			let action = new UnitCharge(scene, unit.hex, target.hex);
 			let knockback = new UnitWalk([hex, hexTo]);
@@ -2683,7 +2763,7 @@
 
 			let hexFrom = unit.hex;
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 
 			let effect = scene.promiseEffect(target, deltaHP);
 			let action = new UnitWalk([hexFrom, hex]);
@@ -2704,7 +2784,7 @@
 
 			let hexFrom = unit.hex;
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 
 			let effect = scene.promiseEffect(target, deltaHP, null, hexTo);
 			let action = new UnitWalk([hexFrom, hex]);
@@ -2721,14 +2801,14 @@
 		Shoot: function(scene: Scene, unit: Unit, hex: Hex): Job {
 			let { field } = scene;
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 			return standardShoot(scene, unit, target, scene.promiseEffect(target, deltaHP), rgb(255, 128, 0), rgba(255, 128, 0, 0));
 		},
 		// Damage to HP, and also the half to SP.
 		Freeze: function(scene: Scene, unit: Unit, hex: Hex): Job {
 			let { field } = scene;
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 			let deltaSP = floor(deltaHP / 2);
 			return standardShoot(scene, unit, target, scene.promiseEffect(target, deltaHP, deltaSP), rgb(0, 128, 255), rgba(0, 128, 255, 0));
 		},
@@ -2736,7 +2816,7 @@
 		Drain: function(scene: Scene, unit: Unit, hex: Hex): Job {
 			let { field } = scene;
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 
 			let damage = scene.promiseEffect(target, deltaHP);
 			let heal = scene.promiseEffect(unit, -deltaHP)
@@ -2750,7 +2830,7 @@
 		Explode: function(scene: Scene, unit: Unit, hex: Hex): Job {
 			let { field } = scene;
 			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(target);
+			let deltaHP = unit.trySkill(scene, target);
 
 			let action = shootProjectile(scene, unit.hex, target.hex, rgb(255, 128, 0), rgba(255, 128, 0, 0));
 			let nova = asJob(() => standardNova(scene, unit, hex, 1, { r: 255, g: 128, b: 0 }, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
@@ -2769,7 +2849,7 @@
 			field.straight(hexFrom, hex, range, hex => {
 				let target = field.get(hex).unit;
 				if (unit.isTarget(target)) {
-					let deltaHP = unit.trySkill(target);
+					let deltaHP = unit.trySkill(scene, target);
 					let effect = scene.promiseEffect(target, deltaHP);
 					effect.attach(scene);
 					effects.push(effect);

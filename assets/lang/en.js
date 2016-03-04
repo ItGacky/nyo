@@ -83,7 +83,9 @@
 		PartyTurn: "Your Turn",
 		EnemyTurn: "Enemies' Turn",
 		CannotUndo: "Cannot undo.",
-		UnitNotAvailable: "No unit available."
+		UnitNotAvailable: "No unit available.",
+		CannotRevive: "Cannot revive yet.",
+		NoSpaceToRevive: "No space to revive."
 	},
 	Character: {
 		Name: "Name",

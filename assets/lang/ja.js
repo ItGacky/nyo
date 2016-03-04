@@ -83,7 +83,9 @@
 		PartyTurn: "味方ターン",
 		EnemyTurn: "敵ターン",
 		CannotUndo: "やり直せません。",
-		UnitNotAvailable: "ユニットがありません。"
+		UnitNotAvailable: "ユニットがありません。",
+		CannotRevive: "まだ復帰できません。",
+		NoSpaceToRevive: "復帰する場所がありません。"
 	},
 	Character: {
 		Name: "名前",
