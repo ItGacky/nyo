@@ -935,11 +935,11 @@
 	class ActionMap extends HexMap<ActionResult> {
 		static DUMMY: ActionResult = { SP: -1 };
 
-		constructor(scene: Scene, unit: Unit, zoc: ZoC) {
+		constructor(scene: Scene, unit: Unit, baseSP: number) {
 			let { field } = scene;
 			super(field.depth, ActionMap.DUMMY);
+			let zoc = scene.zoc[unit.team];
 			let { step, cost, hex } = unit;
-			let baseSP = unit.SP;
 			this.ensure(hex).SP = baseSP;
 			// walk/dash
 			if (baseSP >= step + zoc.get(hex)) {
@@ -955,7 +955,7 @@
 							let cell = field.rawget(near);
 							if (cell && cell.type === CELL.NORMAL && !unit.isEnemy(cell.unit)) {
 								let r = this.ensure(near);
-								if (r.SP < remain) {
+								if (r.SP < remain || (r.SP === remain && field.get(from).empty && !field.get(r.comeFrom).empty)) {
 									r.SP = remain;
 									r.comeFrom = from;
 									if (remain >= step + zoc.get(near)) {
@@ -984,15 +984,15 @@
 					let { field, numScrollsPerTurn } = scene;
 
 					// XXX: This evaluation function can be moved to CPU class.
-					let L = this.get(from);
+					let spL = this.get(from).SP;
 					let zL = zoc.get(from);
 					let yL = abs(from.yH * 2 + from.xH % 2 - MAP_H);
 					let edge = field.minXH + numScrollsPerTurn;
 					let edgeL = (from.xH < edge);
 					let better = (rhs: Hex): boolean => {
-						let R = this.get(rhs);
-						if (L.SP > R.SP) { return true; }
-						if (L.SP < R.SP) { return false; }
+						let spR = this.get(rhs).SP;
+						if (spL > spR) { return true; }
+						if (spL < spR) { return false; }
 						let edgeR = (rhs.xH < edge);
 						if (!edgeL && edgeR) { return true; }
 						if (edgeL && !edgeR) { return false; }
@@ -1423,14 +1423,14 @@
 		mapFor(unit: Unit): ActionMap {
 			if (!unit || !this.enabled) { return undefined; }
 
-			let { zoc, maps } = this;
+			let { maps } = this;
 			if (!maps) {
 				this.maps = maps = new HexMap<ActionMap>(this.field.depth);
 			}
 			let { hex } = unit;
 			let map = maps.rawget(hex);
 			if (map == null) {
-				map = new ActionMap(this, unit, zoc[unit.team]);
+				map = new ActionMap(this, unit, unit.SP);
 				maps.set(map, hex);
 			}
 			return map;
@@ -1496,7 +1496,7 @@
 
 		// invalidate caches of ZoC and ActionMap
 		invalidate(): void {
-			this.zoc = undefined;
+			this._zoc = undefined;
 			this.maps = undefined;
 		}
 
@@ -2354,7 +2354,6 @@
 
 	// TODO: Support units with multiple skills.
 	// TODO: Support skills other than targeting hostile single.
-	// TODO: 複数ターンに渡る最適化のサポート。障害物の回り込みや遠くの標的に近づくため、いったんスコアが下がる選択ができるように。
 
 	const CPU_X_BONUS = 10;			// positional bonus for X-axis per cell X (max<200)
 	const CPU_Y_BONUS = 10;			// positional bonus for Y-axis per cell X (max=20)
@@ -2362,6 +2361,7 @@
 	const CPU_SKILL_BONUS = 400;	// bonus on using skill.
 	const CPU_DAMAGE_BONUS = 600;	// bonus on dealing damage.
 	const CPU_FAVOR_EDGE = 0.1;		// factor for edge of map (<1 means avoid edge)
+	const CPU_SEARCH_SP = 999;		// enough SP to search far units.
 
 	function scorePosition(unit: Unit, xH: Coord, yH: Coord, minXH: Coord, maxXH: Coord, edgeXH: Coord): number {
 		let score = 0;
@@ -2405,7 +2405,7 @@
 				// can kill this attack; bonus for dealt damage.
 				score += CPU_DAMAGE_BONUS * max(1, DMG / myMHP);
 			} else {
-				// cannnot kill this attack; bonus for dealt damage and dealing damage.
+				// cannot kill this attack; bonus for dealt damage and dealing damage.
 				score += CPU_DAMAGE_BONUS * max(1, DMG / myMHP) * max(1, myDMG / HP);
 			}
 		}
@@ -2459,17 +2459,66 @@
 				return focus;
 			}
 
+			interface Score {
+				hex: Hex;
+				score: number;
+			}
+
 			function move(scene: Scene, unit: Unit, ignored: Unit[]): Job {
-				let { field, numScrollsPerTurn } = scene;
 				let map = scene.mapFor(unit);
+				let best = getBestMovement(scene, unit, map);
+				let { hex } = best;
+
+				// If unit cannot shoot, enter search-mode.
+				if (map.get(hex).deltaHP == null && unit.SP >= unit.maxSP) {
+					let search = new ActionMap(scene, unit, CPU_SEARCH_SP);
+					hex = getBestMovement(scene, unit, search, best).hex;
+					let r = search.get(hex);
+					if (r.deltaHP != null) {
+						hex = r.shotFrom;
+					}
+					let { field } = scene;
+					while (hex && (map.get(hex).SP < 0 || !field.get(hex).empty)) {
+						hex = search.get(hex).comeFrom;
+					}
+					if (hex == null) {
+						hex = unit.hex;
+					}
+				}
+
+				// Ignore units don't want further more actions but still have SPs to avoid infinite loops.
+				if (same(hex, unit.hex)) {
+					ignored.push(unit);
+					scene.focus = null;
+					return null;
+				}
+
+				// Reset ignored list.
+				ignored.length = 0;
+				this.caret = hex;
+				let { PICK } = config.wait;
+				if (PICK > 0) {
+					let job = asJob(() => scene.move(unit, hex));
+					new Animation(PICK).then(job).attach(scene);	// just delay
+					return job;
+				} else {
+					return scene.move(unit, hex);
+				}
+			}
+
+			function getBestMovement(scene: Scene, unit: Unit, map: ActionMap, best?: Score): Score {
+				let { field, numScrollsPerTurn } = scene;
 				let { minXH, maxXH } = field;
 				let { maxSP, hex, cost } = unit;
 				let edge = minXH + numScrollsPerTurn;
 
 				// Baseline is "noop".
-				let hexBest = hex;
-				let scoreBest = scorePosition(unit, hex.xH, hex.yH, minXH, maxXH, edge) + scoreSP(unit.SP, maxSP, cost);
-
+				if (!best) {
+					best = {
+						hex: hex,
+						score: scorePosition(unit, hex.xH, hex.yH, minXH, maxXH, edge) + scoreSP(unit.SP, maxSP, cost)
+					}
+				}
 				map.each(({ SP, deltaHP, shotFrom }, xH, yH) => {
 					let score: number;
 					if (deltaHP != null) {
@@ -2490,30 +2539,12 @@
 					// Bonus for remaining cost.
 					score += scoreSP(SP, maxSP, cost);
 
-					if (scoreBest < score) {
-						scoreBest = score;
-						hexBest = { xH, yH };
+					if (best.score < score) {
+						best.score = score;
+						best.hex = { xH, yH };
 					}
 				});
-
-				// Ignore units don't want further more actions but still have SPs to avoid infinite loops.
-				if (same(hexBest, hex)) {
-					ignored.push(unit);
-					scene.focus = null;
-					return null;
-				}
-
-				// Reset ignored list.
-				ignored.length = 0;
-				this.caret = hexBest;
-				let { PICK } = config.wait;
-				if (PICK > 0) {
-					let job = asJob(() => scene.move(unit, hexBest));
-					new Animation(PICK).then(job).attach(scene);	// just delay
-					return job;
-				} else {
-					return scene.move(unit, hexBest);
-				}
+				return best;
 			}
 		}
 	}

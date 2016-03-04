@@ -99,13 +99,13 @@ function drawRect(
 	if (w > 0 && h > 0) {
 		g.save();
 		setupStyle(g, style);
-		let lineWidth = (g.lineWidth || 0);
-		x += lineWidth / 2;
-		y += lineWidth / 2;
-		w -= lineWidth;
-		h -= lineWidth;
-		if (!style || style.fillStyle) { g.fillRect(x, y, w, h); }
-		if (!style || style.strokeStyle) { g.strokeRect(x, y, w, h); }
+		if (!style || style.fillStyle) {
+			g.fillRect(x, y, w, h);
+		}
+		if (!style || style.strokeStyle) {
+			let offset = g.lineWidth - 1;
+			g.strokeRect(x + offset / 2, y + offset / 2, w - offset, h - offset);
+		}
 		g.restore();
 	}
 }

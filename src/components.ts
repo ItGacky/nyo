@@ -13,8 +13,6 @@ interface Logger {
 	error(message: any): void;
 }
 
-let logger: Logger;
-
 const LOG_STYLE: TextStyle = {
 	fontSize: 32,
 	fillStyle: "white",
