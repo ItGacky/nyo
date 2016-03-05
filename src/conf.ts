@@ -44,24 +44,24 @@ const BAR_STYLE_HP: UnitBarStyle = {
 	delta: rgb(255, 51, 0),
 	normal: rgb(153, 204, 0),
 	full: rgb(0, 204, 51)
-}
+};
 
 const BAR_STYLE_SP: UnitBarStyle = {
 	bkgnd: rgba(0, 0, 0, 0.6),
 	delta: rgb(0, 51, 102),
 	normal: rgb(0, 153, 204),
 	full: rgb(0, 153, 255)
-}
+};
 
 // config.effects
 
-interface CPU_WAIT {
+interface EfeectConfig {
 	PICK: Duration;	// delay per pick
 	WALK: boolean;	// wait walking animation?
 	POPUP: boolean;	// wait damage popup?
 }
 
-const CPU_WAIT: CPU_WAIT[] = [
+const CPU_WAIT: EfeectConfig[] = [
 	{
 		PICK: 0,
 		WALK: false,

@@ -224,11 +224,11 @@ class Dialog extends Composite {
 		let self = new Dialog();
 		new Gallery(0, 0, SCREEN_W, SCREEN_H, new Label(message, CONFIRM_TEXT_STYLE, DLG_BKGND_STYLE)).attach(self);
 
-		let len = options.length;
-		let MODAL_BUTTON_W = SCREEN_W / (3 + options.length);
+		let { length } = options;
+		let MODAL_BUTTON_W = SCREEN_W / (3 + length);
 		let MODAL_BUTTON_MARGIN = MODAL_BUTTON_W / 8;
-		let MODAL_BUTTON_X = (SCREEN_W - MODAL_BUTTON_W * len - MODAL_BUTTON_MARGIN * (len - 1)) / 2;
-		for (let i = 0; i < len; ++i) {
+		let MODAL_BUTTON_X = (SCREEN_W - MODAL_BUTTON_W * length - MODAL_BUTTON_MARGIN * (length - 1)) / 2;
+		for (let i = 0; i < length; ++i) {
 			let { label, click, mnemonic } = options[i];
 			new Button(MODAL_BUTTON_X + (MODAL_BUTTON_W + MODAL_BUTTON_MARGIN) * i, CONFIRM_BUTTON_Y, MODAL_BUTTON_W, CONFIRM_BUTTON_H,
 				new Label(label),
@@ -268,7 +268,7 @@ class Widget extends Component implements XYWH {
 		return this.x + this.w;
 	}
 	set right(value: Pixel) {
-		this.w = value - this.x
+		this.w = value - this.x;
 	}
 
 	get top(): Pixel {
@@ -406,7 +406,7 @@ class Button extends Widget {
 					break;
 			}
 		}
-	}
+	};
 
 	get enabled(): boolean { return true; }
 	set enabled(value: boolean) { defineProperty(this, "enabled", value); }
@@ -551,7 +551,7 @@ class SwappableButton extends Button {
 				yFrom: this.y,
 				xTo: xOrig,
 				yTo: yOrig
-			}
+			};
 			this.dragged = null;
 			if (this.pressed) {
 				this.pressed = null;
@@ -710,34 +710,34 @@ class ListView<T> extends Widget {
 	}
 
 	onDown(x: Pixel, y: Pixel): void {
-		if (!this.contains(x, y)) { return }
+		if (!this.contains(x, y)) { return; }
 		this.hover = this.dragged = this.toRowIndex(x, y);
 		if (this.dragged != null) { return; }
 		let { headerHeight, scrollBarWidth } = this.design;
-		let wItems = this.w - scrollBarWidth
-		let yItems = this.y + headerHeight
+		let wItems = this.w - scrollBarWidth;
+		let yItems = this.y + headerHeight;
 		if (this.x <= x && x < this.x + wItems && this.y <= y && y < yItems) {
 			// header
-			let col = this.toColumnIndex(x, y)
+			let col = this.toColumnIndex(x, y);
 			if (col != null) {
 				this.sort(col, (this.sortkeys != null && this.sortkeys[0] === col + 1));
 			}
 		} else if (this.x + wItems <= x && x < this.right) {
 			// scroll bar
-			let nRows = this.rows.length
-			let nDisp = this.displayCount
-			let hItems = this.h - headerHeight
-			let yScroll = yItems + hItems * this.topRow / nRows
-			let hScroll = hItems * nDisp / nRows
+			let nRows = this.rows.length;
+			let nDisp = this.displayCount;
+			let hItems = this.h - headerHeight;
+			let yScroll = yItems + hItems * this.topRow / nRows;
+			let hScroll = hItems * nDisp / nRows;
 			if (yItems <= y && y < yScroll) {
-				this.scrollTo(floor(nRows * (y - yItems) / hItems))
-				yScroll = yItems + hItems * this.topRow / nRows
+				this.scrollTo(floor(nRows * (y - yItems) / hItems));
+				yScroll = yItems + hItems * this.topRow / nRows;
 			} else if (yScroll + hScroll <= y && y < this.bottom) {
-				this.scrollTo(floor(nRows * (y - yItems) / hItems) - nDisp + 1)
-				yScroll = yItems + hItems * this.topRow / nRows
+				this.scrollTo(floor(nRows * (y - yItems) / hItems) - nDisp + 1);
+				yScroll = yItems + hItems * this.topRow / nRows;
 			}
 			if (yScroll <= y && y < yScroll + hScroll) {
-				this.scrolling = y - yScroll
+				this.scrolling = y - yScroll;
 			}
 		}
 	}
@@ -773,8 +773,8 @@ class ListView<T> extends Widget {
 		let wItems = this.w - scrollBarWidth;
 		let hItems = this.h - headerHeight;
 		let xScroll = this.x + wItems;
-		let yScroll = (nRows > 0 && hItems * this.topRow / nRows || 0) + yItems
-		let hScroll = (nRows > 0 && hItems * nDisp / nRows || hItems)
+		let yScroll = (nRows > 0 && hItems * this.topRow / nRows || 0) + yItems;
+		let hScroll = (nRows > 0 && hItems * nDisp / nRows || hItems);
 		let wAuto = this.defaultColumnWidth;
 		// background
 		design.drawHeader(g, this.x, this.y, this.w, headerHeight);
@@ -822,7 +822,7 @@ class ListView<T> extends Widget {
 					}
 					g.fillText(value, xRow, yRow + hRow / 2, wRow);
 				}
-				ww += wHeader
+				ww += wHeader;
 			}
 		}
 		g.restore();
@@ -845,7 +845,7 @@ class ListView<T> extends Widget {
 				g.stroke();
 			}
 			g.fillText(c.name.localized, xHeader + wHeader / 2, this.y + headerHeight / 2);
-			ww += wHeader
+			ww += wHeader;
 		}
 		g.restore();
 		// empty message
@@ -922,7 +922,7 @@ class ListView<T> extends Widget {
 		let { design } = this;
 		let wItems = this.w - design.scrollBarWidth;
 		if (this.x <= x && x < this.x + wItems) {
-			let n = this.topRow + floor((y - this.y - design.headerHeight) / design.rowHeight)
+			let n = this.topRow + floor((y - this.y - design.headerHeight) / design.rowHeight);
 			if (this.topRow <= n && n < this.rows.length) {
 				return n;
 			}
@@ -1074,7 +1074,7 @@ class Slider extends Widget {
 			}
 			drawRect(g, knob, style);
 		}
-	}
+	};
 
 	private getValueAsX(): Pixel {
 		let wKnob = this.design.knobWidth;

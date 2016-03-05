@@ -39,7 +39,7 @@ type TextBaseline = "top" | "middle" | "bottom";	// FIXME: support "hanging" | "
 interface ShapeStyle {
 	fillStyle?: CanvasStyle;
 	strokeStyle?: CanvasStyle;
-	globalAlpha?: Alpha,
+	globalAlpha?: Alpha;
 	lineWidth?: Pixel;
 }
 
@@ -287,7 +287,7 @@ type Byte = number;		// integer of [0, 255]
 type Alpha = number;	// real of [0, 1]
 
 function toFixed(n: number, fractionDigits: number): string {
-	return n.toFixed(fractionDigits).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, '$1');
+	return n.toFixed(fractionDigits).replace(/([0-9]+(\.[0-9]+[1-9])?)(\.?0+$)/, "$1");
 }
 
 function rgb(r: Byte, g: Byte, b: Byte): CanvasStyleString {

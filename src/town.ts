@@ -214,8 +214,8 @@
 				let wHP = (wBar - 2) * HP / maxHP;
 				g.strokeStyle = "black";
 				g.fillStyle = BAR_STYLE_HP.full;
-				g.fillRect(xBar, yHP, wHP, hBar)
-				g.strokeRect(xBar, yHP, wHP, hBar)
+				g.fillRect(xBar, yHP, wHP, hBar);
+				g.strokeRect(xBar, yHP, wHP, hBar);
 				// HP value
 				drawTextBox(g, HP.toString(), xBar + 4, yHP - 20, wBar, 20, {
 					fontSize: 20,

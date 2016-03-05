@@ -20,7 +20,7 @@ const config = new (class implements CanvasConfig {
 	private _magnifyCanvas: boolean = false;
 	get magnifyCanvas() { return this._magnifyCanvas; }
 	set magnifyCanvas(value: boolean) {
-		if (this._magnifyCanvas != value) {
+		if (this._magnifyCanvas !== value) {
 			this._magnifyCanvas = value;
 			window.dispatchEvent(new UIEvent("resize"));
 		}
@@ -29,13 +29,13 @@ const config = new (class implements CanvasConfig {
 	private _refineCanvas: boolean = false;
 	get refineCanvas() { return this._refineCanvas; }
 	set refineCanvas(value: boolean) {
-		if (this._refineCanvas != value) {
+		if (this._refineCanvas !== value) {
 			this._refineCanvas = value;
 			window.dispatchEvent(new UIEvent("resize"));
 		}
 	}
 
-	get wait(): CPU_WAIT { return CPU_WAIT[this.effects.value]; }
+	get wait(): EfeectConfig { return CPU_WAIT[this.effects.value]; }
 });
 
 //================================================================================
@@ -220,7 +220,7 @@ System.main = function(canvas: HTMLCanvasElement, resume: boolean): void {
 			children[length - 1].detach();
 		}
 		new FadeIn(new Title.Scene()).attach(scene);
-	}
+	};
 
 	loadConfig();
 
@@ -231,8 +231,8 @@ System.main = function(canvas: HTMLCanvasElement, resume: boolean): void {
 		saveConfig();
 		// TODO: This should save components. It requires serialize with class name.
 		//System.setLocalStorage(CHECKPOINT_KEY, stringify( { root: toJSON(root.children) } ));
-	}
-}
+	};
+};
 
 //================================================================================
 

@@ -16,4 +16,4 @@ const ENCHANTS: { [EID: string/*EnchantID*/]: EnchantDef } = {
 		max: 10,
 		ATK: enchantAddedATK
 	}
-}
+};

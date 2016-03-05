@@ -268,6 +268,9 @@
 		return team === TEAM.ALLY ? TEAM.ENEMY : TEAM.ALLY;
 	}
 
+	type Action = (scene: Scene, unit: Unit, hex: Hex) => Job;
+	let ACTIONS: { [key: string]: Action };
+
 	//================================================================================
 	// Hex
 	//================================================================================
@@ -876,7 +879,7 @@
 				g.fillRect(x, y, remain - 1, h);
 			}
 			g.fillStyle = style.delta;
-			g.fillRect(x + remain, y, w * (ratio - after), h)
+			g.fillRect(x + remain, y, w * (ratio - after), h);
 		} else {
 			g.fillStyle = (ratio >= 1 ? style.full : style.normal);
 			g.fillRect(x, y, w * ratio, h);
@@ -1009,7 +1012,7 @@
 						if (from.xH < rhs.xH) { return true; }
 						if (from.xH > rhs.xH) { return false; }
 						return yL < abs(rhs.yH * 2 + rhs.xH % 2 - MAP_H);
-					}
+					};
 
 					field.surround(from, range, hex => {
 						if (!same(hex, hexUnit)) {
@@ -1075,7 +1078,7 @@
 					}
 				}
 				return undefined;
-			}
+			};
 
 			super(x, y, w, h, group, new Label(label, SkillButton.textStyle), equip, exchange);
 			this.scene = scene;
@@ -1296,7 +1299,7 @@
 				}
 				function click() {
 					if (unit.hex) {
-						() => human.click(unit.hex);
+						human.click(unit.hex);
 					} else {
 						if (unit.HP / unit.maxHP >= UNIT_REVIVE_HP) {
 							let xH = field.minXH;
@@ -1662,7 +1665,7 @@
 					this.snapshots.length = 0;
 					this.invalidate();
 					return unit.shoot(this, hex).then(finish);
-				}
+				};
 
 				// fast path for shoot only
 				if (unit.canTarget(field, hex)) {
@@ -1800,7 +1803,7 @@
 					this.kill(target);
 				}
 				return attach.call(popup, parent);
-			}
+			};
 			return popup;
 		}
 
@@ -2083,10 +2086,6 @@
 	}
 
 	class Human extends Component implements Controller {
-		constructor() {
-			super();
-		}
-
 		private mode: Caret = Caret.Unlocked;
 
 		private _caret: Hex;
@@ -2170,7 +2169,7 @@
 			}
 
 			let { focus } = scene;
-			if (focus == null || scene.team != focus.team) {
+			if (focus == null || scene.team !== focus.team) {
 				this.mode = Caret.Unlocked;	// click on enemy
 				return;
 			}
@@ -2597,7 +2596,7 @@
 					best = {
 						hex: hex,
 						score: scorePosition(unit, hex.xH, hex.yH, minXH, maxXH, edge) + scoreSP(unit.SP, maxSP, cost)
-					}
+					};
 				}
 				map.each(({ SP, deltaHP, shotFrom }, xH, yH) => {
 					let score: number;
@@ -2644,6 +2643,18 @@
 		return rearHex;
 	}
 
+	function standardCharge(scene: Scene, unit: Unit, hex: Hex): Job {
+		let { field } = scene;
+		let target = field.get(hex).unit;
+		let deltaHP = unit.trySkill(scene, target);
+		let effect = scene.promiseEffect(target, deltaHP);
+		let action = new UnitCharge(scene, unit.hex, target.hex);
+
+		unit.state = action;
+		action.hit(() => { effect.attach(scene); });
+		return (config.wait.POPUP ? new ParallelJob([effect, action]) : action);
+	}
+
 	function shootProjectile(scene: Scene, hexFrom: Hex, hexTo: Hex, innerStyle: CanvasStyleString, outerStyle: CanvasStyleString): Animation {
 		let dx = scene.toX(hexFrom) - scene.toX(hexTo);
 		let dy = scene.toY(hexFrom) - scene.toY(hexTo);
@@ -2664,7 +2675,7 @@
 
 	function standardShoot(scene: Scene, unit: Unit, target: Unit, effect: Animation, innerStyle: CanvasStyleString, outerStyle: CanvasStyleString): Animation {
 		let action = shootProjectile(scene, unit.hex, target.hex, innerStyle, outerStyle);
-		action.then(() => { effect.attach(scene) });
+		action.then(() => effect.attach(scene));
 		return (config.wait.POPUP ? effect : action);
 	}
 
@@ -2714,28 +2725,16 @@
 		}
 	}
 
-	type Action = (scene: Scene, unit: Unit, hex: Hex) => Job;
-
-	const ACTIONS: { [key: string]: Action } = {
+	ACTIONS = {
 		// Charge tha target and come back.
-		Charge: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			let { field } = scene;
-			let target = field.get(hex).unit;
-			let deltaHP = unit.trySkill(scene, target);
-			let effect = scene.promiseEffect(target, deltaHP);
-			let action = new UnitCharge(scene, unit.hex, target.hex);
-
-			unit.state = action;
-			action.hit(() => { effect.attach(scene); });
-			return (config.wait.POPUP ? new ParallelJob([effect, action]) : action);
-		},
+		Charge: standardCharge,
 		// Knockback the target.
 		Knockback: function(scene: Scene, unit: Unit, hex: Hex): Job {
 			let { field } = scene;
 
 			let hexTo: Hex = rearHexOf(field, unit.hex, hex);
 			if (hexTo == null) {
-				return ACTIONS["Charge"](scene, unit, hex);	// no space; just charge
+				return standardCharge(scene, unit, hex);	// no space; just charge
 			}
 
 			let target = field.get(hex).unit;
@@ -2758,7 +2757,7 @@
 
 			let hexTo: Hex = rearHexOf(field, unit.hex, hex);
 			if (hexTo == null) {
-				return ACTIONS["Charge"](scene, unit, hex);	// no space; just charge
+				return standardCharge(scene, unit, hex);	// no space; just charge
 			}
 
 			let hexFrom = unit.hex;
@@ -2779,7 +2778,7 @@
 
 			let hexTo: Hex = rearHexOf(field, unit.hex, hex);
 			if (hexTo == null) {
-				return ACTIONS["Charge"](scene, unit, hex);	// no space; just charge
+				return standardCharge(scene, unit, hex);	// no space; just charge
 			}
 
 			let hexFrom = unit.hex;
@@ -2819,9 +2818,9 @@
 			let deltaHP = unit.trySkill(scene, target);
 
 			let damage = scene.promiseEffect(target, deltaHP);
-			let heal = scene.promiseEffect(unit, -deltaHP)
+			let heal = scene.promiseEffect(unit, -deltaHP);
 			let action = shootProjectile(scene, target.hex, unit.hex, rgb(255, 0, 128), rgba(255, 0, 128, 0));
-			action.then(() => { heal.attach(scene) });
+			action.then(() => heal.attach(scene));
 			damage.attach(scene);
 
 			return (config.wait.POPUP ? heal : action);

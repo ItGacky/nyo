@@ -16,7 +16,7 @@ const CANVAS_RESIZE_DELAY: Duration = 300;
 //================================================================================
 
 interface Dictionary {
-	[id: string]: string | Dictionary
+	[id: string]: string | Dictionary;
 }
 
 interface System {
@@ -64,8 +64,8 @@ function now(): Timestamp {
 	return performance.now() as Timestamp;	// NOTE: required performance as "this".
 }
 
-function clamp<T>(min: T, max: T, value: T): T {
-	return value < min ? min : value > max ? max : value;
+function clamp<T>(lo: T, hi: T, value: T): T {
+	return value < lo ? lo : value > hi ? hi : value;
 }
 
 function coalesce<A1, A2>(a1: A1, a2: A2): A1 | A2 {
@@ -391,7 +391,7 @@ function _(...src: string[]): Word {
 
 System.localize = function(lang: string, dict: Dictionary): void {
 	Word.languages[lang] = dict;
-}
+};
 
 //================================================================================
 // Components
@@ -578,12 +578,12 @@ if (DEBUG) {
 	CanvasRenderingContext2D.prototype.save = function() {
 		this.debugSaveAndRestoreCount = (this.debugSaveAndRestoreCount || 0) + 1;
 		save.call(this);
-	}
+	};
 
 	CanvasRenderingContext2D.prototype.restore = function() {
 		this.debugSaveAndRestoreCount = this.debugSaveAndRestoreCount - 1;
 		restore.call(this);
-	}
+	};
 
 	Composite.prototype.onDraw = function(g: CanvasRenderingContext2D, when: Timestamp): void {
 		let before = (g.debugSaveAndRestoreCount || 0);
@@ -597,7 +597,7 @@ if (DEBUG) {
 				}
 			}
 		}
-	}
+	};
 }
 
 //================================================================================
@@ -694,7 +694,7 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 				w = logicalWidth;
 				h = logicalHeight;
 			}
-			if (canvas.width != w || canvas.width != w) {
+			if (canvas.width !== w || canvas.width !== w) {
 				canvas.width = w;
 				canvas.height = h;
 			}
