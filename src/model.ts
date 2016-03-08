@@ -13,20 +13,25 @@ let TAG2NAME: Word[];
 
 function tags2str(tags: TAG[]): string {
 	if (TAG2NAME == null) {
+		// NOTE: Order of tag names must match with TAG.
 		TAG2NAME = [
 			_("Tag", "Melee"),
 			_("Tag", "Throw"),
 			_("Tag", "Shoot"),
+			_("Tag", "Magic"),
+			_("Tag", "Alchemy"),
+			_("Tag", "Slash"),
+			_("Tag", "Blunt"),
+			_("Tag", "Pierce"),
 			_("Tag", "Shield"),
 			_("Tag", "Head"),
 			_("Tag", "Body"),
 			_("Tag", "Arms"),
 			_("Tag", "Legs"),
-			_("Tag", "Slash"),
-			_("Tag", "Blunt"),
-			_("Tag", "Pierce"),
-			_("Tag", "Magic"),
-			_("Tag", "Alchemy")
+			_("Tag", "Fire"),
+			_("Tag", "Cold"),
+			_("Tag", "Lightning"),
+			_("Tag", "Life")
 		];
 	}
 	return tags.map(tag => TAG2NAME[tag].localized).join(", ");
@@ -40,11 +45,12 @@ function tags2bits(tags: TAG[]): number {
 	return bits;
 }
 
+const TAGBITS_WEAPON = tags2bits([TAG.MELEE, TAG.THROW, TAG.SHOOT, TAG.MAGIC, TAG.ALCHEMY, TAG.SLASH, TAG.BLUNT, TAG.PIERCE]);
+const TAGBITS_ARMORS = tags2bits([TAG.SHIELD, TAG.HEAD, TAG.BODY, TAG.ARMS, TAG.LEGS]);
+
 //================================================================================
 // Target
 //================================================================================
-
-const TAGBITS_CONFLICT = tags2bits([TAG.SHIELD, TAG.HEAD, TAG.BODY, TAG.ARMS, TAG.LEGS]);
 
 function isHostile(target: TARGET): boolean {
 	switch (target) {
@@ -249,10 +255,12 @@ class Skill implements ToJSON<SkillArchive> {
 	get power() { return this.def.power; }
 	get target() { return this.def.target; }
 	get hostile() { return isHostile(this.def.target); }
-	get action() { return this.def.aciton; }
+	get effect() { return this.def.effect; }
+	get action() { return this.def.action; }
 
 	match(item: Item): boolean {
-		return (this.tagbits & item.tagbits) === this.tagbits;
+		let required = (this.tagbits & TAGBITS_WEAPON);
+		return (required & item.tagbits) === required;
 	}
 
 	static nameOf(SID: SkillID): Word {

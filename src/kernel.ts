@@ -694,7 +694,7 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 				w = logicalWidth;
 				h = logicalHeight;
 			}
-			if (canvas.width !== w || canvas.width !== w) {
+			if (canvas.width !== w || canvas.height !== h) {
 				canvas.width = w;
 				canvas.height = h;
 			}

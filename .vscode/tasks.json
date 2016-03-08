@@ -10,30 +10,26 @@
 	"command": "cmd",
 	"isShellCommand": true,
 	"showOutput": "silent",
-	"args": [],
+	"suppressTaskName": true,
+	"args": ["/C"],
 	"tasks": [
 		{
 			"taskName": "build",
-			"suppressTaskName": false,
-			"args": [ "/C tsc -p src --outFile bld/main.js" ],
+			"args": [ "tsc", "-p", "src", "--outFile", "bld/main.js" ],
 			"problemMatcher": "$tsc"
 		},
 		{
 			"taskName": "clean",
-			"suppressTaskName": false,
-			"args": [ "/C tools\\clean.cmd" ],
+			"args": [ "tools\\clean.cmd" ],
 			"showOutput": "never"
 		},
 		{
 			"taskName": "release",
-			"suppressTaskName": false,
-			"args": [ "/C tools\\release.cmd" ],
-			"showOutput": "silent"
+			"args": [ "tools\\release.cmd" ]
 		},
 		{
 			"taskName": "test",
-			"suppressTaskName": false,
-			"args": [ "/C start index-debug.html" ],
+			"args": [ "start", "index-debug.html" ],
 			"showOutput": "never"
 		}
 	]

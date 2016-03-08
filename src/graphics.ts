@@ -304,6 +304,10 @@ interface RGB {
 	b: Byte;
 }
 
+function RGBtoString(color: RGB, a?: number): CanvasStyleString {
+	return a == null ? rgb(color.r, color.g, color.b) : rgba(color.r, color.g, color.b, a);
+}
+
 //================================================================================
 // Drawables
 //================================================================================

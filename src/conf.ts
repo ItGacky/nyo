@@ -8,19 +8,26 @@ Word.languages["en"] = URL_LANG + "en.js";
 Word.languages["ja"] = URL_LANG + "ja.js";
 
 const enum TAG {
+	// Weapon Attributes
 	MELEE,
 	THROW,
 	SHOOT,
+	MAGIC,
+	ALCHEMY,
+	SLASH,
+	BLUNT,
+	PIERCE,
+	// Armor Parts
 	SHIELD,
 	HEAD,
 	BODY,
 	ARMS,
 	LEGS,
-	SLASH,
-	BLUNT,
-	PIERCE,
-	MAGIC,
-	ALCHEMY
+	// Effect Types
+	FIRE,
+	COLD,
+	LIGHTNING,
+	LIFE
 }
 
 const enum TARGET {

@@ -97,16 +97,20 @@
 		Melee: "Melee",
 		Throw: "Throw",
 		Shoot: "Shoot",
+		Slash: "Slash",
+		Blunt: "Blunt",
+		Pierce: "Pierce",
+		Magic: "Magic",
+		Alchemy: "Alchemy",
 		Shield: "Shield",
 		Head: "Head",
 		Body: "Body",
 		Arms: "Arms",
 		Legs: "Legs",
-		Slash: "Slash",
-		Blunt: "Blunt",
-		Pierce: "Pierce",
-		Magic: "Magic",
-		Alchemy: "Alchemy"
+		Fire: "Fire",
+		Cold: "Cold",
+		Lightning: "Lightning",
+		Life: "Life"
 	},
 	Enchant: {
 		AddedFire: {

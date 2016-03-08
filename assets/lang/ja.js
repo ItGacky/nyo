@@ -97,16 +97,20 @@
 		Melee: "近接",
 		Throw: "投擲",
 		Shoot: "射撃",
+		Slash: "斬撃",
+		Blunt: "殴打",
+		Pierce: "刺突",
+		Magic: "魔術",
+		Alchemy: "錬金",
 		Shield: "盾",
 		Head: "頭",
 		Body: "胴",
 		Arms: "腕",
 		Legs: "脚",
-		Slash: "斬撃",
-		Blunt: "殴打",
-		Pierce: "刺突",
-		Magic: "魔術",
-		Alchemy: "錬金"
+		Fire: "火炎",
+		Cold: "冷気",
+		Lightning: "電気",
+		Life: "生命"
 	},
 	Enchant: {
 		AddedFire: {

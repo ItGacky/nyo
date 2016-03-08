@@ -4,7 +4,8 @@ interface SkillDef {
 	range: number;	//
 	power: number;	//
 	target: TARGET;
-	aciton: string;
+	effect: string;	//
+	action: string;	//
 }
 
 const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
@@ -14,7 +15,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 0,
 		power: 0,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Charge"
+		effect: "Damage",
+		action: "Charge"
 	},
 	Swing: {
 		tags: [TAG.MELEE],
@@ -22,7 +24,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 100,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Charge"
+		effect: "Damage",
+		action: "Charge"
 	},
 	Slash: {
 		tags: [TAG.MELEE, TAG.SLASH],
@@ -30,7 +33,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 110,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Charge"
+		effect: "Damage",
+		action: "Charge"
 	},
 	CutThrough: {
 		tags: [TAG.MELEE, TAG.SLASH],
@@ -38,7 +42,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 100,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "GoBehind"
+		effect: "Damage",
+		action: "GoBehind"
 	},
 	Sweep: {
 		tags: [TAG.MELEE, TAG.SLASH],
@@ -46,7 +51,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 100,
 		target: TARGET.SURROUND_HOSTILE,
-		aciton: "Nova"
+		effect: "Damage",
+		action: "Nova"
 	},
 	Crash: {
 		tags: [TAG.MELEE, TAG.BLUNT],
@@ -54,7 +60,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 110,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Charge"
+		effect: "Damage",
+		action: "Charge"
 	},
 	Bash: {
 		tags: [TAG.MELEE, TAG.BLUNT],
@@ -62,7 +69,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 100,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Knockback"
+		effect: "Damage",
+		action: "Knockback"
 	},
 	Stab: {
 		tags: [TAG.MELEE, TAG.PIERCE],
@@ -70,7 +78,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 110,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Charge"
+		effect: "Damage",
+		action: "Charge"
 	},
 	Thrust: {
 		tags: [TAG.MELEE, TAG.PIERCE],
@@ -78,7 +87,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 2,
 		power: 100,
 		target: TARGET.STRAIGHT_HOSTILE,
-		aciton: "Laser"
+		effect: "Damage",
+		action: "Laser"
 	},
 	ShieldBash: {
 		tags: [TAG.SHIELD],
@@ -86,7 +96,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 100,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Charge"
+		effect: "Damage",
+		action: "Charge"
 	},
 	ShieldCharge: {
 		tags: [TAG.SHIELD],
@@ -94,7 +105,8 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 1,
 		power: 100,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Trample"
+		effect: "Damage",
+		action: "Trample"
 	},
 	Shoot: {
 		tags: [TAG.SHOOT],
@@ -102,71 +114,80 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		range: 3,
 		power: 100,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Shoot"
+		effect: "Damage",
+		action: "Shoot"
 	},
 	// MAGIC
 	IceSpear: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.MAGIC, TAG.COLD],
 		cost: 16,
 		range: 5,
 		power: 80,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Freeze"
+		effect: "DamageHPandSP",
+		action: "Shoot"
 	},
 	DrainLife: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.MAGIC, TAG.LIFE],
 		cost: 16,
 		range: 5,
 		power: 80,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Drain"
+		effect: "Damage",
+		action: "Drain"
 	},
 	FireBall: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.MAGIC, TAG.FIRE],
 		cost: 16,
 		range: 5,
 		power: 100,
 		target: TARGET.SINGLE_HOSTILE,
-		aciton: "Explode"
+		effect: "Damage",
+		action: "Explode"
 	},
 	LightningLaser: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.MAGIC, TAG.LIGHTNING],
 		cost: 16,
 		range: 5,
 		power: 100,
 		target: TARGET.STRAIGHT_HOSTILE,
-		aciton: "Laser"
+		effect: "Damage",
+		action: "Laser"
 	},
 	FireNova: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.MAGIC, TAG.FIRE],
 		cost: 16,
 		range: 2,
 		power: 100,
 		target: TARGET.SURROUND_HOSTILE,
-		aciton: "Nova"
+		effect: "Damage",
+		action: "Nova"
 	},
 	Heal: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.MAGIC, TAG.LIFE],
 		cost: 24,
 		range: 3,
 		power: 100,
 		target: TARGET.SINGLE_FRIENDLY,
-		aciton: "Shoot"
+		effect: "Heal",
+		action: "Shoot"
 	},
 	PartyHeal: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.MAGIC, TAG.LIFE],
 		cost: 24,
 		range: 1,
 		power: 100,
 		target: TARGET.SURROUND_FRIENDLY,
-		aciton: "Nova"
+		effect: "Heal",
+		action: "Nova"
 	},
 	FirstAid: {
-		tags: [TAG.ALCHEMY],
+		tags: [TAG.ALCHEMY, TAG.LIFE],
 		cost: 24,
 		range: 1,
 		power: 100,
 		target: TARGET.SINGLE_FRIENDLY,
-		aciton: "Charge"
+		effect: "Heal",
+		action: "Charge"
 	}
 };

@@ -493,7 +493,7 @@
 
 	function removeConflictedItems(items: Item[], tagbits: number): Item[] {
 		let conflicted: Item[] = [];
-		tagbits &= TAGBITS_CONFLICT;
+		tagbits &= TAGBITS_ARMORS;
 		if (tagbits !== 0) {
 			for (let i = 0; i < items.length;) {
 				if ((items[i].tagbits & tagbits) !== 0) {
