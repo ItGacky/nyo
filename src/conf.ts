@@ -30,7 +30,8 @@ const enum TAG {
 	LIFE
 }
 
-const enum TARGET {
+const enum USAGE {
+	PASSIVE,
 	SINGLE_HOSTILE,
 	SINGLE_FRIENDLY,
 	STRAIGHT_HOSTILE,

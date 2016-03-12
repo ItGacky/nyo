@@ -24,7 +24,7 @@ function scaleProportionally(wh: WH, wLimit: number, hLimit: number, magnify: bo
 			h = hLimit;
 		}
 	}
-	return { w, h };	// return always a new object.
+	return { w, h };	// always return a new object.
 }
 
 //================================================================================
@@ -195,7 +195,6 @@ function drawTextBox(
 			case "bottom":
 				ty = y + h;
 				break;
-			case "top":
 			default:
 				ty = y;
 				break;
@@ -211,7 +210,6 @@ function drawTextBox(
 			case "bottom":
 				ty = y + h - stride * (lines.length - 1);
 				break;
-			case "top":
 			default:
 				ty = y;
 				break;
@@ -304,7 +302,7 @@ interface RGB {
 	b: Byte;
 }
 
-function RGBtoString(color: RGB, a?: number): CanvasStyleString {
+function RGBtoString(color: RGB, a?: Alpha): CanvasStyleString {
 	return a == null ? rgb(color.r, color.g, color.b) : rgba(color.r, color.g, color.b, a);
 }
 
@@ -381,7 +379,8 @@ class Picture implements Drawable, WH, Job {
 	private sig: Signal;
 
 	then(slot: Slot): this {
-		if (this._image === undefined) {
+		let { _image } = this;
+		if (_image == null) {
 			this.sig = connect(this.sig, slot);
 			this.preload();	// kick to load
 		} else {
@@ -391,7 +390,7 @@ class Picture implements Drawable, WH, Job {
 	}
 
 	preload(): void {
-		assert(this._image === undefined);
+		if (this._image !== undefined) { return; }
 
 		let assign = (image: HTMLImageElement) => {
 			this._image = image;
@@ -431,10 +430,10 @@ class Picture implements Drawable, WH, Job {
 		let { image } = this;
 		let { x, y, w, h } = rect;
 		if (image && w > 0 && h > 0) {
-			g.save();
 			if (!overlayStyle || overlayAlpha <= 0) {
 				g.drawImage(image, x, y, w, h);
 			} else {
+				g.save();
 				g.globalCompositeOperation = "destination-out";
 				g.drawImage(image, x, y, w, h);
 				g.globalCompositeOperation = "destination-over";
@@ -445,8 +444,8 @@ class Picture implements Drawable, WH, Job {
 					g.globalAlpha = (1 - overlayAlpha);
 					g.drawImage(image, x, y, w, h);
 				}
+				g.restore();
 			}
-			g.restore();
 		}
 	}
 }

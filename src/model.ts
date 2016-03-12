@@ -52,11 +52,11 @@ const TAGBITS_ARMORS = tags2bits([TAG.SHIELD, TAG.HEAD, TAG.BODY, TAG.ARMS, TAG.
 // Target
 //================================================================================
 
-function isHostile(target: TARGET): boolean {
+function isHostile(target: USAGE): boolean {
 	switch (target) {
-		case TARGET.SINGLE_FRIENDLY:
-		case TARGET.STRAIGHT_FRIENDLY:
-		case TARGET.SURROUND_FRIENDLY:
+		case USAGE.SINGLE_FRIENDLY:
+		case USAGE.STRAIGHT_FRIENDLY:
+		case USAGE.SURROUND_FRIENDLY:
 			return false;
 		default:
 			return true;
@@ -240,23 +240,26 @@ class Skill implements ToJSON<SkillArchive> {
 	public tagbits: number;
 
 	constructor(public SID: SkillID) {
-		this.def = SKILLS[this.SID];
+		this.def = SKILLS[SID];
 		if (this.def == null) {
-			throw new RangeError(`Skill not found: "${this.SID}"`);
+			throw new RangeError(`Skill not found: "${SID}"`);
 		}
-		this.name = Skill.nameOf(this.SID);
-		this.spec = Skill.specOf(this.SID);
+		this.name = Skill.nameOf(SID);
+		this.spec = Skill.specOf(SID);
 		this.tagbits = tags2bits(this.def.tags);
 	}
 
 	get tags() { return this.def.tags; }
-	get cost() { return this.def.cost; }
-	get range() { return this.def.range; }
-	get power() { return this.def.power; }
-	get target() { return this.def.target; }
-	get hostile() { return isHostile(this.def.target); }
+	get rawCost() { return this.def.cost; }
+	get rawRange() { return this.def.range; }
+	get rawPower() { return this.def.power; }
+	get target() { return this.def.usage; }
+	get hostile() { return isHostile(this.def.usage); }
 	get effect() { return this.def.effect; }
 	get action() { return this.def.action; }
+
+	get isActive(): boolean { return this.effect !== "Aura"; }
+	get isPassive(): boolean { return this.effect === "Aura"; }
 
 	match(item: Item): boolean {
 		let required = (this.tagbits & TAGBITS_WEAPON);
@@ -352,7 +355,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 				new Picture(path + "/fore.png")
 			];
 
-			new ParallelJob(parts).then(() => images.push(
+			join(parts).then(() => images.push(
 				compose(parts[0], parts[1], parts[7]),
 				compose(parts[0], parts[2], parts[7]),
 				compose(parts[0], parts[3], parts[7]),
@@ -418,6 +421,10 @@ class Character implements ToJSON<CharacterArchive>, WH {
 		return max(0, (3 + this.STR) * 4 - penalty);
 	}
 
+	get reservedSP(): number {
+		return this.skills.reduce((total, skill) => total + (skill.isPassive ? this.costOf(skill) : 0), 0);
+	}
+
 	get step(): number { return (13 - this.DEX); }
 	get ZoC(): number { return (3 + this.DEX); }
 	get maxWeight(): Weight { return (3 + this.STR) * 10; }
@@ -432,18 +439,18 @@ class Character implements ToJSON<CharacterArchive>, WH {
 
 	costOf(skill: Skill): number {
 		if (skill == null) { return undefined; }
-		return skill.cost - this.INT;	// TODO: スキルコストの増減はここで。
+		return skill.rawCost - this.INT;	// TODO: スキルコストの増減はここで。
 	}
 
 	rangeOf(skill: Skill): number {
 		if (skill == null) { return undefined; }
-		return skill.range;	// TODO: スキルの射程を伸ばすような装備やパッシブスキルがあればここで。
+		return skill.rawRange;	// TODO: スキルの射程を伸ばすような装備やパッシブスキルがあればここで。
 	}
 
 	// TODO: 攻撃力算出式を考える。基礎パラメータ値も加味すべきか？それとも武器の装備時にすでにパラメータは要求されているので不要か？
 	powerOf(skill: Skill): number {
 		let item = this.itemFor(skill);
-		return item ? (item.ATK * skill.power / 100) : undefined;
+		return item ? (item.ATK * skill.rawPower / 100) : undefined;
 	}
 
 	itemFor(skill: Skill): Item {

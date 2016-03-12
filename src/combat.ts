@@ -276,7 +276,7 @@
 	type Effect = (scene: Scene, unit: Unit, target: Unit) => SkillEffect;
 	let EFFECTS: { [key: string]: Effect };
 
-	type Action = (scene: Scene, unit: Unit, hex: Hex) => Job;
+	type Action = (scene: Scene, unit: Unit, target: Unit) => Job;
 	let ACTIONS: { [key: string]: Action };
 
 	//================================================================================
@@ -386,7 +386,7 @@
 					return line[yH];
 				}
 			}
-			return null;
+			return undefined;
 		}
 
 		get(xH: Coord, yH: Coord): T;
@@ -398,8 +398,7 @@
 			} else {
 				xH = xH_or_hex as Coord;
 			}
-			let value = this.rawget(xH, yH);
-			return coalesce(value, this.dummy);
+			return coalesce(this.rawget(xH, yH), this.dummy);
 		}
 
 		set(value: T, xH: Coord, yH: Coord): void;
@@ -664,43 +663,67 @@
 	}
 
 	class Unit {
-		HP: number;
-		SP: number;
-		// TODO: ch.skills と対応したキャッシュ構造を持たせる。スキルに最適な武器や攻撃力をキャッシュしておく。
-		skill: Skill;	// selected active skill
+		public HP: number;
+		public SP: number;
+		public skill: Skill;	// selected active skill
 		private idleOffset: number;	// 0..1
+		private minCost: number;	// min cost in active skills
 
 		constructor(
-			public ch: Character,
+			private ch: Character,
 			public team: TEAM,
 			public hex: Hex		// NOTICE: Do not set directly; Use Scene.setUnit instead.
 		) {
 			this.idleOffset = random();
+			this.skill = (ch.skills.find(skill => ch.rangeOf(skill) > 0) || Skill.DUMMY);
 			this.HP = this.maxHP;
-			this.SP = this.maxSP;
-			this.skill = (ch.skills.find(skill => ch.powerOf(skill) != null) || Skill.DUMMY);
+			this.minCost = this.SP = this.availSP;
+			for (let skill of ch.skills) {
+				if (skill.isActive) {
+					let cost = this.costOf(skill);
+					if (cost < this.minCost) {
+						this.minCost = cost;
+					}
+				}
+			}
 		}
 
 		get name(): string { return this.ch.name; }
 		get level(): number { return this.ch.level; }
+		get INT(): number { return this.ch.INT; }
+		get DEX(): number { return this.ch.DEX; }
+		get STR(): number { return this.ch.STR; }
 		get maxHP(): number { return this.ch.HP; }
 		get maxSP(): number { return this.ch.SP; }
+		get availSP(): number { return max(0, this.ch.SP - this.ch.reservedSP); }
+
 		get step(): number { return this.ch.step; }
 		get ZoC(): number { return this.ch.ZoC; }
 		get DEF(): number { return this.ch.DEF; }
 
-		get cost(): number { return this.ch.costOf(this.skill); }
-		get range(): number { return this.ch.rangeOf(this.skill); }
+		// TODO: ch.skills と対応したキャッシュ構造を持たせる。スキルに最適な武器や攻撃力をキャッシュしておく。
+		get skills(): Skill[] { return this.ch.skills; }
 
+		costOf(skill: Skill): number { return this.ch.costOf(skill); }
+		rangeOf(skill: Skill): number { return this.ch.rangeOf(skill); }
 		powerOf(skill: Skill): number { return this.ch.powerOf(skill); }
 
-		get minCost(): number {
-			// TODO: この値はキャッシュ可能
-			return this.ch.skills.reduce((min, skill) => {
-				let cost = this.ch.costOf(skill);
-				return cost < min ? cost : min;
-			}, this.maxSP);
+		get cost(): number { return this.costOf(this.skill); }
+		get range(): number { return this.rangeOf(this.skill); }
+
+		getPassive(active: Skill, action: string): number {
+			let { tagbits } = active;
+			let total = 0;
+			for (let skill of this.ch.skills) {
+				if (skill.isPassive && skill.action === action && (tagbits & skill.tagbits) !== 0) {
+					total += skill.rawPower;	// TODO: Should use rawPower?
+				}
+			}
+			return total;
 		}
+
+		getOffencePassive(active: Skill): number { return this.getPassive(active, "Offence"); }
+		getDefencePassive(active: Skill): number { return this.getPassive(active, "Defence"); }
 
 		isEnemy(other: Unit): boolean {
 			return other != null && this.team !== other.team;
@@ -717,11 +740,6 @@
 			}
 		}
 
-		// Check: SP, range, team
-		canTarget(field: Field, hex: Hex): boolean {
-			return this.SP >= this.cost && this.isTarget(field.get(hex).unit) && distance(this.hex, hex) <= this.range;
-		}
-
 		done(scene: Scene): boolean {
 			let { zoc } = scene;
 			if (!zoc) { return false; }
@@ -731,23 +749,30 @@
 
 		// Check: team
 		trySkill(scene: Scene, target: Unit): SkillEffect {
-			if (this.isTarget(target)) {
-				return EFFECTS[this.skill.effect](scene, this, target);
-			} else {
-				return null;
+			if (!this.isTarget(target)) { return null; }
+			let id = this.skill.effect;
+			let effect = EFFECTS[id];
+			if (effect == null) {
+				throw new RangeError(`Action not found: "${id}"`);
 			}
+			return effect(scene, this, target);
 		}
 
 		// Activate the current skill.
-		shoot(scene: Scene, hex: Hex): Job {
-			let job = ACTIONS[this.skill.action](scene, this, hex);
+		shoot(scene: Scene, target: Unit): Job {
+			let id = this.skill.action;
+			let action = ACTIONS[id];
+			if (action == null) {
+				throw new RangeError(`Action not found: "${id}"`);
+			}
+			let job = action(scene, this, target);
 			this.SP -= this.cost;
 			return job;
 		}
 
 		onTurnEnd(scene: Scene) {
 			if (this.team === scene.team) {
-				this.SP = this.maxSP;
+				this.SP = this.availSP;
 			}
 		}
 
@@ -808,7 +833,7 @@
 
 			// idle animation
 			if (when) {
-				let cycle = UNIT_IDLE_CYCLE * (12 - ch.DEX);
+				let cycle = UNIT_IDLE_CYCLE * (13 - ch.DEX);
 				let theta = this.idleOffset + (when % cycle) / cycle;
 				let progress = max(0, sin(2 * PI * theta));
 				y -= (UNIT_IDLE_UI * progress + UNIT_IDLE_LO * (1 - progress));
@@ -982,12 +1007,12 @@
 			}
 			// skill
 			if (baseSP >= cost) {
+				expandRange.call(this, scene, unit, zoc, hex);
 				this.each(({ SP }, xH, yH) => {
 					if (SP >= cost && field.rawget(xH, yH).empty) {
 						expandRange.call(this, scene, unit, zoc, { xH, yH });
 					}
 				});
-				expandRange.call(this, scene, unit, zoc, hex);
 			}
 
 			function expandRange(scene: Scene, unit: Unit, zoc: ZoC, from: Hex): void {
@@ -996,10 +1021,14 @@
 					let hexUnit = unit.hex;
 					let { field, numScrollsPerTurn } = scene;
 
+					function yScore(hex: Hex): number {
+						return abs(hex.yH * 2 + hex.xH % 2 - MAP_H);
+					}
+
 					// XXX: This evaluation function can be moved to CPU class.
 					let spL = this.get(from).SP;
 					let zL = zoc.get(from);
-					let yL = abs(from.yH * 2 + from.xH % 2 - MAP_H);
+					let yL = yScore(from);
 					let edge = field.minXH + numScrollsPerTurn;
 					let edgeL = (from.xH < edge);
 					let better = (rhs: Hex): boolean => {
@@ -1014,7 +1043,7 @@
 						if (zL > zR) { return false; }
 						if (from.xH < rhs.xH) { return true; }
 						if (from.xH > rhs.xH) { return false; }
-						return yL < abs(rhs.yH * 2 + rhs.xH % 2 - MAP_H);
+						return yL < yScore(rhs);
 					};
 
 					field.surround(from, range, hex => {
@@ -1077,13 +1106,19 @@
 			function label(): string {
 				let { focus } = scene;
 				if (focus) {
-					let skill = focus.ch.skills[index];
+					let skill = focus.skills[index];
 					if (skill) {
-						let selected = (focus.skill === skill);
-						let cost = focus.ch.costOf(skill);
-						let range = focus.ch.rangeOf(skill);
-						let power = focus.ch.powerOf(skill);
-						return `${selected ? "E " : ""}${skill.name.localized}\n${cost} / ${range} / ${power > 0 ? power.toFixed(1) : "-"}`;
+						let range = focus.rangeOf(skill);
+						if (range > 0) {
+							// Active Skills
+							let selected = (focus.skill === skill);
+							let cost = focus.costOf(skill);
+							let power = focus.powerOf(skill);
+							return `${selected ? "E " : ""}${skill.name.localized}\n${cost} / ${range} / ${power > 0 ? power.toFixed(1) : "-"}`;
+						} else {
+							// Passive Skills
+							return `${skill.name.localized}\n${skill.action === "Offence" ? "ATK" : "DEF"}: ${tags2str(skill.tags)}`;
+						}
 					}
 				}
 				return undefined;
@@ -1092,8 +1127,8 @@
 			function equip() {
 				let { focus } = scene;
 				if (focus) {
-					let skill = focus.ch.skills[index];
-					if (skill && focus.ch.powerOf(skill) > 0) {
+					let skill = focus.skills[index];
+					if (skill && focus.rangeOf(skill) > 0) {
 						focus.skill = skill;
 						scene.onSkillChanged(focus);
 					}
@@ -1103,12 +1138,12 @@
 
 		get visible(): boolean {
 			let { focus } = this.scene;
-			return focus != null && focus.ch.skills[this.index] != null;
+			return focus != null && focus.skills[this.index] != null;
 		}
 
 		get enabled(): boolean {
 			let { focus } = this.scene;
-			return focus != null && focus.ch.powerOf(focus.ch.skills[this.index]) != null;
+			return focus != null && focus.rangeOf(focus.skills[this.index]) > 0;
 		}
 	}
 
@@ -1156,18 +1191,18 @@
 				}
 			});
 			let enemyRatio = (numAllies === 0 ? ENEMY_RATIO : ENEMY_RATIO * pow(1.1, numAllies - numEnemies));
+			let holeRatio = 0.1;
 
 			let line: Cell[] = new Array(MAP_H);
-			let enemies = keys(MONSTERS);
+			let monsters = keys(MONSTERS);
 			for (let yH = 0; yH < MAP_H; ++yH) {
 				let unit: Unit;
 				let type = CELL.NORMAL;
 				if (xH > XH_ENEMY && random() < enemyRatio) {
-					let name = enemies[rand(enemies.length)];
+					let name = monsters[rand(monsters.length)];
 					let ch = Character.monster(name, scene.level);
-					let team = TEAM.ENEMY;
-					unit = new Unit(ch, team, { xH, yH });
-				} else if (xH > XH_HOLE && random() < 0.1) {
+					unit = new Unit(ch, TEAM.ENEMY, { xH, yH });
+				} else if (xH > XH_HOLE && random() < holeRatio) {
 					type = CELL.HOLE;
 				}
 				line[yH] = new Cell(type, unit);
@@ -1244,12 +1279,12 @@
 				field.setLine(xH, this.stage.generate(this, xH));
 			}
 			let allyButtons: Button[] = [];
-			let location = [[2, 0], [2, 1], [2, 2], [1, MAP_H - 3], [1, MAP_H - 2], [1, MAP_H - 1]];
+			const locations = [[2, 0], [2, 1], [2, 2], [1, MAP_H - 3], [1, MAP_H - 2], [1, MAP_H - 1]];
 			let { party } = data;
-			for (let i = 0, len = location.length; i < len; ++i) {
+			for (let i = 0; i < PARTY_MAX; ++i) {
 				let ch = party[i];
 				if (ch) {
-					let [xH, yH] = location[i];
+					let [xH, yH] = locations[i];
 					let hex = { xH, yH };
 					let unit = new Unit(ch, TEAM.ALLY, hex);
 					unit.state = new UnitEnter(ch.DEX);
@@ -1511,16 +1546,14 @@
 		setUnit(unit: Unit, hex: Hex): void {
 			let { field } = this;
 			let cell = field.rawget(hex);
-			if (cell == null) {
-				throw new Error(`Cannot set unit at ${hex}: out of range`);
-			}
+			assert(cell != null);
 			let occupied = cell.unit;
 			if (unit) {
 				if (occupied === unit) {
 					return;	// not moved at all
-				} else if (occupied) {
-					throw new Error(`Cannot set unit at ${hex}: already exists`);
-				} else if (unit.hex) {
+				}
+				assert(occupied == null);
+				if (unit.hex) {
 					field.rawget(unit.hex).unit = null;
 				}
 				unit.hex = hex;
@@ -1537,8 +1570,8 @@
 			let index = deads.indexOf(unit);
 			assert(index >= 0);
 			deads.splice(index, 1);
-			unit.SP = unit.maxSP;
-			unit.state = new UnitEnter(unit.ch.DEX);
+			unit.SP = unit.availSP;
+			unit.state = new UnitEnter(unit.DEX);
 			this.setUnit(unit, hex);
 			this.snapshots.length = 0;
 		}
@@ -1646,14 +1679,18 @@
 				// wait for skill animation
 				this.enabled = false;
 
+				let target = field.get(hex).unit;
+				assert(unit.SP >= unit.cost);
+				assert(unit.isTarget(target));
+
 				let shoot = (): Job => {
 					this.snapshots.length = 0;
 					this.invalidate();
-					return unit.shoot(this, hex).then(finish);
+					return unit.shoot(this, target).then(finish);
 				};
 
 				// fast path for shoot only
-				if (unit.canTarget(field, hex)) {
+				if (same(r.shotFrom, unit.hex)) {
 					return shoot();
 				}
 
@@ -1667,7 +1704,7 @@
 				this.setUnit(unit, hexWalk);
 				unit.SP = map.get(hexWalk).SP;
 				let walk = unit.state = new UnitWalk(path);
-				let job = asJob(shoot);
+				let job = delay(shoot);
 				walk.then(job);
 				return job;
 			} else {
@@ -2294,23 +2331,23 @@
 						if (r.effect) {
 							let { skill } = focus;
 							switch (skill.target) {
-								case TARGET.SINGLE_HOSTILE:
+								case USAGE.SINGLE_HOSTILE:
 									drawCaret(g, scene, caret, CARET_HOSTILE);
 									break;
-								case TARGET.SINGLE_FRIENDLY:
+								case USAGE.SINGLE_FRIENDLY:
 									drawCaret(g, scene, caret, CARET_FRIENDLY);
 									break;
-								case TARGET.STRAIGHT_HOSTILE:
-									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
+								case USAGE.STRAIGHT_HOSTILE:
+									field.straight(r.shotFrom, caret, focus.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
 									break;
-								case TARGET.STRAIGHT_FRIENDLY:
-									field.straight(r.shotFrom, caret, skill.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
+								case USAGE.STRAIGHT_FRIENDLY:
+									field.straight(r.shotFrom, caret, focus.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
 									break;
-								case TARGET.SURROUND_HOSTILE:
-									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
+								case USAGE.SURROUND_HOSTILE:
+									field.surround(r.shotFrom, focus.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
 									break;
-								case TARGET.SURROUND_FRIENDLY:
-									field.surround(r.shotFrom, skill.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
+								case USAGE.SURROUND_FRIENDLY:
+									field.surround(r.shotFrom, focus.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
 									break;
 							}
 						} else if (r.SP >= 0) {
@@ -2444,14 +2481,16 @@
 		let { ch } = me;
 		let best = 0;
 		for (let skill of ch.skills) {
-			let power = ch.powerOf(skill);
-			let value: number;
-			if (skill.hostile) {
-				value = power * (100 - you.DEF) / 100 * pow(BASE_FOR_LEVEL, me.level - you.level) / you.HP;
-			} else {
-				value = power * pow(BASE_FOR_LEVEL, me.level - scene.level) / me.maxHP;
+			if (ch.rangeOf(skill) > 0) {
+				let power = ch.powerOf(skill);
+				let value: number;
+				if (skill.hostile) {
+					value = calcDamage(scene, me, skill, you) / you.HP;
+				} else {
+					value = calcHeal(scene, me, skill) / me.maxHP;
+				}
+				best = max(value, value);
 			}
-			best = max(value, value);
 		}
 		return min(1, best);
 	}
@@ -2529,7 +2568,7 @@
 				let { hex } = best;
 
 				// If unit cannot shoot, enter search-mode.
-				if (!map.get(hex).effect && unit.SP >= unit.maxSP) {
+				if (!map.get(hex).effect && unit.SP >= unit.availSP) {
 					let search = new ActionMap(scene, unit, CPU_SEARCH_SP);
 					hex = getBestMovement(scene, unit, search, best).hex;
 					let r = search.get(hex);
@@ -2557,7 +2596,7 @@
 				this.caret = hex;
 				let { PICK } = config.wait;
 				if (PICK > 0) {
-					let job = asJob(() => scene.move(unit, hex));
+					let job = delay(() => scene.move(unit, hex));
 					new Animation(PICK).then(job).attach(scene);	// just delay
 					return job;
 				} else {
@@ -2612,19 +2651,27 @@
 	// Effects for Skills
 	//================================================================================
 
+	function calcDamage(scene: Scene, unit: Unit, skill: Skill, target: Unit): number {
+		let power = unit.powerOf(skill);
+		let diff = unit.level + unit.getOffencePassive(skill) - target.level - target.getDefencePassive(skill);
+		return ceil(power * (100 - target.DEF) / 100 * pow(BASE_FOR_LEVEL, diff));
+	}
+
+	function calcHeal(scene: Scene, unit: Unit, skill: Skill): number {
+		let power = unit.powerOf(skill);
+		let diff = unit.level + unit.getOffencePassive(skill) - scene.level;
+		return ceil(power * pow(BASE_FOR_LEVEL, diff));
+	}
+
 	EFFECTS = {
 		Damage: function(scene: Scene, unit: Unit, target: Unit): SkillEffect {
-			let { skill } = unit;
-			let power = unit.powerOf(skill);
 			return {
-				deltaHP: -ceil(power * (100 - target.DEF) / 100 * pow(BASE_FOR_LEVEL, unit.level - target.level))
+				deltaHP: -calcDamage(scene, unit, unit.skill, target)
 			};
 		},
 		// Damage to HP, and also the half to SP.
 		DamageHPandSP: function(scene: Scene, unit: Unit, target: Unit): SkillEffect {
-			let { skill } = unit;
-			let power = unit.powerOf(skill);
-			let deltaHP = -ceil(power * (100 - target.DEF) / 100 * pow(BASE_FOR_LEVEL, unit.level - target.level));
+			let deltaHP = -calcDamage(scene, unit, unit.skill, target);
 			return {
 				deltaHP: deltaHP,
 				deltaSP: floor(deltaHP / 2)
@@ -2647,7 +2694,7 @@
 		let { tagbits } = skill;
 		if (match(tagbits, TAG.FIRE)) {
 			return { r: 255, g: 128, b: 0 };
-		} else if  (match(tagbits, TAG.COLD)) {
+		} else if (match(tagbits, TAG.COLD)) {
 			return { r: 0, g: 128, b: 255 };
 		} else if (match(tagbits, TAG.LIGHTNING)) {
 			return { r: 255, g: 255, b: 0 };
@@ -2677,16 +2724,13 @@
 		return rearHex;
 	}
 
-	function standardCharge(scene: Scene, unit: Unit, hex: Hex): Job {
-		let { field } = scene;
-		let target = field.get(hex).unit;
+	function standardCharge(scene: Scene, unit: Unit, target: Unit): Job {
 		let effect = unit.trySkill(scene, target);
 		let popup = scene.promiseEffect(target, effect);
 		let action = new UnitCharge(scene, unit.hex, target.hex);
-
 		unit.state = action;
-		action.hit(() => { popup.attach(scene); });
-		return (config.wait.POPUP ? new ParallelJob([popup, action]) : action);
+		action.hit(() => popup.attach(scene));
+		return (config.wait.POPUP ? join([popup, action]) : action);
 	}
 
 	function shootProjectile(scene: Scene, hexFrom: Hex, hexTo: Hex, skill: Skill): Animation {
@@ -2708,12 +2752,6 @@
 		});
 		action.attach(scene);
 		return action;
-	}
-
-	function standardShoot(scene: Scene, unit: Unit, target: Unit, popup: Animation): Animation {
-		let action = shootProjectile(scene, unit.hex, target.hex, unit.skill);
-		action.then(() => popup.attach(scene));
-		return (config.wait.POPUP ? popup : action);
 	}
 
 	function standardNova(
@@ -2756,7 +2794,7 @@
 
 		if (config.wait.POPUP) {
 			effects.push(action);
-			return new ParallelJob(effects);
+			return join(effects);
 		} else {
 			return action;
 		}
@@ -2766,15 +2804,13 @@
 		// Charge tha target and come back.
 		Charge: standardCharge,
 		// Knockback the target.
-		Knockback: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			let { field } = scene;
-
-			let hexTo: Hex = rearHexOf(field, unit.hex, hex);
+		Knockback: function(scene: Scene, unit: Unit, target: Unit): Job {
+			let { hex } = target;
+			let hexTo = rearHexOf(scene.field, unit.hex, hex);
 			if (hexTo == null) {
-				return standardCharge(scene, unit, hex);	// no space; just charge
+				return standardCharge(scene, unit, target);	// no space; just charge
 			}
 
-			let target = field.get(hex).unit;
 			let effect = unit.trySkill(scene, target);
 			let popup = scene.promiseEffect(target, effect, hexTo);
 			let action = new UnitCharge(scene, unit.hex, target.hex);
@@ -2786,46 +2822,36 @@
 				target.state = knockback;
 			});
 			knockback.then(() => { popup.attach(scene); });
-			return (config.wait.POPUP ? new ParallelJob([popup, action]) : action);
+			return (config.wait.POPUP ? join([popup, action]) : action);
 		},
 		// Go to behind of the target
-		GoBehind: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			let { field } = scene;
-
-			let hexTo: Hex = rearHexOf(field, unit.hex, hex);
+		GoBehind: function(scene: Scene, unit: Unit, target: Unit): Job {
+			let { hex } = target;
+			let hexTo = rearHexOf(scene.field, unit.hex, hex);
 			if (hexTo == null) {
-				return standardCharge(scene, unit, hex);	// no space; just charge
+				return standardCharge(scene, unit, target);	// no space; just charge
 			}
-
 			let hexFrom = unit.hex;
-			let target = field.get(hex).unit;
 			let effect = unit.trySkill(scene, target);
-
 			let popup = scene.promiseEffect(target, effect);
 			let action = new UnitWalk([hexFrom, hex]);
-
 			scene.setUnit(unit, hexTo);
 			unit.state = action;
 			action.then(() => { popup.attach(scene); });
 			return (config.wait.POPUP ? popup : action);
 		},
 		// Charge and Knockback the target.
-		Trample: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			let { field } = scene;
-
-			let hexTo: Hex = rearHexOf(field, unit.hex, hex);
+		Trample: function(scene: Scene, unit: Unit, target: Unit): Job {
+			let { hex } = target;
+			let hexTo = rearHexOf(scene.field, unit.hex, hex);
 			if (hexTo == null) {
-				return standardCharge(scene, unit, hex);	// no space; just charge
+				return standardCharge(scene, unit, target);	// no space; just charge
 			}
-
 			let hexFrom = unit.hex;
-			let target = field.get(hex).unit;
 			let effect = unit.trySkill(scene, target);
-
 			let popup = scene.promiseEffect(target, effect, hexTo);
 			let action = new UnitWalk([hexFrom, hex]);
 			let knockback = new UnitWalk([hex, hex, hexTo]);	// HACK: use the first hex twice to delay animation
-
 			scene.setUnit(target, hexTo);
 			target.state = knockback;
 			scene.setUnit(unit, hex);
@@ -2834,16 +2860,15 @@
 			return (config.wait.POPUP ? popup : knockback);
 		},
 		// Shoot a projectile.
-		Shoot: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			let { field } = scene;
-			let target = field.get(hex).unit;
+		Shoot: function(scene: Scene, unit: Unit, target: Unit): Job {
 			let effect = unit.trySkill(scene, target);
-			return standardShoot(scene, unit, target, scene.promiseEffect(target, effect));
+			let popup = scene.promiseEffect(target, effect);
+			let action = shootProjectile(scene, unit.hex, target.hex, unit.skill);
+			action.then(() => popup.attach(scene));
+			return (config.wait.POPUP ? popup : action);
 		},
 		// Damage to HP, and heal the caster.
-		Drain: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			let { field } = scene;
-			let target = field.get(hex).unit;
+		Drain: function(scene: Scene, unit: Unit, target: Unit): Job {
 			let effect = unit.trySkill(scene, target);
 			let damage = scene.promiseEffect(target, effect);
 			let heal = scene.promiseEffect(unit, { deltaHP: -effect.deltaHP });
@@ -2853,24 +2878,23 @@
 			return (config.wait.POPUP ? heal : action);
 		},
 		// Damage target, and also ones near of it.
-		Explode: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			let { field } = scene;
-			let target = field.get(hex).unit;
+		Explode: function(scene: Scene, unit: Unit, target: Unit): Job {
 			let effect = unit.trySkill(scene, target);
+			let radius = 1;
 			let action = shootProjectile(scene, unit.hex, target.hex, unit.skill);
-			let nova = asJob(() => standardNova(scene, unit, hex, 1, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
+			let nova = delay(() => standardNova(scene, unit, target.hex, radius, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
 			action.then(nova);
 			return nova;
 		},
 		// Action for STRAIGHT
-		Laser: function(scene: Scene, unit: Unit, hex: Hex): Job {
+		Laser: function(scene: Scene, unit: Unit, target: Unit): Job {
 			let { field } = scene;
-			let { range } = unit.skill;
+			let { range } = unit;
 
 			let hexFrom = unit.hex;
 			let hexTo: Hex;
 			let effects: Job[] = [];
-			field.straight(hexFrom, hex, range, hex => {
+			field.straight(hexFrom, target.hex, range, hex => {
 				let target = field.get(hex).unit;
 				if (unit.isTarget(target)) {
 					let effect = unit.trySkill(scene, target);
@@ -2905,14 +2929,14 @@
 
 			if (config.wait.POPUP) {
 				effects.push(action);
-				return new ParallelJob(effects);
+				return join(effects);
 			} else {
 				return action;
 			}
 		},
 		// Action for SURROUND
-		Nova: function(scene: Scene, unit: Unit, hex: Hex): Job {
-			return standardNova(scene, unit, unit.hex, unit.skill.range);
+		Nova: function(scene: Scene, unit: Unit, target: Unit): Job {
+			return standardNova(scene, unit, unit.hex, unit.range);
 		}
 	};
 }

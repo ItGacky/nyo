@@ -276,38 +276,47 @@ function commit(sig: Signal): void {
 }
 
 // similar to Promise.all()
-class ParallelJob implements Job {
-	private sig: Signal;
-
-	constructor(jobs: Job[]) {
-		let remains = jobs.length;
-		for (let job of jobs) {
-			assert(job !== committed);
-			job.then(() => {
-				assert(remains > 0);
-				if (--remains <= 0) {
-					commit(this.sig);
-					this.sig = undefined;
-				}
-			});
+function join(jobs: Job[]): Job {
+	let sig: Signal;
+	let remains = jobs.length;
+	let all = {
+		then: function(slot: Slot): Job {
+			if (remains > 0) {
+				sig = connect(sig, slot);
+			} else {
+				committed.then(slot);
+			}
+			return this;
 		}
+	};
+	for (let job of jobs) {
+		assert(job !== committed);
+		job.then(() => {
+			assert(remains > 0);
+			if (--remains <= 0) {
+				commit(sig);
+				sig = undefined;
+			}
+		});
 	}
-
-	then(slot: Slot): this {
-		this.sig = connect(this.sig, slot);
-		return this;
-	}
+	return all;
 }
 
-function asJob(fn: () => Job): Job & Slot {
+function delay(fn: () => Job): Job & Slot {
+	let sig: Signal;
 	let job = function() {
 		fn().then(() => {
-			commit(job.sig);
-			job.sig = undefined;
+			commit(sig);
+			sig = undefined;
+			fn = null;	// done
 		});
 	} as any;
 	job.then = function(slot: Slot): Job {
-		this.sig = connect(this.sig, slot);
+		if (fn) {
+			sig = connect(sig, slot);
+		} else {	// done
+			committed.then(slot);
+		}
 		return this;
 	};
 	return job;
@@ -427,11 +436,8 @@ class Component {
 	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void { }
 
 	attach(parent: Composite): boolean {
-		if (parent) {
-			return parent.onAttach(this);
-		} else {
-			throw new RangeError("Cannot attach to null");
-		}
+		assert(parent != null);
+		return parent.onAttach(this);
 	}
 
 	detach(): Composite {
@@ -467,41 +473,34 @@ class Composite extends Component {
 	}
 
 	onAttach(child: Component): boolean {
-		if (child.parent == null) {
-			this.children.push(child);
-			child.parent = this;
-			return true;
-		} else if (child.parent === this) {
-			return false;	// already registered
-		} else {
-			throw new RangeError("Cannot add Component with another parent");
-		}
+		if (child.parent === this) { return false; }
+		assert(child.parent == null);
+
+		this.children.push(child);
+		child.parent = this;
+		return true;
 	}
 
 	onDetach(child: Component): boolean {
-		if (child.parent === this) {
-			child.parent = null;
-			let { children } = this;
-			for (let i = 0; i < children.length; ++i) {
-				if (children[i] === child) {
-					// clone children to ensure current event handler not to skip existing children.
-					this.children = Array_clone_except(this.children, i);
-					return true;
-				}
+		if (child.parent == null) { return false; }
+		assert(child.parent === this);
+
+		child.parent = null;
+		let { children } = this;
+		for (let i = 0; i < children.length; ++i) {
+			if (children[i] === child) {
+				// clone children to ensure current event handler not to skip existing children.
+				this.children = Array_clone_except(this.children, i);
+				return true;
 			}
-			// inconsistent parent and children...
-			return true;
-		} else if (child.parent == null) {
-			return false;
-		} else {
-			throw new RangeError("Cannot remove Component with another parent");
 		}
+		// inconsistent parent and children...
+		return true;
 
 		function Array_clone_except<T>(arr: T[], index: number): T[] {
 			let { length } = arr;
-			if (index < 0 || length <= index) {
-				throw new RangeError("index is out of range");
-			}
+			assert(0 <= index);
+			assert(index < length);
 			let clone: T[] = new Array(length - 1);
 			for (let i = 0; i < index; ++i) {
 				clone[i] = arr[i];

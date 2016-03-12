@@ -13,7 +13,7 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		DEX: 4,
 		STR: 7,
 		equipments: ["Mace", "PlateArmor", "Mace"],
-		skills: ["Swing", "Crash", "Bash"],
+		skills: ["Swing", "Crash", "Bash", "PathToWarrior"],
 		image: "nazrin"
 	},
 	Samurai: {
@@ -72,7 +72,7 @@ const MONSTERS: { [key: string]: CharacterDef } = {
 		DEX: 3,
 		STR: 3,
 		equipments: ["Wand", "LetherArmor"],
-		skills: ["FireBall"],
+		skills: ["FireBall", "ResistFire"],
 		image: "elemental.png"
 	},
 	Frog: {

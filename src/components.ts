@@ -646,10 +646,10 @@ class ListView<T> extends Widget {
 
 	static defaultDesign: ListViewDesign = {
 		rowHeight: 28,
-		rowFont: `20px ${DEFAULT_FONT_FAMILY}`,
+		rowFont: font(20),
 		rowStyle: "white",
 		headerHeight: 24,
-		headerFont: `18px ${DEFAULT_FONT_FAMILY}`,
+		headerFont: font(18),
 		headerStyle: "white",
 		scrollBarWidth: 14,
 		lineStyle: rgb(102, 102, 102),

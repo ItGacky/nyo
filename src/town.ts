@@ -10,15 +10,15 @@
 	const PORTRAIT_W: Pixel = 160;
 	const PORTRAIT_H: Pixel = ((SCREEN_H - PORTRAIT_Y * 2 - PORTRAIT_MARGIN * 2) / 10) * 3;
 
-	const PORTRAIT_CHAR_W = PORTRAIT_W - MARGIN * 2;
-	const PORTRAIT_CHAR_H = PORTRAIT_H - MARGIN * 2;
+	const PORTRAIT_CHAR_W: Pixel = PORTRAIT_W - MARGIN * 2;
+	const PORTRAIT_CHAR_H: Pixel = PORTRAIT_H - MARGIN * 2;
 
-	const TOWN_LISTVIEW_X = PORTRAIT_W * 2 + MARGIN * 3;
-	const TOWN_LISTVIEW_Y = MARGIN;
-	const TOWN_LISTVIEW_W = SCREEN_W - TOWN_LISTVIEW_X - MARGIN;
+	const TOWN_LISTVIEW_X: Pixel = PORTRAIT_W * 2 + MARGIN * 3;
+	const TOWN_LISTVIEW_Y: Pixel = MARGIN;
+	const TOWN_LISTVIEW_W: Pixel = SCREEN_W - TOWN_LISTVIEW_X - MARGIN;
 
-	const ROW_W_FOR_NAME = 200;
-	const ROW_W_FOR_NUBMER = 60;
+	const ROW_W_FOR_NAME: Pixel = 200;
+	const ROW_W_FOR_NUBMER: Pixel = 60;
 
 	function createColumnsForCharacters(): ListViewColumn<Character>[] {
 		return [
@@ -150,19 +150,19 @@
 			},
 			{
 				name: _("Town", "Cost"),
-				extract: row => row.cost,
+				extract: row => row.rawCost,
 				width: ROW_W_FOR_NUBMER,
 				align: "right"
 			},
 			{
 				name: _("Town", "Range"),
-				extract: row => row.range,
+				extract: row => row.rawRange,
 				width: ROW_W_FOR_NUBMER,
 				align: "right"
 			},
 			{
 				name: _("Town", "Power"),
-				extract: row => row.power,
+				extract: row => row.rawPower,
 				width: ROW_W_FOR_NUBMER,
 				align: "right"
 			},

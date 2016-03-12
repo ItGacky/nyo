@@ -369,6 +369,66 @@
 		FirstAid: {
 			Name: "応急手当",
 			Spec: "味方単体のHPを回復します。"
+		},
+		PathToWarrior: {
+			Name: "戦士の心得",
+			Spec: "近接攻撃力が上昇します。"
+		},
+		PathToNinja: {
+			Name: "忍者の心得",
+			Spec: "投擲攻撃力が上昇します。"
+		},
+		PathToArcher: {
+			Name: "射手の心得",
+			Spec: "射撃攻撃力が上昇します。"
+		},
+		PathToMage: {
+			Name: "魔術師の心得",
+			Spec: "魔法効力が上昇します。"
+		},
+		PathToAlchemist: {
+			Name: "錬金術師の心得",
+			Spec: "薬物効力が上昇します。"
+		},
+		Defence: {
+			Name: "防御",
+			Spec: "近接耐性が上昇します。"
+		},
+		Dodge: {
+			Name: "回避",
+			Spec: "遠隔耐性が上昇します。"
+		},
+		Meditation: {
+			Name: "瞑想",
+			Spec: "魔法耐性が上昇します。"
+		},
+		Healthy: {
+			Name: "健康",
+			Spec: "薬物耐性が上昇します。"
+		},
+		AvatarOfFire: {
+			Name: "火炎の化身",
+			Spec: "火炎効力が上昇します。"
+		},
+		AvatarOfCold: {
+			Name: "冷気の化身",
+			Spec: "冷気効力が上昇します。"
+		},
+		AvatarOfLightning: {
+			Name: "電気の化身",
+			Spec: "電気効力が上昇します。"
+		},
+		ResistFire: {
+			Name: "火炎耐性",
+			Spec: "火炎耐性が上昇します。"
+		},
+		ResistCold: {
+			Name: "冷気耐性",
+			Spec: "冷気耐性が上昇します。"
+		},
+		ResistLightning: {
+			Name: "電気耐性",
+			Spec: "電気耐性が上昇します。"
 		}
 	},
 	Adventurer: {

@@ -367,8 +367,68 @@
 			Spec: "Heal members surrounding you."
 		},
 		FirstAid: {
-			Name: "FirstAid",
+			Name: "First Aid",
 			Spec: "Heal a member of your party."
+		},
+		PathToWarrior: {
+			Name: "Path to Warrior",
+			Spec: "Increase power of melee."
+		},
+		PathToNinja: {
+			Name: "Path to Ninja",
+			Spec: "Increase power of throwing."
+		},
+		PathToArcher: {
+			Name: "Path to Archer",
+			Spec: "Increase power of shooting."
+		},
+		PathToMage: {
+			Name: "Path to Mage",
+			Spec: "Increase power of magic."
+		},
+		PathToAlchemist: {
+			Name: "Path to Alchemist",
+			Spec: "Increase power of alchemy."
+		},
+		Defence: {
+			Name: "Defence",
+			Spec: "Increase resistance to melee attacks."
+		},
+		Dodge: {
+			Name: "Dodge",
+			Spec: "Increase resistance to ranged attacks."
+		},
+		Meditation: {
+			Name: "Meditation",
+			Spec: "Increase resistance to magic."
+		},
+		Healthy: {
+			Name: "Healthy",
+			Spec: "Increase resistance to alchemy."
+		},
+		AvatarOfFire: {
+			Name: "Avatar of Fire",
+			Spec: "Increase power of fire."
+		},
+		AvatarOfCold: {
+			Name: "Avatar of Cold",
+			Spec: "Increase power of cold."
+		},
+		AvatarOfLightning: {
+			Name: "Avatar of Lightning",
+			Spec: "Increase power of lightning."
+		},
+		ResistFire: {
+			Name: "Resist Fire",
+			Spec: "Increase resistance to fire."
+		},
+		ResistCold: {
+			Name: "Resist Cold",
+			Spec: "Increase resistance to cold."
+		},
+		ResistLightning: {
+			Name: "Resist Lightning",
+			Spec: "Increase resistance to lightning."
 		}
 	},
 	Adventurer: {
