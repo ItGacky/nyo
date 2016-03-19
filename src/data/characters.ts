@@ -37,7 +37,7 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		DEX: 6,
 		STR: 6,
 		equipments: ["LongBow", "LetherArmor", "FirstAidKit"],
-		skills: ["Shoot", "FirstAid"],
+		skills: ["Shoot", "PoisonArrow", "FirstAid"],
 		image: "marisa"
 	},
 	Healer: {

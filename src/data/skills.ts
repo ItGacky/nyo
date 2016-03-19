@@ -117,6 +117,15 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		effect: "Damage",
 		action: "Shoot"
 	},
+	PoisonArrow: {
+		tags: [TAG.SHOOT],
+		usage: USAGE.SINGLE_HOSTILE,
+		power: 60,
+		cost: 20,
+		range: 3,
+		effect: "DamageOverTime",
+		action: "Shoot"
+	},
 	// MAGIC
 	IceSpear: {
 		tags: [TAG.MAGIC, TAG.COLD],
@@ -187,7 +196,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		power: 100,
 		cost: 24,
 		range: 1,
-		effect: "Heal",
+		effect: "HealOverTime",
 		action: "Charge"
 	},
 	//================================================================================

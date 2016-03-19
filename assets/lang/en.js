@@ -337,6 +337,10 @@
 			Name: "Shoot",
 			Spec: "Shoot a projectile to an enemy."
 		},
+		PoisonArrow: {
+			Name: "Poison Arrow",
+			Spec: "Shoot a projectile to an enemy, and also deals damage over time."
+		},
 
 		IceSpear: {
 			Name: "Ice Spear",
@@ -368,7 +372,7 @@
 		},
 		FirstAid: {
 			Name: "First Aid",
-			Spec: "Heal a member of your party."
+			Spec: "Heal a member of your party, and also heals over time."
 		},
 		PathToWarrior: {
 			Name: "Path to Warrior",

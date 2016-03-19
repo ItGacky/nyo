@@ -81,12 +81,12 @@ class Enchant implements ToJSON<EnchantArchive> {
 	public spec: Word;
 
 	constructor(public EID: EnchantID) {
-		this.def = ENCHANTS[this.EID];
+		this.def = ENCHANTS[EID];
 		if (this.def == null) {
-			throw new RangeError(`Enchantment not found: "${this.EID}"`);
+			throw new RangeError(`Enchantment not found: "${EID}"`);
 		}
-		this.name = Enchant.nameOf(this.EID);
-		this.spec = Enchant.specOf(this.EID);
+		this.name = Enchant.nameOf(EID);
+		this.spec = Enchant.specOf(EID);
 		this.value = this.def.min + rand(this.def.max - this.def.min);
 	}
 
@@ -146,12 +146,12 @@ class Item implements ToJSON<ItemArchive> {
 		public IID: ItemID,
 		public enchants?: Enchant[]
 	) {
-		this.def = ITEMS[this.IID];
+		this.def = ITEMS[IID];
 		if (this.def == null) {
-			throw new RangeError(`Item not found: "${this.IID}"`);
+			throw new RangeError(`Item not found: "${IID}"`);
 		}
-		this.baseName = Item.nameOf(this.IID);
-		this.spec = Item.specOf(this.IID);
+		this.baseName = Item.nameOf(IID);
+		this.spec = Item.specOf(IID);
 		this.tagbits = tags2bits(this.def.tags);
 		if (this.enchants == null) {
 			let { enchants } = this.def;

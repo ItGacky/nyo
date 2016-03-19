@@ -337,6 +337,10 @@
 			Name: "射撃",
 			Spec: "敵単体に矢を放ちます。"
 		},
+		PoisonArrow: {
+			Name: "毒矢",
+			Spec: "敵単体に毒矢を放ち、継続ダメージを与えます。"
+		},
 
 		IceSpear: {
 			Name: "アイス・スピア",
@@ -368,7 +372,7 @@
 		},
 		FirstAid: {
 			Name: "応急手当",
-			Spec: "味方単体のHPを回復します。"
+			Spec: "味方単体のHPを回復し、さらに継続的に回復します。"
 		},
 		PathToWarrior: {
 			Name: "戦士の心得",
