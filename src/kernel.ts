@@ -614,13 +614,6 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 	let logicalHeight = canvas.height;
 	assert(logicalHeight > 0);
 
-	let hasPointer = (window.navigator.pointerEnabled);
-	let hasMSPointer = (window.navigator.msPointerEnabled);
-	let hasTouch = (document.ontouchstart != null);
-	let pointermove = hasPointer ? "pointermove" : hasMSPointer ? "MSPointerMove" : hasTouch ? "touchmove" : "mousemove";
-	let pointerdown = hasPointer ? "pointerdown" : hasMSPointer ? "MSPointerDown" : hasTouch ? "touchstart" : "mousedown";
-	let pointerup = hasPointer ? "pointerup" : hasMSPointer ? "MSPointerUp" : hasTouch ? "touchend" : "mouseup";
-
 	function canvasX(e: MouseEvent): Pixel {
 		let x: number;
 		if (e.pageX == null) {
@@ -641,23 +634,29 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 		return y * logicalHeight / canvas.offsetHeight;
 	}
 
-	canvas.addEventListener(pointermove, (e: MouseEvent) => {
+	function onMove(e: MouseEvent) {
 		if (e.buttons & 1) { // L
 			root.onDrag(canvasX(e), canvasY(e));
 		} else if (!TOUCH_ONLY) {
 			root.onHover(canvasX(e), canvasY(e));
 		}
 		e.preventDefault();
-	});
-	canvas.addEventListener(pointerdown, (e: MouseEvent) => {
+	}
+	canvas.addEventListener("mousemove", onMove);
+	canvas.addEventListener("touchmove", onMove);
+
+	function onDown(e: MouseEvent) {
 		switch (e.button) {
 			case 0:	// L
 				root.onDown(canvasX(e), canvasY(e));
 				break;
 		}
 		e.preventDefault();
-	});
-	canvas.addEventListener(pointerup, (e: MouseEvent) => {
+	}
+	canvas.addEventListener("mousedown", onDown);
+	canvas.addEventListener("touchstart", onDown);
+
+	function onUp(e: MouseEvent) {
 		switch (e.button) {
 			case 0:	// L
 				root.onUp(canvasX(e), canvasY(e));
@@ -667,7 +666,10 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 				break;
 		}
 		e.preventDefault();
-	});
+	}
+	canvas.addEventListener("mouseup", onUp);
+	canvas.addEventListener("touchend", onUp);
+
 	canvas.addEventListener("contextmenu", (e: MouseEvent) => {
 		e.preventDefault();
 	});

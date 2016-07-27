@@ -74,15 +74,16 @@ class Animation extends Component implements Job {
 	}
 
 	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void {
-		if (this.start != null) {
-			let end = this.start + this.duration;
+		let { start } = this;
+		if (start != null) {
+			let end = start + this.duration;
 			if (when >= end) {
 				this.onAnimation(1, g, when);
 				this.detach();
 				commit(this.sig);
 				this.sig = undefined;
-			} else if (when >= this.start) {
-				let progress = (when - this.start) / this.duration;
+			} else {
+				let progress = max(0, when - start) / this.duration;
 				this.onAnimation(progress, g, when);
 			}
 		}
