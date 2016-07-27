@@ -1,6 +1,7 @@
 # Project-specific files
 /bin
 /bld
+/node_modules
 
 # Visual Studio
 .vs

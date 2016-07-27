@@ -8,8 +8,17 @@ GNU General Public License, version 3 (GPL-3.0)
 
 ## Tips for Hackers
 - Written in [TypeScript](http://www.typescriptlang.org/) 1.8.
-- Developed with [Visual Stdio Code](https://code.visualstudio.com/) on Windows.
 - Checked by [tslint](https://www.npmjs.com/package/tslint) and [vscode-tslint](https://github.com/Microsoft/vscode-tslint/tree/master/tslint).
+- Developed with [gulp.js](http://gulpjs.com/) and [Visual Stdio Code](https://code.visualstudio.com/).
+
+```bash
+npm install --global gulp-cli
+npm install   # install dependencies.
+gulp build    # compile ts to js for debug build.
+gulp test     # open index-debug.html with browser.
+gulp release  # minify js for release build.
+gulp default  # open index.html with browser.
+```
 
 ## Cregits
 - Character Images: とら 氏 - https://sites.google.com/site/trastrage/

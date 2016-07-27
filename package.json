@@ -1,0 +1,32 @@
+{
+  "name": "nyo",
+  "version": "0.1.0",
+  "description": "Tactical Turn-Based Combat Game",
+  "main": "index.html",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ItGacky/nyo.git"
+  },
+  "keywords": [
+    "game"
+  ],
+  "author": "ItGacky",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/ItGacky/nyo/issues"
+  },
+  "homepage": "https://github.com/ItGacky/nyo#readme",
+  "devDependencies": {
+    "del": "^2.2.1",
+    "gulp": "^3.9.1",
+    "gulp-closurecompiler": "^0.1.0",
+    "gulp-insert": "^0.5.0",
+    "gulp-open": "^2.0.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-typescript": "^2.13.6",
+    "typescript": "^1.8.10"
+  },
+  "optionalDependencies": {
+    "tslint": "^3.14.0"
+  }
+}

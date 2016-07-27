@@ -330,7 +330,7 @@ class Word {
 	static language: string = (window.navigator.userLanguage || window.navigator.language || window.navigator.browserLanguage).substr(0, 2);
 	static fallback: string = "en";
 
-	// supported[language]
+	// languages[locale]
 	// - undefined: not supported
 	// - string: supported, but not loaded yet
 	// - true: now loading

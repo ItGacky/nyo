@@ -7,30 +7,21 @@
 // ${cwd}: the current working directory of the spawned process
 {
 	"version": "0.1.0",
-	"command": "cmd",
+	"command": "gulp",
 	"isShellCommand": true,
-	"showOutput": "silent",
-	"suppressTaskName": true,
-	"args": ["/C"],
+	"showOutput": "never",
+	"suppressTaskName": false,
+	"args": [ "--no-color" ],
 	"tasks": [
 		{
 			"taskName": "build",
-			"args": [ "tsc", "-p", "src", "--outFile", "bld/main.js" ],
-			"problemMatcher": "$tsc"
-		},
-		{
-			"taskName": "clean",
-			"args": [ "tools\\clean.cmd" ],
-			"showOutput": "never"
-		},
-		{
-			"taskName": "release",
-			"args": [ "tools\\release.cmd" ]
-		},
-		{
-			"taskName": "test",
-			"args": [ "start", "index-debug.html" ],
-			"showOutput": "never"
+			"showOutput": "silent",
+			"isBuildCommand": true,
+			"isWatching": false,
+			"problemMatcher": [
+				"$tsc",
+				"$gulp-tsc"
+			]
 		}
 	]
 }

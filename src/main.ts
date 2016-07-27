@@ -304,21 +304,15 @@ function loadConfig(): void {
 		if (value) {
 			let sys = parse(value) as ConfigArchive;
 			if (sys) {
-				if (typeof sys.language === typeof Word.language) {
-					Word.language = sys.language;
+				function overwrite<T>(defaultValue: T, newValue: any): T {
+					return (typeof defaultValue === typeof newValue) ? newValue : defaultValue;
 				}
-				if (typeof sys.magnifyCanvas === typeof config.magnifyCanvas) {
-					config.magnifyCanvas = sys.magnifyCanvas;
-				}
-				if (typeof sys.refineCanvas === typeof config.refineCanvas) {
-					config.refineCanvas = sys.refineCanvas;
-				}
-				if (typeof sys.volume === typeof config.volume.value) {
-					config.volume.value = sys.volume;
-				}
-				if (typeof sys.effects === typeof config.effects.value) {
-					config.effects.value = sys.effects;
-				}
+
+				Word.language = overwrite(Word.language, sys.language);
+				config.magnifyCanvas = overwrite(config.magnifyCanvas, sys.magnifyCanvas);
+				config.refineCanvas = overwrite(config.refineCanvas, sys.refineCanvas);
+				config.volume.value = overwrite(config.volume.value, sys.volume);
+				config.effects.value = overwrite(config.effects.value, sys.effects);
 			}
 		}
 	} catch (e) {
