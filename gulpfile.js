@@ -33,9 +33,7 @@ gulp.task("release", function () {
 		pipe(insert.wrap("(function() {\nvar NDEBUG=true;\n", "\n})();")).
 		pipe(rename(WRAPPED_FILE)).
 		pipe(gulp.dest(WRAPPED_DIR)).
-		pipe(minify({ fileName: WRAPPED_FILE }, {
-			compilation_level: "ADVANCED_OPTIMIZATIONS"
-		})).
+		pipe(minify({ fileName: WRAPPED_FILE })).
 		pipe(rename(RELEASE_FILE)).
 		pipe(gulp.dest(RELEASE_DIR));
 });
