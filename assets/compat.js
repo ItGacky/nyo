@@ -69,7 +69,7 @@
 		window.requestAnimationFrame = (window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || window.mozRequestAnimationFrame);
 		if (!window.requestAnimationFrame) {
 			window.requestAnimationFrame = function (callback) {
-				window.setTImeout(function () { callback(new Date().getTime()); }, 1000 / 30);
+				window.setTimeout(function () { callback(new Date().getTime()); }, 1000 / 30);
 				return 1;
 			}
 		}
