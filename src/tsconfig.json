@@ -5,9 +5,13 @@
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,
 		"noImplicitReturns": true,
-		"removeComments": true,
+		"noImplicitThis": true,
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
 		"preserveConstEnums": false,
+		"removeComments": true,
 		"sourceMap": false,
+		"strictNullChecks": false,
 		"target": "es5"
 	},
 	"files": [

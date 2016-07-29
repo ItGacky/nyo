@@ -2,8 +2,8 @@
 	// Model
 	const LEVEL_PER_DEPTH = 0.1;
 	const BASE_FOR_LEVEL = pow(2, 0.1);	// twice power per 10 differece of levels.
-	const UNIT_REGEN_ON_DEAD = 0.1;		// regenerated HP on dead.
-	const UNIT_REVIVE_HP = 0.5;			// threshold to revive.
+	const UNIT_RECUPERATE_RATIO = 0.1;	// regenerated HP ratio on dead.
+	const UNIT_REVIVE_RATIO = 0.5;		// threshold to revive.
 
 	//interface Coord extends Number { Coord; };
 	type Coord = number;
@@ -50,6 +50,10 @@
 	const ALLY_BUTTON_Y: Pixel = PANEL_Y + MARGIN;
 	const ALLY_BUTTON_W: Pixel = 100;
 	const ALLY_BUTTON_H: Pixel = PANEL_H - MARGIN * 2;
+	const ALLY_BAR_W: Pixel = ALLY_BUTTON_W - MARGIN * 2;
+	const ALLY_BAR_H: Pixel = 6;
+	const ALLY_BAR_X: Pixel = (ALLY_BUTTON_W - ALLY_BAR_W) / 2;
+	const ALLY_BAR_Y: Pixel = ALLY_BUTTON_H - ALLY_BAR_H * 2;
 
 	// Field: Sky + Cells + Fades
 	const SKY_H: Pixel = SCREEN_H - CELL_H * MAP_H * 2 - PANEL_H;
@@ -158,7 +162,6 @@
 	const UNIT_IDLE_UI: Pixel = 16;
 	const UNIT_STEP_DURATION: Duration = 100;		// duration per step.
 	const UNIT_STEP_POW = 0.75;			// duration will be reduced for many steps.
-	const UNIT_DYING_DURATION: Duration = 300;	// duration for dying animation.
 	const UNIT_OVERLAY_DYING: CanvasStyle = "red";
 	const UNIT_OVERLAY_FOCUS: CanvasStyle = "yellow";
 	const UNIT_OVERLAY_HOSTILE: CanvasStyle = "red";
@@ -326,7 +329,7 @@
 		}
 	}
 
-	function same(lhs: Hex, rhs: Hex): boolean {
+	function same(lhs: Optional<Hex>, rhs: Optional<Hex>): boolean {
 		return (lhs === rhs) || (!!lhs && !!rhs && lhs.xH === rhs.xH && lhs.yH === rhs.yH);
 	}
 
@@ -373,9 +376,9 @@
 			delete this.cells[xH];
 		}
 
-		rawget(xH: Coord, yH: Coord): T;
-		rawget(hex: Hex): T;
-		rawget(xH_or_hex: Coord | Hex, yH?: Coord): T {
+		rawget(xH: Coord, yH: Coord): Optional<T>;
+		rawget(hex: Hex): Optional<T>;
+		rawget(xH_or_hex: Coord | Hex, yH?: Coord): Optional<T> {
 			let xH: Coord;
 			if (yH == null) {
 				({ xH, yH } = (xH_or_hex as Hex));
@@ -391,9 +394,9 @@
 			return undefined;
 		}
 
-		get(xH: Coord, yH: Coord): T;
-		get(hex: Hex): T;
-		get(xH_or_hex: Coord | Hex, yH?: Coord): T {
+		get(xH: Coord, yH: Coord): Optional<T>;
+		get(hex: Hex): Optional<T>;
+		get(xH_or_hex: Coord | Hex, yH?: Coord): Optional<T> {
 			let xH: Coord;
 			if (yH == null) {
 				({ xH, yH } = (xH_or_hex as Hex));
@@ -413,34 +416,34 @@
 				xH = xH_or_hex as Coord;
 			}
 			let line = this.cells[xH];
-			if (line == null) {
+			if (!line) {
 				line = this.cells[xH] = [];
 			}
 			line[yH] = value;
 		}
 
 		// visit each valid cell
-		each(callback: (cell: T, xH: Coord, yH: Coord) => void): void {
+		each(callback: (this: void, cell: T, xH: Coord, yH: Coord) => void): void {
 			let { minXH, maxXH } = this;
 			for (let xH = minXH; xH < maxXH; ++xH) {
 				for (let yH = 0; yH < MAP_H; ++yH) {
-					callback.call(this, this.get(xH, yH), xH, yH);
+					callback(this.get(xH, yH), xH, yH);
 				}
 			}
 		}
 
 		// visit each visible cell
-		eachVisible(callback: (cell: T, xH: Coord, yH: Coord) => void): void {
+		eachVisible(callback: (this: void, cell: T, xH: Coord, yH: Coord) => void): void {
 			let { minVisibleXH, maxVisibleXH } = this;
 			for (let xH = minVisibleXH; xH < maxVisibleXH; ++xH) {
 				for (let yH = 0; yH < MAP_H; ++yH) {
-					callback.call(this, this.get(xH, yH), xH, yH);
+					callback(this.get(xH, yH), xH, yH);
 				}
 			}
 		}
 
 		// visit cells int the straight line up to range, excluding the starting hex.
-		straight(from: Hex, to: Hex, range: number, callback: (hex: Hex, steps: number) => void): void {
+		straight(from: Hex, to: Hex, range: number, callback: (this: void, hex: Hex, steps: number) => void): void {
 			if (same(from, to)) { return; }
 
 			let xFrom = from.xH;
@@ -469,7 +472,7 @@
 		}
 
 		// visit cells surround up to range, excluding the center hex.
-		surround(center: Hex, range: number, callback: (hex: Hex, steps: number) => void): void {
+		surround(center: Hex, range: number, callback: (this: void, hex: Hex, steps: number) => void): void {
 			if (range === 1) {
 				// fast path for near
 				for (let dir = DIR_BEGIN; dir < DIR_END; ++dir) {
@@ -501,14 +504,16 @@
 
 	abstract class UnitState implements Job {
 		public start: Timestamp;
+		public duration?: Duration;
 
-		constructor(public duration: Duration) {
+		constructor(duration: Duration) {
+			this.duration = duration;
 		}
 
 		private sig: Signal;
 
 		then(slot: Slot): this {
-			if (this.duration == null) {
+			if (!this.duration) {
 				committed.then(slot);
 			} else {
 				this.sig = connect(this.sig, slot);
@@ -522,8 +527,8 @@
 			this.duration = undefined;
 		}
 
-		getXY(unit: Unit, scene: Scene, when: Timestamp): XY {
-			if (this.duration == null) {
+		getXY(unit: Unit, scene: Scene, when: Timestamp): Optional<XY> {
+			if (!this.duration) {
 				return undefined;
 			}
 			let progress = Animation.clamp(when, this.start, this.duration);
@@ -536,7 +541,7 @@
 
 		protected abstract onGetXY(unit: Unit, scene: Scene, progress: number): XY;
 
-		drawCharacter(unit: Unit, g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha): void {
+		drawCharacter(unit: Unit, g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: Optional<CanvasStyle>, overlayAlpha: Alpha): void {
 			unit.drawCharacter(g, when, x, y, overlayStyle, overlayAlpha);
 		}
 	}
@@ -579,8 +584,12 @@
 	}
 
 	class UnitCharge extends UnitState {
-		constructor(scene: Scene, private hexFrom: Hex, private hexTo: Hex) {
+		private hexFrom: Hex;
+		private hexTo: Hex;
+		constructor(scene: Scene, hexFrom: Hex, hexTo: Hex) {
 			super(duration(scene, hexFrom, hexTo));
+			this.hexFrom = hexFrom;
+			this.hexTo = hexTo;
 
 			function duration(scene: Scene, hexFrom: Hex, hexTo: Hex): number {
 				let dx = scene.toX(hexFrom) - scene.toX(hexTo);
@@ -592,7 +601,7 @@
 		private hitsig: Signal;
 
 		hit(slot: Slot): void {
-			if (this.duration == null) {
+			if (!this.duration) {
 				committed.then(slot);
 			} else {
 				this.hitsig = connect(this.hitsig, slot);
@@ -616,7 +625,7 @@
 			} else {
 				progress = 2 - progress * 2;
 				commit(this.hitsig);
-				this.hitsig = null;
+				this.hitsig = undefined;
 			}
 			return {
 				x: xFrom * (1.0 - progress) + xTo * progress + CELL_W / 2,
@@ -627,13 +636,13 @@
 
 	class UnitStagger extends UnitState {
 		radius: number;
-		dying: Hex;
+		dying?: Hex;
 
 		constructor(unit: Unit, damage: number) {
 			super(UNIT_DAMAGED_DURATION);
 			assert(damage > 0);
 			let { HP } = unit;
-			this.dying = (damage >= HP ? unit.hex : null);
+			this.dying = (damage >= HP ? unit.hex : undefined);
 			if (damage >= HP / 2) {
 				this.radius = 1;
 			} else {
@@ -678,7 +687,7 @@
 		effectsOverTime: EffectOverTime[];
 
 		constructor(
-			private ch: Character,
+			public ch: Character,
 			public team: TEAM,
 			public hex: Hex		// NOTICE: Do not set directly; Use Scene.setUnit instead.
 		) {
@@ -689,7 +698,7 @@
 			for (let skill of ch.skills) {
 				if (skill.isActive) {
 					let cost = this.costOf(skill);
-					if (cost < this.minCost) {
+					if (cost && cost < this.minCost) {
 						this.minCost = cost;
 					}
 				}
@@ -713,12 +722,12 @@
 		// TODO: ch.skills と対応したキャッシュ構造を持たせる。スキルに最適な武器や攻撃力をキャッシュしておく。
 		get skills(): Skill[] { return this.ch.skills; }
 
-		costOf(skill: Skill): number { return this.ch.costOf(skill); }
-		rangeOf(skill: Skill): number { return this.ch.rangeOf(skill); }
-		powerOf(skill: Skill): number { return this.ch.powerOf(skill); }
+		costOf(skill: Skill) { return this.ch.costOf(skill); }
+		rangeOf(skill: Skill) { return this.ch.rangeOf(skill); }
+		powerOf(skill: Skill) { return this.ch.powerOf(skill); }
 
-		get cost(): number { return this.costOf(this.skill); }
-		get range(): number { return this.rangeOf(this.skill); }
+		get cost() { return this.costOf(this.skill); }
+		get range() { return this.rangeOf(this.skill); }
 
 		getPassive(tagbits: number, action: string): number {
 			let total = 0;
@@ -734,18 +743,30 @@
 		getDefencePassive(tagbits: number): number { return this.getPassive(tagbits, "Defence"); }
 
 		isEnemy(other: Unit): boolean {
-			return other != null && this.team !== other.team;
+			return !!other && this.team !== other.team;
 		}
 
 		// Check: team
-		isTarget(target: Unit): boolean {
-			if (target == null) {
+		isTarget(target: Optional<Unit>): boolean {
+			if (!target) {
 				return false;
 			} else if (this.skill.hostile) {
 				return this.isEnemy(target);
 			} else {
 				return this !== target && !this.isEnemy(target);
 			}
+		}
+
+		//
+		getTarget(field: Field, hex: Hex): Optional<Unit> {
+			let r = field.get(hex);
+			if (r) {
+				let { unit } = r;
+				if (this.isTarget(unit)) {
+					return unit;
+				}
+			}
+			return undefined;
 		}
 
 		done(scene: Scene): boolean {
@@ -760,7 +781,7 @@
 			assert(this.isTarget(target));
 			let id = this.skill.effect;
 			let effect = EFFECTS[id];
-			if (effect == null) {
+			if (!effect) {
 				throw new RangeError(`Effect not found: "${id}"`);
 			}
 			return effect(scene, this, target);
@@ -772,12 +793,24 @@
 			assert(this.SP >= this.cost);
 			let id = this.skill.action;
 			let action = ACTIONS[id];
-			if (action == null) {
+			if (!action) {
 				throw new RangeError(`Action not found: "${id}"`);
 			}
 			let job = action(scene, this, target);
 			this.SP -= this.cost;
 			return job;
+		}
+
+		// Regenerate HP on dead.
+		recuperate(): void {
+			assert(!this.hex);
+			let deltaHP = floor(this.maxHP * UNIT_RECUPERATE_RATIO);	// TODO: based on character's status?
+			this.HP = min(this.maxHP, this.HP + deltaHP);
+		}
+
+		// Can revive on dead?
+		get canRevive(): boolean {
+			return !this.hex && this.HP / this.maxHP >= UNIT_REVIVE_RATIO;		// TODO: based on character's status?
 		}
 
 		onTurnEnd(scene: Scene): void {
@@ -786,7 +819,7 @@
 			}
 		}
 
-		onTurnStart(scene: Scene): Job {
+		onTurnStart(scene: Scene): Optional<Job> {
 			if (this.team === scene.team) {
 				let deltaHP = 0;
 				let { effectsOverTime } = this;
@@ -805,19 +838,19 @@
 					return popup;
 				}
 			}
-			return null;
+			return undefined;
 		}
 
 		// screen position
-		getXY(scene: Scene, when: Timestamp): XY {
-			let pt: XY;
+		getXY(scene: Scene, when: Timestamp): Optional<XY> {
+			let pt: Optional<XY>;
 			if (this.state) {
 				pt = this.state.getXY(this, scene, when);
-				if (pt == null) {
-					this.state = null;
+				if (!pt) {
+					this.state = undefined;
 				}
 			}
-			if (pt == null) {
+			if (!pt) {
 				let { hex } = this;
 				if (hex) {
 					pt = {
@@ -829,20 +862,20 @@
 			return pt;
 		}
 
-		private _state: UnitState;
+		private _state?: UnitState;
 
-		get state(): UnitState {
+		get state(): Optional<UnitState> {
 			return this._state;
 		}
 
-		set state(value: UnitState) {
+		set state(value: Optional<UnitState>) {
 			let state = this._state;
 			this._state = value;
 			if (value) { value.start = now(); }
 			if (state) { state.commit(); }
 		}
 
-		drawCharacter(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha) {
+		drawCharacter(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: Optional<CanvasStyle>, overlayAlpha: Alpha) {
 			let { ch } = this;
 			let rect = scaleProportionally(ch, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
 
@@ -871,7 +904,7 @@
 			ch.draw(g, when, rect, overlayStyle, overlayAlpha);
 		}
 
-		draw(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha) {
+		draw(g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: Optional<CanvasStyle>, overlayAlpha: Alpha) {
 			if (this.state) {
 				this.state.drawCharacter(this, g, when, x, y, overlayStyle, overlayAlpha);
 			} else {
@@ -910,7 +943,7 @@
 		h: Pixel,
 		value: number,
 		limit: number,
-		delta: number,
+		delta: Optional<number>,
 		style: UnitBarStyle
 	): void {
 		let ratio = clamp(0, 1, value / limit);
@@ -949,7 +982,7 @@
 	function drawHP(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, unit: Unit, hex: Hex) {
 		let x = scene.toX(hex) + UNIT_BAR_X;
 		let y = scene.toY(hex) + UNIT_BAR_Y;
-		drawBar(g, x, y, UNIT_BAR_W, UNIT_BAR_H, unit.HP, unit.maxHP, null, BAR_STYLE_HP);
+		drawBar(g, x, y, UNIT_BAR_W, UNIT_BAR_H, unit.HP, unit.maxHP, undefined, BAR_STYLE_HP);
 	}
 
 	function drawSP(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, unit: Unit, hex: Hex, remainSP: number) {
@@ -1043,15 +1076,11 @@
 				});
 			}
 
-			function expandRange(scene: Scene, unit: Unit, zoc: ZoC, from: Hex): void {
-				let { range } = unit;
+			function expandRange(this: ActionMap, scene: Scene, unit: Unit, zoc: ZoC, from: Hex): void {
+				let range = unit.range || 0;
 				if (range >= 1) {
 					let hexUnit = unit.hex;
 					let { field, numScrollsPerTurn } = scene;
-
-					function yScore(hex: Hex): number {
-						return abs(hex.yH * 2 + hex.xH % 2 - MAP_H);
-					}
 
 					// XXX: This evaluation function can be moved to CPU class.
 					let spL = this.get(from).SP;
@@ -1078,11 +1107,11 @@
 						if (!same(hex, hexUnit)) {
 							let cell = field.rawget(hex);
 							let r = this.ensure(hex);
-							if (r.shotFrom == null) {
+							if (!r.shotFrom) {
 								r.shotFrom = from;
 								let target = cell.unit;
 								if (unit.isTarget(target)) {
-									r.effect = unit.estimate(scene, target);
+									r.effect = unit.estimate(scene, target!);
 								}
 							} else if (better(r.shotFrom)) {
 								r.shotFrom = from;
@@ -1091,11 +1120,15 @@
 					});
 				}
 			}
+
+			function yScore(hex: Hex): number {
+				return abs(hex.yH * 2 + hex.xH % 2 - MAP_H);
+			}
 		}
 
 		ensure(hex: Hex): ActionResult {
 			let value = this.rawget(hex);
-			if (value == null) {
+			if (!value) {
 				value = { SP: -1 };
 				this.set(value, hex);
 			}
@@ -1103,15 +1136,17 @@
 		}
 
 		// returns path of walking to the hex or to the shootable hex for it.
-		getPath(hex: Hex, field: Field): Hex[] {
-			let { effect, comeFrom, shotFrom } = this.get(hex);
+		getPath(hex: Hex, field: Field): Optional<Hex[]> {
+			let r = this.get(hex);
+			if (!r) { return undefined; }
+			let { effect, comeFrom, shotFrom } = r;
 			let path: Hex[];
 			if (effect) {
-				if (!field.get(shotFrom).empty) { return null; }
+				if (!field.get(shotFrom).empty) { return undefined; }
 				path = [shotFrom];
 				({ comeFrom } = this.get(shotFrom));
 			} else if (comeFrom) {
-				if (!field.get(hex).empty) { return null; }
+				if (!field.get(hex).empty) { return undefined; }
 				path = [hex];
 			}
 			while (comeFrom) {
@@ -1134,7 +1169,7 @@
 				fontSize: 20
 			}), equip);
 
-			function label(): string {
+			function label(): Optional<string> {
 				let { focus } = scene;
 				if (focus) {
 					let skill = focus.skills[index];
@@ -1169,12 +1204,12 @@
 
 		get visible(): boolean {
 			let { focus } = this.scene;
-			return focus != null && focus.skills[this.index] != null;
+			return !!focus && !!focus.skills[this.index];
 		}
 
 		get enabled(): boolean {
 			let { focus } = this.scene;
-			return focus != null && focus.rangeOf(focus.skills[this.index]) > 0;
+			return !!focus && focus.rangeOf(focus.skills[this.index]) > 0;
 		}
 	}
 
@@ -1227,7 +1262,7 @@
 			let line: Cell[] = new Array(MAP_H);
 			let monsters = keys(MONSTERS);
 			for (let yH = 0; yH < MAP_H; ++yH) {
-				let unit: Unit;
+				let unit: Optional<Unit>;
 				let type = CELL.NORMAL;
 				if (xH > XH_ENEMY && random() < enemyRatio) {
 					let name = monsters[rand(monsters.length)];
@@ -1270,16 +1305,16 @@
 	//================================================================================
 
 	interface Snapshot {
-		unit: Unit;
-		hex: Hex;
-		SP: number;
-		maps: HexMap<ActionMap>;
-		zoc: ZoC[];
+		readonly unit: Unit;
+		readonly hex: Hex;
+		readonly SP: number;
+		readonly maps: HexMap<ActionMap>;
+		readonly zoc: ZoC[];
 	}
 
 	interface Controller {
 		visible: boolean;
-		caret: Hex;
+		caret?: Hex;
 	}
 
 	export class Scene extends Composite {
@@ -1328,46 +1363,34 @@
 			function createAllyButton(scene: Scene, index: number, unit: Unit): Button {
 				function draw(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH): void {
 					let { ch } = unit;
-					let { x, y } = rect;
-					let { w, h } = scaleProportionally(ch, rect.w, rect.h, true);
-					x += (rect.w - w) / 2;
-					y += (rect.h - h) / 2;
-					if (unit.hex) {
-						ch.draw(g, when, { x, y, w, h });
+					let chRect = scaleProportionally(ch, rect.w, rect.h, true) as XYWH;
+					chRect.x = rect.x + (rect.w - chRect.w) / 2;
+					chRect.y = rect.y + (rect.h - chRect.h) / 2;
+					if (unit.hex || unit.canRevive) {
+						ch.draw(g, when, chRect);
 					} else {
-						let ratio = unit.HP / unit.maxHP;
-						if (ratio >= UNIT_REVIVE_HP) {
-							ch.draw(g, when, { x, y, w, h });
-						} else {
-							let image = (ch.images[CharacterImage.CLOSED] || ch.images[CharacterImage.DEFAULT]);
-							image.draw(g, when, { x, y, w, h });
-						}
-						drawTextBox(g, floor(ratio * 100).toFixed(0) + "%", rect.x, rect.y, rect.w, rect.h, {
-							fillStyle: "white",
-							strokeStyle: "black",
-							textAlign: "center",
-							textBaseline: "bottom"
-						});
+						// XXX: Should use grayscaled CLOSED image? Some browser won't allow to read raw data from local image files.
+						let image = (ch.images[CharacterImage.CLOSED] || ch.images[CharacterImage.DEFAULT]);
+						image.draw(g, when, chRect);
 					}
+					drawBar(g, rect.x + ALLY_BAR_X, rect.y + ALLY_BAR_Y, ALLY_BAR_W, ALLY_BAR_H, unit.HP, unit.maxHP, undefined, BAR_STYLE_HP);
 				}
 				function click() {
 					if (unit.hex) {
 						human.click(unit.hex);
-					} else {
-						if (unit.HP / unit.maxHP >= UNIT_REVIVE_HP) {
-							let xH = field.minXH;
-							let yH = index % 3;
-							for (let i = 0; i < MAP_H; ++i) {
-								if (field.get(xH, yH).empty) {
-									scene.revive(unit, { xH, yH });
-									return;
-								}
-								yH = (yH + 1) % MAP_H;
+					} else if (unit.canRevive) {
+						let xH = field.minXH;
+						let yH = index % 3;
+						for (let i = 0; i < MAP_H; ++i) {
+							if (field.get(xH, yH).empty) {
+								scene.revive(unit, { xH, yH });
+								return;
 							}
-							logger.error(_("Combat", "NoSpaceToRevive"));
-						} else {
-							logger.error(_("Combat", "CannotRevive"));
+							yH = (yH + 1) % MAP_H;
 						}
+						logger.error(_("Combat", "NoSpaceToRevive"));
+					} else {
+						logger.error(_("Combat", "CannotRevive"));
 					}
 				}
 				return new Button(
@@ -1380,7 +1403,7 @@
 
 			//========= Human =========
 			let componentsForHuman = new Composite(allyButtons);
-			defineGetSet(componentsForHuman, "visible", () => human.visible && this.focus == null);
+			defineGetSet(componentsForHuman, "visible", () => human.visible && !this.focus);
 			componentsForHuman.attach(this);
 
 			addSystemButton(componentsForHuman, 1, _("Combat", "End"), () => this.endTurn());
@@ -1418,7 +1441,7 @@
 
 			//========= Focus =========
 			let componentsForFocus = new Composite();
-			defineGetSet(componentsForFocus, "visible", () => this.focus != null);
+			defineGetSet(componentsForFocus, "visible", () => !!this.focus);
 			componentsForFocus.attach(this);
 
 			let barsOnFocus = new Component();
@@ -1431,7 +1454,7 @@
 
 			//========= Skills =========
 			let componentsForSkills = new Composite();
-			defineGetSet(componentsForSkills, "visible", () => human.visible && this.focus != null);
+			defineGetSet(componentsForSkills, "visible", () => human.visible && !!this.focus);
 			componentsForSkills.attach(this);
 
 			for (let i = 0; i < SKILL_MAX; ++i) {
@@ -1444,7 +1467,7 @@
 			}
 
 			//========= Target =========
-			let target = (): Unit => {
+			let target = (): Optional<Unit> => {
 				let map = this.mapFor(this.focus);
 				if (map) {
 					let { caret } = this.controller;
@@ -1452,11 +1475,11 @@
 						return field.get(caret).unit;
 					}
 				}
-				return null;
+				return undefined;
 			};
 
 			let panelForTarget = new Widget(PANEL_RX, PANEL_Y, PANEL_RW, PANEL_H);
-			defineGetSet(panelForTarget, "visible", () => target() != null);
+			defineGetSet(panelForTarget, "visible", () => !!target());
 			panelForTarget.onDraw = (g, when) => this.drawPanel(g, when, target(), panelForTarget);
 			panelForTarget.attach(this);
 
@@ -1485,13 +1508,13 @@
 		}
 		get numScrollsPerTurn(): number { return this.stage.numScrollsPerTurn; }
 
-		private _focus: Unit;
-		private focusTime: Timestamp;
+		private _focus?: Unit;
+		private focusTime?: Timestamp;
 
-		get focus(): Unit { return this._focus; }
-		set focus(value: Unit) {
-			if (value == null) {
-				this._focus = null;
+		get focus(): Optional<Unit> { return this._focus; }
+		set focus(value: Optional<Unit>) {
+			if (!value) {
+				this._focus = undefined;
 				this.focusTime = undefined;
 			} else if (this._focus !== value) {
 				this._focus = value;
@@ -1499,8 +1522,8 @@
 			}
 		}
 
-		private _zoc: ZoC[];
-		get zoc(): ZoC[] {
+		private _zoc: Optional<ZoC[]>;
+		get zoc(): Optional<ZoC[]> {
 			if (!this.enabled) { return undefined; }
 
 			let { _zoc } = this;
@@ -1522,8 +1545,8 @@
 			return _zoc;
 		}
 
-		private maps: HexMap<ActionMap>;
-		mapFor(unit: Unit): ActionMap {
+		private maps: Optional<HexMap<ActionMap>>;
+		mapFor(unit?: Unit): Optional<ActionMap> {
 			if (!unit || !this.enabled) { return undefined; }
 
 			let { maps } = this;
@@ -1532,7 +1555,7 @@
 			}
 			let { hex } = unit;
 			let map = maps.rawget(hex);
-			if (map == null) {
+			if (!map) {
 				map = new ActionMap(this, unit, unit.SP);
 				maps.set(map, hex);
 			}
@@ -1565,7 +1588,7 @@
 
 		rollback(): void {
 			let snapshot = this.snapshots.pop();
-			assert(snapshot != null);
+			assert(snapshot);
 			let { unit } = snapshot;
 			this.setUnit(unit, snapshot.hex);
 			unit.SP = snapshot.SP;
@@ -1577,19 +1600,19 @@
 		setUnit(unit: Unit, hex: Hex): void {
 			let { field } = this;
 			let cell = field.rawget(hex);
-			assert(cell != null);
+			assert(cell);
 			let occupied = cell.unit;
 			if (unit) {
 				if (occupied === unit) {
 					return;	// not moved at all
 				}
-				assert(occupied == null);
+				assert(!occupied);
 				if (unit.hex) {
-					field.rawget(unit.hex).unit = null;
+					field.rawget(unit.hex).unit = undefined;
 				}
 				unit.hex = hex;
 			} else if (occupied) {
-				occupied.hex = null;
+				occupied.hex = undefined;
 			}
 			cell.unit = unit;
 			this.invalidate();
@@ -1617,8 +1640,7 @@
 			let { team } = this;
 			for (let dead of this.deads) {
 				if (dead.team === team) {	// dead
-					let regen = floor(dead.maxHP * UNIT_REGEN_ON_DEAD);
-					dead.HP = min(dead.maxHP, dead.HP + regen);
+					dead.recuperate();
 				}
 			}
 			let jobs: Job[];
@@ -1715,7 +1737,7 @@
 			let finish = (): void => {
 				this.enabled = true;
 				if (unit.done(this)) {
-					this.focus = null;
+					this.focus = undefined;
 				}
 			};
 
@@ -1744,7 +1766,7 @@
 
 				// walk and shoot
 				let path = map.getPath(hex, field);
-				assert(path != null);
+				assert(path);
 				assert(path.length > 1);
 				let hexWalk = path[path.length - 1];
 				assert(!same(hexWalk, hex));
@@ -1759,7 +1781,7 @@
 				assert(r.SP >= 0 && field.rawget(hex).empty);
 				// walk only
 				let path = map.getPath(hex, field);
-				assert(path != null);
+				assert(path);
 				assert(path.length > 1);
 				this.setUnit(unit, hex);
 				unit.SP = r.SP;
@@ -1770,7 +1792,7 @@
 		}
 
 		// find units in valid cells; NOTE: eachUnit returns ones in all visible cells.
-		findUnit(hex: Hex, next: boolean, filter: (unit: Unit) => boolean): Unit {
+		findUnit(hex: Optional<Hex>, next: boolean, filter: (unit: Unit) => boolean): Optional<Unit> {
 			let { field } = this;
 			let { minXH, maxXH } = field;
 			let dx = ((this.team === TEAM.ALLY ? next : !next) ? 1 : -1);
@@ -1802,7 +1824,7 @@
 				let { unit } = field.rawget(xH, yH);
 				if (unit && filter(unit)) { return unit; }
 			}
-			return null;	// not found
+			return undefined;	// not found
 		}
 
 		kill(unit: Unit): void {
@@ -1831,7 +1853,7 @@
 		}
 
 		get isGameOver(): boolean {
-			return this.findUnit(null, true, u => u.team === TEAM.ALLY) == null;
+			return !this.findUnit(undefined, true, u => u.team === TEAM.ALLY);
 		}
 
 		createPopup(text: string, color: CanvasStyle, hex: Hex): Animation {
@@ -1883,10 +1905,10 @@
 		}
 
 		// visit all visible units
-		eachUnit(callback: (unit: Unit) => void): void {
+		eachUnit(callback: (this: void, unit: Unit) => void): void {
 			this.field.eachVisible(({ unit }) => {
 				if (unit) {
-					callback.call(this, unit);
+					callback(unit);
 				}
 			});
 		}
@@ -1918,7 +1940,7 @@
 		}
 
 		// view coordinate to scene valid hex, or null if invalid cell
-		toHex(x: Pixel, y: Pixel): Hex {
+		toHex(x: Pixel, y: Pixel): Optional<Hex> {
 			let { field } = this;
 			let dx = x - FIELD_X + field.depth * CELL_W / 2;
 			let dy = y - FIELD_Y - SKY_H;
@@ -1936,7 +1958,7 @@
 					return { xH, yH };
 				}
 			}
-			return null; // out of scene
+			return undefined; // out of scene
 		}
 
 		// depth can be non-integer.
@@ -1975,7 +1997,7 @@
 		}
 
 		// Markers
-		private drawMarkers(g: CanvasRenderingContext2D, when: Timestamp, startTime: Timestamp, map: ActionMap, unit: Unit) {
+		private drawMarkers(g: CanvasRenderingContext2D, when: Optional<Timestamp>, startTime: Timestamp, map: ActionMap, unit: Unit) {
 			let progress = Animation.clamp(when, startTime, MARKER_DURATION);
 			if (progress <= 0) { return; }
 
@@ -1987,7 +2009,7 @@
 				g.globalAlpha = progress;
 			}
 			map.eachVisible(({ effect, SP, shotFrom }, xH, yH) => {
-				let markerStyle: MarkerStyle;
+				let markerStyle: Optional<MarkerStyle>;
 				let inflateW = 0;
 				let inflateH = 0;
 				if (effect) {
@@ -2021,8 +2043,8 @@
 		}
 
 		// Units (Shadows, Characters, Status)
-		private drawUnits(g: CanvasRenderingContext2D, when: Timestamp, startTime: Timestamp): void {
-			let { field, zoc, focus } = this;
+		private drawUnits(g: CanvasRenderingContext2D, when: Timestamp, startTime?: Timestamp): void {
+			let { zoc, focus } = this;
 
 			interface UnitXY extends XY {
 				unit: Unit;
@@ -2054,7 +2076,7 @@
 			let map = this.mapFor(focus);
 			let targetOverlay = ((map && focus.skill.hostile) ? UNIT_OVERLAY_HOSTILE : UNIT_OVERLAY_FRIENDLY);
 			for (let {unit, x, y} of units) {
-				let overlayStyle: CanvasStyle;
+				let overlayStyle: Optional<CanvasStyle>;
 				if (map) {
 					if (focus === unit) {
 						overlayStyle = UNIT_OVERLAY_FOCUS;
@@ -2126,10 +2148,6 @@
 				chRect.y = rect.y + (rect.h - chRect.h) / 2;
 				ch.draw(g, when, chRect);
 
-				function toFixed(n: number): string {
-					return n != null ? n.toFixed(1) : "-";
-				}
-
 				const PANEL_NAME_X: Pixel = UNIT_MAX_W + MARGIN * 2;
 				const PANAL_NAME_Y: Pixel = MARGIN;
 				let MVW = (unit.SP >= unit.cost ? floor((unit.SP - unit.cost) / unit.step) : "-");
@@ -2142,6 +2160,10 @@
 					`ATK/DEF: ${toFixed(ATK)} / ${unit.DEF.toFixed(1)}`,
 					rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y, PANEL_TEXT_STYLE
 				);
+			}
+
+			function toFixed(n: number): string {
+				return n != null ? n.toFixed(1) : "-";
 			}
 		}
 	}
@@ -2166,7 +2188,7 @@
 			this._caret = value;
 			if (this.mode === Caret.Unlocked) {
 				let scene = this.parent as Scene;
-				scene.focus = (value ? scene.field.get(value).unit : null);
+				scene.focus = (value ? scene.field.get(value).unit : undefined);
 			}
 		}
 
@@ -2179,7 +2201,7 @@
 			let scene = this.parent as Scene;
 			let { snapshots } = scene;
 			let { length } = snapshots;
-			let unit = (length > 0 ? snapshots[length - 1].unit : null);
+			let unit = (length > 0 ? snapshots[length - 1].unit : undefined);
 			if (this.mode >= Caret.Locked && unit !== scene.focus) {
 				this.mode = Caret.Unlocked;
 			} else if (unit) {
@@ -2241,7 +2263,7 @@
 			}
 
 			let { focus } = scene;
-			if (focus == null || scene.team !== focus.team) {
+			if (!focus || scene.team !== focus.team) {
 				this.mode = Caret.Unlocked;	// click on enemy
 				return;
 			}
@@ -2259,7 +2281,7 @@
 				scene.savepoint(focus);
 			} else {
 				// cannot shoot nor walk.
-				scene.focus = null;
+				scene.focus = undefined;
 				this.mode = Caret.Unlocked;
 				return;
 			}
@@ -2267,7 +2289,7 @@
 			this.mode = Caret.Locked;
 			let job = scene.move(focus, hex);
 			let checkFocus = () => {
-				if (scene.focus == null) {
+				if (!scene.focus) {
 					this.mode = Caret.Unlocked;
 				}
 			};
@@ -2283,7 +2305,6 @@
 		}
 
 		onPress(key: KEY): void {
-			let scene = this.parent as Scene;
 			switch (key) {
 				case KEY.TAB:
 				case KEY.DELETE:
@@ -2326,7 +2347,7 @@
 					break;
 			}
 
-			function moveCaretFor(dir: DIR) {
+			function moveCaretFor(this: Human, dir: DIR) {
 				let { field } = this.parent as Scene;
 				let { caret } = this;
 				if (caret) {
@@ -2339,7 +2360,7 @@
 				}
 			}
 
-			function seek(next: boolean) {
+			function seek(this: Human, next: boolean) {
 				let scene = this.parent as Scene;
 				let { caret } = this;
 				let { team, focus } = scene;
@@ -2347,10 +2368,10 @@
 				let unit = scene.findUnit(hex, next, u => u.team === team && !u.done(scene));
 				if (unit) {
 					scene.focus = unit;
-					if (caret == null) {
+					if (!caret) {
 						this.caret = unit.hex;
 					}
-					if (this._mode === Caret.Unlocked) {
+					if (this.mode === Caret.Unlocked) {
 						this.mode = Caret.Locked;
 					}
 				} else {
@@ -2510,11 +2531,11 @@
 			if (value) { committed.then(() => this.run([])); }
 		}
 
-		caret: Hex;
+		caret?: Hex;
 
 		private run(ignored: Unit[]): void {
 			let scene = this.parent as Scene;
-			let job: Job = null;
+			let job: Optional<Job>;
 			while (this.running) {
 				if (!scene.enabled) {
 					job = committed;	// should not happen, but...
@@ -2523,9 +2544,9 @@
 					job.then(() => this.run(ignored));
 					break;
 				}
-				this.caret = null;
+				this.caret = undefined;
 				let unit = pick(scene, ignored);
-				if (unit == null) {
+				if (!unit) {
 					scene.endTurn();	// no more actions in this turn.
 					break;
 				}
@@ -2537,7 +2558,7 @@
 				score: number;
 			}
 
-			function pick(scene: Scene, ignored: Unit[]): Unit {
+			function pick(scene: Scene, ignored: Unit[]): Optional<Unit> {
 				let { focus } = scene;
 				if (focus) { return focus; }
 				let { team } = scene;
@@ -2548,13 +2569,13 @@
 						u => u.team === team && !u.done(scene) && ignored.indexOf(u) < 0
 					);
 				} else {
-					focus = scene.findUnit(null, false, u => u.team === team && !u.done(scene));
+					focus = scene.findUnit(undefined, false, u => u.team === team && !u.done(scene));
 				}
 				scene.focus = focus;
 				return focus;
 			}
 
-			function move(scene: Scene, unit: Unit, ignored: Unit[]): Job {
+			function move(this: CPU, scene: Scene, unit: Unit, ignored: Unit[]): Optional<Job> {
 				let map = scene.mapFor(unit);
 				let best = getBestMovement(scene, unit, map);
 				let { hex } = best;
@@ -2571,7 +2592,7 @@
 					while (hex && (map.get(hex).SP < 0 || !field.get(hex).empty)) {
 						hex = search.get(hex).comeFrom;
 					}
-					if (hex == null) {
+					if (!hex) {
 						hex = unit.hex;
 					}
 				}
@@ -2579,8 +2600,8 @@
 				// Ignore units that don't want further actions to avoid infinite loops.
 				if (same(hex, unit.hex)) {
 					ignored.push(unit);
-					scene.focus = null;
-					return null;
+					scene.focus = undefined;
+					return undefined;
 				}
 
 				// Reset ignored list.
@@ -2671,7 +2692,6 @@
 				let best = 0;
 				for (let skill of ch.skills) {
 					if (ch.rangeOf(skill) > 0) {
-						let power = ch.powerOf(skill);
 						let value: number;
 						if (skill.hostile) {
 							value = calcDamage(scene, me, skill, you) / you.HP;
@@ -2685,9 +2705,9 @@
 			}
 
 			function scoreSkill(scene: Scene, me: Unit, xH: Coord, yH: Coord, effect: SkillEffect): number {
-				assert(me != null);
+				assert(me);
 				let you = scene.field.rawget(xH, yH).unit;
-				assert(you != null);
+				assert(you);
 
 				let yourValue = valueOfUnit(scene, you, me);
 				let deltaHP = (effect.deltaHP || 0);
@@ -2720,14 +2740,14 @@
 	}
 
 	EFFECTS = {
-		Damage: function(scene: Scene, unit: Unit, target: Unit): SkillEffect {
+		Damage: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
 			let { skill } = unit;
 			return {
 				deltaHP: -calcDamage(scene, unit, skill, target)
 			};
 		},
 		// Damage to HP, and also the half to SP.
-		DamageHPandSP: function(scene: Scene, unit: Unit, target: Unit): SkillEffect {
+		DamageHPandSP: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
 			let { skill } = unit;
 			let deltaHP = -calcDamage(scene, unit, skill, target);
 			return {
@@ -2735,7 +2755,7 @@
 				deltaSP: floor(deltaHP / 2)
 			};
 		},
-		DamageOverTime: function(scene: Scene, unit: Unit, target: Unit): SkillEffect {
+		DamageOverTime: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
 			let { skill } = unit;
 			let deltaHP = -calcDamage(scene, unit, skill, target);
 			let duration = 2;
@@ -2745,13 +2765,13 @@
 				deltaHPoT: floor(deltaHP / duration)
 			};
 		},
-		Heal: function(scene: Scene, unit: Unit, target: Unit): SkillEffect {
+		Heal: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
 			let { skill } = unit;
 			return {
 				deltaHP: calcHeal(scene, unit, skill)
 			};
 		},
-		HealOverTime: function(scene: Scene, unit: Unit, target: Unit): SkillEffect {
+		HealOverTime: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
 			let { skill } = unit;
 			let deltaHP = calcHeal(scene, unit, skill);
 			let duration = 2;
@@ -2790,8 +2810,8 @@
 		}
 	}
 
-	function rearHexOf(field: Field, from: Hex, to: Hex): Hex {
-		let rearHex: Hex = undefined;
+	function rearHexOf(field: Field, from: Hex, to: Hex): Optional<Hex> {
+		let rearHex: Optional<Hex>;
 		let rearStep = distance(from, to) + 1;
 		field.straight(from, to, rearStep, (hex, steps) => {
 			if (steps === rearStep && field.get(hex).empty) {
@@ -2842,8 +2862,8 @@
 
 		let effects: Job[] = [];
 		function trySkill(hex: Hex, steps: number) {
-			let target = field.get(hex).unit;
-			if (unit.isTarget(target)) {
+			let target = unit.getTarget(field, hex);
+			if (target) {
 				let effect = unit.estimate(scene, target);
 				if (factor) {
 					effect.deltaHP = factor(effect.deltaHP, steps);
@@ -2881,10 +2901,10 @@
 		// Charge tha target and come back.
 		Charge: standardCharge,
 		// Knockback the target.
-		Knockback: function(scene: Scene, unit: Unit, target: Unit): Job {
+		Knockback: function (scene: Scene, unit: Unit, target: Unit): Job {
 			let { hex } = target;
 			let hexTo = rearHexOf(scene.field, unit.hex, hex);
-			if (hexTo == null) {
+			if (!hexTo) {
 				return standardCharge(scene, unit, target);	// no space; just charge
 			}
 
@@ -2902,10 +2922,10 @@
 			return (config.wait.POPUP ? join([popup, action]) : action);
 		},
 		// Go to behind of the target
-		GoBehind: function(scene: Scene, unit: Unit, target: Unit): Job {
+		GoBehind: function (scene: Scene, unit: Unit, target: Unit): Job {
 			let { hex } = target;
 			let hexTo = rearHexOf(scene.field, unit.hex, hex);
-			if (hexTo == null) {
+			if (!hexTo) {
 				return standardCharge(scene, unit, target);	// no space; just charge
 			}
 			let hexFrom = unit.hex;
@@ -2918,10 +2938,10 @@
 			return (config.wait.POPUP ? popup : action);
 		},
 		// Charge and Knockback the target.
-		Trample: function(scene: Scene, unit: Unit, target: Unit): Job {
+		Trample: function (scene: Scene, unit: Unit, target: Unit): Job {
 			let { hex } = target;
 			let hexTo = rearHexOf(scene.field, unit.hex, hex);
-			if (hexTo == null) {
+			if (!hexTo) {
 				return standardCharge(scene, unit, target);	// no space; just charge
 			}
 			let hexFrom = unit.hex;
@@ -2937,7 +2957,7 @@
 			return (config.wait.POPUP ? popup : knockback);
 		},
 		// Shoot a projectile.
-		Shoot: function(scene: Scene, unit: Unit, target: Unit): Job {
+		Shoot: function (scene: Scene, unit: Unit, target: Unit): Job {
 			let effect = unit.estimate(scene, target);
 			let popup = scene.promiseEffect(target, effect);
 			let action = shootProjectile(scene, unit.hex, target.hex, unit.skill);
@@ -2945,7 +2965,7 @@
 			return (config.wait.POPUP ? popup : action);
 		},
 		// Damage to HP, and heal the caster.
-		Drain: function(scene: Scene, unit: Unit, target: Unit): Job {
+		Drain: function (scene: Scene, unit: Unit, target: Unit): Job {
 			let effect = unit.estimate(scene, target);
 			let damage = scene.promiseEffect(target, effect);
 			let heal = scene.promiseEffect(unit, { deltaHP: -effect.deltaHP });
@@ -2955,8 +2975,7 @@
 			return (config.wait.POPUP ? heal : action);
 		},
 		// Damage target, and also ones near of it.
-		Explode: function(scene: Scene, unit: Unit, target: Unit): Job {
-			let effect = unit.estimate(scene, target);
+		Explode: function (scene: Scene, unit: Unit, target: Unit): Job {
 			let radius = 1;
 			let action = shootProjectile(scene, unit.hex, target.hex, unit.skill);
 			let nova = delay(() => standardNova(scene, unit, target.hex, radius, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
@@ -2964,16 +2983,16 @@
 			return nova;
 		},
 		// Action for STRAIGHT
-		Laser: function(scene: Scene, unit: Unit, target: Unit): Job {
+		Laser: function (scene: Scene, unit: Unit, target: Unit): Job {
 			let { field } = scene;
-			let { range } = unit;
+			let range = unit.range || 0;
 
 			let hexFrom = unit.hex;
 			let hexTo: Hex;
 			let effects: Job[] = [];
 			field.straight(hexFrom, target.hex, range, hex => {
-				let target = field.get(hex).unit;
-				if (unit.isTarget(target)) {
+				let target = unit.getTarget(field, hex);
+				if (target) {
 					let effect = unit.estimate(scene, target);
 					let popup = scene.promiseEffect(target, effect);
 					popup.attach(scene);
@@ -3012,8 +3031,8 @@
 			}
 		},
 		// Action for SURROUND
-		Nova: function(scene: Scene, unit: Unit, target: Unit): Job {
-			return standardNova(scene, unit, unit.hex, unit.range);
+		Nova: function (scene: Scene, unit: Unit, target: Unit): Job {
+			return standardNova(scene, unit, unit.hex, unit.range || 0);
 		}
 	};
 }

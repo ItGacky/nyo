@@ -3,11 +3,11 @@
 		window.open('about:blank','_self').close();
 	},
 	getLocalStorage: function (key) {
-		// NOTE: localStorage is undefined on IE/Edge if running on localhost. 
+		// NOTE: localStorage is undefined on IE/Edge if running on localhost.
 		if (typeof localStorage !== "undefined") {
 			return localStorage.getItem("local/" + key);
 		} else {
-			return null;
+			return undefined;
 		}
 	},
 	setLocalStorage: function (key, value) {
@@ -23,7 +23,7 @@
 		if (typeof localStorage !== "undefined") {
 			return localStorage.getItem("roaming/" + key);
 		} else {
-			return null;
+			return undefined;
 		}
 	},
 	setRoamingStorage: function (key, value) {

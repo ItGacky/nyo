@@ -1,11 +1,11 @@
 interface SkillDef {
-	tags: TAG[];
-	usage: USAGE;
-	power: number;
-	cost: number;
-	range?: number;
-	effect: string;
-	action?: string;
+	readonly tags: TAG[];
+	readonly usage: USAGE;
+	readonly power: number;
+	readonly cost: number;
+	readonly range?: number;
+	readonly effect: string;
+	readonly action: string;
 }
 
 const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {

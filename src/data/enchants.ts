@@ -1,8 +1,8 @@
 interface EnchantDef {
-	tags: TAG[];	// supported item tag
-	min: number;	// value min
-	max: number;	// value max
-	ATK?: (value: number, ATK: number) => number;
+	readonly tags: TAG[];	// supported item tag
+	readonly min: number;	// value min
+	readonly max: number;	// value max
+	readonly ATK?: (value: number, ATK: number) => number;
 }
 
 function enchantAddedATK(value: number, ATK: number): number {

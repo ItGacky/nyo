@@ -64,9 +64,9 @@ const BAR_STYLE_SP: UnitBarStyle = {
 // config.effects
 
 interface EfeectConfig {
-	PICK: Duration;	// delay per pick
-	WALK: boolean;	// wait walking animation?
-	POPUP: boolean;	// wait damage popup?
+	readonly PICK: Duration;	// delay per pick
+	readonly WALK: boolean;		// wait walking animation?
+	readonly POPUP: boolean;	// wait damage popup?
 }
 
 const CPU_WAIT: EfeectConfig[] = [
@@ -99,3 +99,11 @@ const MNEMONIC_CONFIG = [KEY.ESCAPE];
 const MNEMONIC_START = [KEY.ENTER, KEY.SPACE];
 
 let logger: Logger;
+
+interface Config extends CanvasConfig {
+	readonly volume: Integer;
+	readonly effects: Integer;
+	readonly wait: EfeectConfig;
+}
+
+let config: Config;

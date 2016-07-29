@@ -8,7 +8,7 @@
 
 let reset: Slot;
 
-const config = new (class implements CanvasConfig {
+config = new class implements Config {
 	volume: Integer;
 	effects: Integer;
 
@@ -36,7 +36,7 @@ const config = new (class implements CanvasConfig {
 	}
 
 	get wait(): EfeectConfig { return CPU_WAIT[this.effects.value]; }
-});
+};
 
 //================================================================================
 
@@ -259,14 +259,14 @@ function newData(): Data {
 		],
 		gold: 1000
 	};
-	data.party[0].equipments[0].enchants.push(Enchant.from("AddedFire"));
+	data.party[0]!.equipments[0].enchants.push(Enchant.from("AddedFire"));
 	return data;
 }
 
-function loadData(): Data {
+function loadData(): Optional<Data> {
 	try {
 		let value = System.getRoamingStorage(STORAGE_KEY);
-		if (!value) { return null; }
+		if (!value) { return undefined; }
 		let json = parse(value) as DataArchive;
 		return {
 			shop: json.shop,
@@ -277,7 +277,7 @@ function loadData(): Data {
 		};
 	} catch (e) {
 		logger.error(e);
-		return null;
+		return undefined;
 	}
 }
 
@@ -292,7 +292,7 @@ function saveData(data: Data): void {
 
 function deleteData(): void {
 	try {
-		System.setRoamingStorage(STORAGE_KEY, null);
+		System.setRoamingStorage(STORAGE_KEY, undefined);
 	} catch (e) {
 		logger.error(e);
 	}
@@ -304,10 +304,6 @@ function loadConfig(): void {
 		if (value) {
 			let sys = parse(value) as ConfigArchive;
 			if (sys) {
-				function overwrite<T>(defaultValue: T, newValue: any): T {
-					return (typeof defaultValue === typeof newValue) ? newValue : defaultValue;
-				}
-
 				Word.language = overwrite(Word.language, sys.language);
 				config.magnifyCanvas = overwrite(config.magnifyCanvas, sys.magnifyCanvas);
 				config.refineCanvas = overwrite(config.refineCanvas, sys.refineCanvas);
@@ -317,6 +313,10 @@ function loadConfig(): void {
 		}
 	} catch (e) {
 		logger.error(e);
+	}
+
+	function overwrite<T>(defaultValue: T, newValue: any): T {
+		return (typeof defaultValue === typeof newValue) ? newValue : defaultValue;
 	}
 }
 

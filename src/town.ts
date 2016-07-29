@@ -97,7 +97,7 @@
 		return [
 			{
 				name: label,
-				extract: row => Item.nameOf(row),
+				extract: row => Item.nameOf(row).localized,
 				width: ROW_W_FOR_NAME
 			},
 			{
@@ -186,7 +186,7 @@
 
 	class Portrait implements Drawable {
 		constructor(
-			public party: Character[],
+			public party: Optional<Character>[],
 			public index: number
 		) {
 		}
@@ -257,7 +257,7 @@
 		}
 
 		goTo(sceneClass: new (data: Data) => Composite): void {
-			new FadeOut(this, new sceneClass(this.data)).attach(this.parent);
+			new FadeOut(this, new sceneClass(this.data)).attach(this.parent!);
 		}
 	}
 
@@ -271,7 +271,7 @@
 
 			const DH = SCREEN_H - PORTRAIT_Y - (PORTRAIT_H + PORTRAIT_MARGIN) * (PARTY_MAX / 2);
 			let { party } = data;
-			assert(party != null);
+			assert(party);
 			let scene = this;
 			let portraits: SwappableButton[] = [];
 			for (let i = 0; i < PARTY_MAX; ++i) {
@@ -281,10 +281,10 @@
 				let y = PORTRAIT_Y + (PORTRAIT_H + PORTRAIT_MARGIN) * r + DH * c;
 				new SwappableButton(x, y, PORTRAIT_W, PORTRAIT_H, portraits,
 					new Portrait(party, i),
-					function() {
+					function(this: SwappableButton) {
 						scene.onPortraitClick((this.drawable as Portrait).index);
 					},
-					function(that: SwappableButton) {
+					function(this: SwappableButton, that: SwappableButton) {
 						let L = this.drawable as Portrait;
 						let R = that.drawable as Portrait;
 						// swap index and character
@@ -313,8 +313,8 @@
 			this.addSpot(3, KEY.C, "Shop", () => this.goTo(Shop));		// TODO: Shop or Trading Post?
 			this.addSpot(2, KEY.D, "Smith", () => { }).enabled = false;	// TODO: 武器や防具に Enchant を追加できる。
 			this.addSpot(1, KEY.E, "Dungeon", () => {
-				new FadeOut(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin], 0))).attach(this.parent);
-			}).enabled = data.party.some(ch => ch != null);
+				new FadeOut(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin], 0))).attach(this.parent!);
+			}).enabled = data.party.some(ch => !!ch);
 
 			this.addButton(2, [KEY.L], _("Town", "Load"), () => {
 				Dialog.confirm(this, _("Town", "ConfirmLoad"),
@@ -323,7 +323,7 @@
 						click: () => {
 							let loaded = loadData();
 							if (loaded) {
-								new FadeOut(this, new Home(loaded)).attach(this.parent);
+								new FadeOut(this, new Home(loaded)).attach(this.parent!);
 								logger.log(_("Town", "NotifyLoad"));
 							}
 						},
@@ -344,7 +344,7 @@
 		onPortraitClick(index: number) {
 			let ch = this.data.party[index];
 			if (ch) {
-				new FadeOut(this, new CharacterDetails(this.data, ch)).attach(this.parent);
+				new FadeOut(this, new CharacterDetails(this.data, index)).attach(this.parent!);
 			}
 		}
 
@@ -375,7 +375,7 @@
 					let ch = data.party[i];
 					if (ch) {
 						data.reservers.push(ch);
-						data.party[i] = null;
+						data.party[i] = undefined;
 					}
 				}
 			});
@@ -396,14 +396,14 @@
 		onPortraitClick(index: number): void {
 			let ch = this.data.party[index];
 			if (ch) {
-				this.data.party[index] = null;
+				this.data.party[index] = undefined;
 				this.data.reservers.push(ch);
 			}
 		}
 
 		onReserverClick(reserver: Character, index: number): void {
 			for (let i = 0; i < PARTY_MAX; ++i) {
-				if (this.data.party[i] == null) {
+				if (!this.data.party[i]) {
 					this.data.party[i] = reserver;
 					this.data.reservers.splice(index, 1);
 					return;
@@ -452,7 +452,7 @@
 					let price = item.priceToSell;
 					warehouse.splice(index, 1);
 					let stock = shop[IID];
-					if (stock == null) {
+					if (!stock) {
 						// new item
 						shop[IID] = 1;
 						buy.rows.push(IID);
@@ -481,7 +481,7 @@
 			});
 			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
 
-			btnBuy.click();
+			btnBuy.onClick();
 		}
 
 		onPortraitClick(index: number): void {
@@ -508,9 +508,12 @@
 	}
 
 	class CharacterDetails extends SceneWithSystemButtons {
-		constructor(data: Data, ch: Character) {
+		constructor(data: Data, index: number) {
 			super(data);
-			let { warehouse } = data;
+			let { warehouse, party } = data;
+
+			let ch = party[index];
+			assert(ch);
 
 			let sz = scaleProportionally(ch, SCREEN_W, SCREEN_H, true);
 			new Gallery(0, 0, sz.w, sz.h, ch).attach(this);	// character large image
@@ -566,6 +569,26 @@
 			]);
 			skills.attach(this);
 
+			let { length } = party;
+			for (let i = 1; i < length; ++i) {
+				let prev = (index + length - i) % length;
+				if (party[prev]) {
+					this.addButton(5, [KEY.LEFT, KEY.UP], _("Town", "Prev"), () =>
+						new FadeOut(this, new CharacterDetails(this.data, prev)).attach(this.parent!)
+					);
+					break;
+				}
+			}
+			for (let i = 1; i < length; ++i) {
+				let next = (index + i) % length;
+				if (party[next]) {
+					this.addButton(4, [KEY.RIGHT, KEY.DOWN], _("Town", "Next"), () =>
+						new FadeOut(this, new CharacterDetails(this.data, next)).attach(this.parent!)
+					);
+					break;
+				}
+			}
+
 			let btnEquip: Button, btnSkills: Button;
 			btnEquip = this.addButton(3, [KEY.E], _("Town", "Equipments"), () => {
 				equipments.visible = true;
@@ -581,9 +604,7 @@
 			});
 			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
 
-			btnEquip.click();
-
-			// TODO: Add buttons and mnemonics to switch another character.
+			btnEquip.onClick();
 		}
 	}
 }

@@ -22,21 +22,21 @@
 
 			let loaded = loadData();
 			let goTown = (data: Data) => {
-				new FadeOut(this, new Town.Home(data)).attach(this.parent);
+				new FadeOut(this, new Town.Home(data)).attach(this.parent!);
 			};
 
 			let label: Word;
 			let click: Slot;
 			if (loaded) {
 				label = _("Title", "Continue");
-				click = () => goTown(loaded);
+				click = () => goTown(loaded!);
 				new Button(TITLE_DELETE_X, TITLE_DELETE_Y, TITLE_DELETE_W, TITLE_DELETE_H, new Label(_("Title", "Delete")), () => {
 					Dialog.confirm(this, _("Title", "ConfirmDelete"),
 						{
 							label: _("Title", "Delete"),
 							click: () => {
 								deleteData();
-								new FadeOut(this, new Scene()).attach(this.parent);
+								new FadeOut(this, new Scene()).attach(this.parent!);
 								logger.log(_("Title", "NotifyDelete"));
 							},
 							mnemonic: MNEMONIC_YES

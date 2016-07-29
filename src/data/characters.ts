@@ -1,10 +1,10 @@
 interface CharacterDef {
-	INT: number;
-	DEX: number;
-	STR: number;
-	equipments: ItemID[];
-	skills: SkillID[];
-	image: string;
+	readonly INT: number;
+	readonly DEX: number;
+	readonly STR: number;
+	readonly equipments: ItemID[];
+	readonly skills: SkillID[];
+	readonly image: string;
 }
 
 const ADVENTURERS: { [key: string]: CharacterDef } = {

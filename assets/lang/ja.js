@@ -36,6 +36,8 @@
 		ConfirmLoad: "現在の状態を破棄してロードしますか？",
 		NotifyLoad: "データをロードしました。",
 		NotifySave: "データをセーブしました。",
+		Prev: "前へ",
+		Next: "次へ",
 
 		Guild: "登録所",
 

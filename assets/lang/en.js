@@ -36,6 +36,8 @@
 		ConfirmLoad: "Discard current state and load data?",
 		NotifyLoad: "Data is loaded.",
 		NotifySave: "Data is saved.",
+		Prev: "Previous",
+		Next: "Next",
 
 		Guild: "Guild",
 

@@ -46,7 +46,7 @@ const CONFIRM_TEXT_STYLE: TextStyle = {
 //================================================================================
 
 class Animation extends Component implements Job {
-	private start: Timestamp;
+	private start?: Timestamp;
 	private sig: Signal;
 
 	constructor(
@@ -68,14 +68,14 @@ class Animation extends Component implements Job {
 		}
 	}
 
-	detach(): Composite {
-		this.start = null;
+	detach(): Optional<Composite> {
+		this.start = undefined;
 		return super.detach();
 	}
 
 	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void {
 		let { start } = this;
-		if (start != null) {
+		if (start) {
 			let end = start + this.duration;
 			if (when >= end) {
 				this.onAnimation(1, g, when);
@@ -100,10 +100,10 @@ class Animation extends Component implements Job {
 	}
 
 	// helper function for duration
-	static clamp(when: Timestamp, start: Timestamp, duration: Duration): number {
-		if (start == null || when < start) {
+	static clamp(when: Timestamp, start?: Timestamp, duration?: Duration): number {
+		if (!start || when < start) {
 			return 0;
-		} else if (duration == null || start + duration < when) {
+		} else if (!duration || start + duration < when) {
 			return 1;
 		} else {
 			return (when - start) / duration;
@@ -111,8 +111,8 @@ class Animation extends Component implements Job {
 	}
 
 	// helper function for cycle animation
-	static cycle(when: Timestamp, start: Timestamp, duration: Duration): number {
-		if (start == null || duration == null || when < start) {
+	static cycle(when: Timestamp, start?: Timestamp, duration?: Duration): number {
+		if (!start || !duration || when < start) {
 			return 0;
 		} else {
 			return ((when - start) % duration) / duration;
@@ -139,7 +139,7 @@ class FadeIn extends Animation {
 			g.fillRect(0, 0, SCREEN_W, SCREEN_H);
 			g.restore();
 		} else {
-			this.next.attach(this.parent);
+			this.next.attach(this.parent!);
 		}
 	}
 }
@@ -173,7 +173,7 @@ class FadeOut extends Animation {
 				g.restore();
 			}
 		} else if (this.next) {
-			new FadeIn(this.next, this.duration).attach(this.parent);
+			new FadeIn(this.next, this.duration).attach(this.parent!);
 		}
 	}
 }
@@ -192,7 +192,7 @@ class Dialog extends Composite {
 	protected prev: Composite;
 
 	attach(parent: Composite): boolean {
-		if (this.prev == null && parent.parent != null && super.attach(parent.parent)) {
+		if (!this.prev && parent.parent && super.attach(parent.parent)) {
 			parent.detach();
 			this.prev = parent;
 			return true;
@@ -201,7 +201,7 @@ class Dialog extends Composite {
 		}
 	}
 
-	detach(): Composite {
+	detach(): Optional<Composite> {
 		let parent = super.detach();
 		if (parent) {
 			this.prev.attach(parent);
@@ -219,7 +219,7 @@ class Dialog extends Composite {
 		message: Word,
 		...options: ConfirmOption[]
 	): Dialog {
-		assert(options != null);
+		assert(options);
 		assert(options.length > 0);
 
 		let self = new Dialog();
@@ -234,7 +234,7 @@ class Dialog extends Composite {
 			new Button(MODAL_BUTTON_X + (MODAL_BUTTON_W + MODAL_BUTTON_MARGIN) * i, CONFIRM_BUTTON_Y, MODAL_BUTTON_W, CONFIRM_BUTTON_H,
 				new Label(label),
 				click
-					? () => { self.detach(); click(); }
+					? () => { self.detach(); click!(); }
 					: () => { self.detach(); },
 				mnemonic
 			).attach(self);
@@ -339,7 +339,7 @@ interface ButtonDesign {
 }
 
 class Button extends Widget {
-	pressed: boolean;	// 3-state boolean
+	pressed?: boolean;	// 3-state boolean
 	hover: boolean = false;
 
 	constructor(
@@ -426,7 +426,7 @@ class Button extends Widget {
 
 	onHover(x: Pixel, y: Pixel): void {
 		this.hover = this.contains(x, y);
-		this.pressed = null;
+		this.pressed = undefined;
 	}
 
 	onDrag(x: Pixel, y: Pixel): void {
@@ -443,7 +443,7 @@ class Button extends Widget {
 
 	onUp(x: Pixel, y: Pixel): void {
 		let { pressed } = this;
-		this.pressed = null;
+		this.pressed = undefined;
 		if (pressed) {
 			if (this.contains(x, y)) {
 				this.onClick();
@@ -460,7 +460,7 @@ class Button extends Widget {
 
 	onClick(): void {
 		if (this.click) {
-			committed.then(() => this.click());
+			committed.then(() => this.click!());
 		}
 	}
 
@@ -470,14 +470,14 @@ class Button extends Widget {
 }
 
 class SwappableButton extends Button {
-	private dragged: {
+	private dragged?: {
 		xDown?: Pixel;
 		yDown?: Pixel;
 		xOrig: Pixel;
 		yOrig: Pixel;
 	};
 
-	private swapping: {
+	private swapping?: {
 		start: Timestamp;
 		xFrom: Pixel;
 		yFrom: Pixel;
@@ -493,7 +493,7 @@ class SwappableButton extends Button {
 		public group: SwappableButton[],
 		drawable: Drawable,
 		click?: Slot,
-		public swap?: (that: SwappableButton) => void,
+		public swap?: (this: SwappableButton, that: SwappableButton) => void,
 		mnemonic?: KEY[],
 		design: ButtonDesign = Button.defaultDesign
 	) {
@@ -510,8 +510,8 @@ class SwappableButton extends Button {
 				this.onSwap(that, when);
 				that.onSwap(this, when);
 				this.dragged = {
-					xOrig: this.swapping.xTo,
-					yOrig: this.swapping.yTo
+					xOrig: this.swapping!.xTo,
+					yOrig: this.swapping!.yTo
 				};
 				if (this.swap) {
 					this.swap(that);
@@ -540,7 +540,7 @@ class SwappableButton extends Button {
 
 	onUp(x: Pixel, y: Pixel): void {
 		if (this.swapping) {
-			this.dragged = null;
+			this.dragged = undefined;
 			super.onUp(x, y);
 		} else if (!this.dragged) {
 			super.onUp(x, y);
@@ -553,9 +553,9 @@ class SwappableButton extends Button {
 				xTo: xOrig,
 				yTo: yOrig
 			};
-			this.dragged = null;
+			this.dragged = undefined;
 			if (this.pressed) {
-				this.pressed = null;
+				this.pressed = undefined;
 				if (this.contains(x, y) && xOrig <= x && yOrig <= y && x < xOrig + this.w && y < yOrig + this.h) {
 					this.onClick();
 				}
@@ -564,7 +564,7 @@ class SwappableButton extends Button {
 	}
 
 	onSwap(that: SwappableButton, when: Timestamp) {
-		this.pressed = null;
+		this.pressed = undefined;
 		this.swapping = {
 			start: when,
 			xFrom: this.x,
@@ -584,7 +584,7 @@ class SwappableButton extends Button {
 			} else {
 				this.x = this.swapping.xTo;
 				this.y = this.swapping.yTo;
-				this.swapping = null;
+				this.swapping = undefined;
 			}
 		}
 		super.onDraw(g, when);
@@ -625,12 +625,12 @@ interface ListViewColumn<T> {
 }
 
 class ListView<T> extends Widget {
-	private dragged: number;	// (row index)
-	private hover: number;		// (row index)
-	private scrolling: Pixel;
+	private dragged?: number;	// (row index)
+	private hover?: number;		// (row index)
+	private scrolling?: Pixel;
 	private topRow: number = 0;	// (row index) top row index to display
-	private sortkeys: number[];	// array of +- (column index + 1); nagative means desc order.
-	public selected: T;
+	private sortkeys?: number[];	// array of +- (column index + 1); nagative means desc order.
+	public selected?: T;
 
 	constructor(
 		x: Pixel,
@@ -687,8 +687,8 @@ class ListView<T> extends Widget {
 
 	onHover(x: Pixel, y: Pixel): void {
 		this.hover = this.toRowIndex(x, y);
-		this.dragged = null;
-		this.scrolling = null;
+		this.dragged = undefined;
+		this.scrolling = undefined;
 	}
 
 	onDrag(x: Pixel, y: Pixel): void {
@@ -699,13 +699,13 @@ class ListView<T> extends Widget {
 			let hItems = this.h - headerHeight;
 			this.scrollTo(floor(nRows * (y - yItems - this.scrolling) / hItems));
 		} else {
-			let row = this.toRowIndex(x, y);
+			let row = this.toRowIndex(undefined, y);
 			if (row != null && this.dragged != null && row !== this.dragged) {
 				[this.rows[this.dragged], this.rows[row]] = [this.rows[row], this.rows[this.dragged]];
 				this.dragged = row;
-				this.hover = null;		// means row swapped
-				this.scrolling = null;
-				this.sortkeys = null;	// reset sort key
+				this.hover = undefined;		// means row swapped
+				this.scrolling = undefined;
+				this.sortkeys = undefined;	// reset sort key
 			}
 		}
 	}
@@ -719,9 +719,9 @@ class ListView<T> extends Widget {
 		let yItems = this.y + headerHeight;
 		if (this.x <= x && x < this.x + wItems && this.y <= y && y < yItems) {
 			// header
-			let col = this.toColumnIndex(x, y);
+			let col = this.toColumnIndex(x);
 			if (col != null) {
-				this.sort(col, (this.sortkeys != null && this.sortkeys[0] === col + 1));
+				this.sort(col, (!!this.sortkeys && this.sortkeys[0] === col + 1));
 			}
 		} else if (this.x + wItems <= x && x < this.right) {
 			// scroll bar
@@ -748,8 +748,8 @@ class ListView<T> extends Widget {
 			this.click(this.rows[this.dragged], this.dragged);
 			this.refresh();
 		}
-		this.dragged = null;
-		this.scrolling = null;
+		this.dragged = undefined;
+		this.scrolling = undefined;
 		this.hover = this.toRowIndex(x, y);
 	}
 
@@ -852,10 +852,14 @@ class ListView<T> extends Widget {
 		// empty message
 		if (nDisp === 0 && hItems > 0 && design.emptyText) {
 			g.save();
-			g.font = design.emptyFont;
+			if (design.emptyFont) {
+				g.font = design.emptyFont;
+			}
 			g.textAlign = "center";
 			g.textBaseline = "middle";
-			g.fillStyle = design.emptyStyle;
+			if (design.emptyStyle) {
+				g.fillStyle = design.emptyStyle;
+			}
 			g.fillText(design.emptyText.localized, this.x + wItems / 2, yItems + hItems / 2);
 			g.restore();
 		}
@@ -884,18 +888,21 @@ class ListView<T> extends Widget {
 	}
 
 	compare(lhs: T, rhs: T): number {
+		let { sortkeys, columns } = this;
 		let cmp = 0;
-		for (let i = 0, len = this.sortkeys.length; cmp === 0 && i < len; ++i) {
-			let sortkey = this.sortkeys[i];
-			let column = (sortkey > 0 ? sortkey : -sortkey) - 1;
-			let c = this.columns[column];
-			if (c.compare) {
-				cmp = c.compare(lhs, rhs);
-			} else {
-				cmp = compare(this.extract(lhs, c), this.extract(rhs, c));
-			}
-			if (sortkey < 0) {
-				cmp = -cmp;
+		if (sortkeys) {
+			for (let i = 0, len = sortkeys.length; cmp === 0 && i < len; ++i) {
+				let sortkey = sortkeys[i];
+				let column = (sortkey > 0 ? sortkey : -sortkey) - 1;
+				let c = columns[column];
+				if (c.compare) {
+					cmp = c.compare(lhs, rhs);
+				} else {
+					cmp = compare(this.extract(lhs, c), this.extract(rhs, c));
+				}
+				if (sortkey < 0) {
+					cmp = -cmp;
+				}
 			}
 		}
 		return cmp;
@@ -908,7 +915,8 @@ class ListView<T> extends Widget {
 			this.sortkeys = [desc ? -sortkey : sortkey];
 		} else {
 			for (let i = 0, len = this.sortkeys.length; i < len; ++i) {
-				if (this.sortkeys[i] === sortkey || this.sortkeys[i] === -sortkey) {
+				let value = this.sortkeys[i];
+				if (value === sortkey || value === -sortkey) {
 					this.sortkeys.splice(i, 1);
 					break;
 				}
@@ -919,34 +927,31 @@ class ListView<T> extends Widget {
 	}
 
 	// from screen coordinate to row index
-	toRowIndex(x: Pixel, y: Pixel): number {
+	toRowIndex(x: Optional<Pixel>, y: Pixel): Optional<number> {
 		let { design } = this;
 		let wItems = this.w - design.scrollBarWidth;
-		if (this.x <= x && x < this.x + wItems) {
+		if (x === undefined || (this.x <= x && x < this.x + wItems)) {
 			let n = this.topRow + floor((y - this.y - design.headerHeight) / design.rowHeight);
 			if (this.topRow <= n && n < this.rows.length) {
 				return n;
 			}
 		}
-		return null;
+		return undefined;
 	}
 
 	// from screen coordinate to column index
-	toColumnIndex(x: Pixel, y: Pixel): number {
-		let wItems = this.w - this.design.scrollBarWidth;
-		if (this.x <= x && x < this.x + wItems) {
-			let wAuto = this.defaultColumnWidth;
-			let ww = this.x;
-			for (let i = 0, len = this.columns.length; i < len; ++i) {
-				let c = this.columns[i];
-				let wHeader = coalesce(c.width, wAuto);
-				if (ww <= x && x < ww + wHeader) {
-					return i;
-				}
-				ww += wHeader;
+	toColumnIndex(x: Pixel): Optional<number> {
+		let wAuto = this.defaultColumnWidth;
+		let ww = this.x;
+		for (let i = 0, len = this.columns.length; i < len; ++i) {
+			let c = this.columns[i];
+			let wHeader = coalesce(c.width, wAuto);
+			if (ww <= x && x < ww + wHeader) {
+				return i;
 			}
+			ww += wHeader;
 		}
-		return null;
+		return undefined;
 	}
 
 	get defaultColumnWidth(): number {
@@ -970,10 +975,10 @@ class ListView<T> extends Widget {
 	refresh() {
 		let len = this.rows.length;
 		if (this.dragged >= len) {
-			this.dragged = null;
+			this.dragged = undefined;
 		}
 		if (this.hover >= len) {
-			this.hover = null;
+			this.hover = undefined;
 		}
 		this.scrollTo(this.topRow);
 	}

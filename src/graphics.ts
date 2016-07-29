@@ -58,8 +58,8 @@ function setupStyle(g: CanvasRenderingContext2D, style: any) {
 				g.font = font(style.fontSize, style.fontFamily);
 				break;
 			case "fontFamily":
-				if (style.fontSize == null) {
-					g.font = font(null, style.fontFamily);
+				if (!style.fontSize) {
+					g.font = font(undefined, style.fontFamily);
 				}
 				break;
 			default:
@@ -100,7 +100,7 @@ function drawRect(
 		g.save();
 		setupStyle(g, style);
 		if (!style || style.fillStyle) {
-			g.fillRect(x, y, w, h);
+			g.fillRect(x, y, w, h!);
 		}
 		if (!style || style.strokeStyle) {
 			let offset = g.lineWidth - 1;
@@ -120,7 +120,7 @@ function drawText(
 	g.save();
 	setupStyle(g, style);
 
-	function draw(g: CanvasRenderingContext2D, text: string, x: Pixel, y: Pixel, style: TextStyle) {
+	function draw(g: CanvasRenderingContext2D, text: string, x: Pixel, y: Pixel, style?: TextStyle) {
 		if (!style || style.strokeStyle) { g.strokeText(text, x, y); }
 		if (!style || style.fillStyle) { g.fillText(text, x, y); }
 	}
@@ -167,7 +167,7 @@ function drawTextBox(
 	g.save();
 	setupStyle(g, style);
 
-	function draw(g: CanvasRenderingContext2D, text: string, x: Pixel, y: Pixel, width: Pixel, style: TextStyle) {
+	function draw(g: CanvasRenderingContext2D, text: string, x: Pixel, y: Pixel, width: Pixel, style?: TextStyle) {
 		if (!style || style.strokeStyle) { g.strokeText(text, x, y, width); }
 		if (!style || style.fillStyle) { g.fillText(text, x, y, width); }
 	}
@@ -330,7 +330,7 @@ class Label implements Drawable {
 		public rectStyle?: ShapeStyle
 	) {
 		if (!textStyle || !textStyle.fillStyle || !textStyle.textAlign || !textStyle.textBaseline) {
-			let defaults: TextStyle = Object.create(textStyle || null);
+			let defaults = Object.create(textStyle || null) as TextStyle;
 			if (!textStyle || !textStyle.fillStyle) {
 				defaults.fillStyle = "white";
 			}
@@ -364,14 +364,18 @@ class Label implements Drawable {
 type DrawableElement = HTMLImageElement | HTMLCanvasElement | HTMLVideoElement;
 
 class Picture implements Drawable, WH, Job {
-	static DUMMY: HTMLImageElement = null;
-	private _image: DrawableElement = undefined;
+	static DUMMY: HTMLImageElement | null = null;	// NOTE: dont use undefined
 
-	constructor(public src: string) {
+	// NOTE: undefined and null are used for different purpose here.
+	// - undefined: unloaded.
+	// - null: loading or not found.
+	private _image: DrawableElement | null | undefined = undefined;
+
+	constructor(public src?: string) {
 	}
 
 	static from(elem: DrawableElement): Picture {
-		let self = new Picture(undefined);
+		let self = new Picture();
 		self._image = elem;
 		return self;
 	}
@@ -380,11 +384,11 @@ class Picture implements Drawable, WH, Job {
 
 	then(slot: Slot): this {
 		let { _image } = this;
-		if (_image == null) {
+		if (_image) {
+			committed.then(slot);
+		} else {
 			this.sig = connect(this.sig, slot);
 			this.preload();	// kick to load
-		} else {
-			committed.then(slot);
 		}
 		return this;
 	}
@@ -392,7 +396,7 @@ class Picture implements Drawable, WH, Job {
 	preload(): void {
 		if (this._image !== undefined) { return; }
 
-		let assign = (image: HTMLImageElement) => {
+		let assign = (image: HTMLImageElement | null) => {
 			this._image = image;
 			commit(this.sig);
 			this.sig = undefined;
@@ -402,10 +406,12 @@ class Picture implements Drawable, WH, Job {
 		let image = new Image();
 		image.addEventListener("load", () => assign(image));
 		image.addEventListener("error", () => assign(Picture.DUMMY));
-		image.src = this.src;
+		if (this.src) {
+			image.src = this.src;
+		}
 	}
 
-	get image(): DrawableElement {
+	get image() {
 		if (this._image === undefined) { this.preload(); }
 		return this._image;
 	}
@@ -422,7 +428,7 @@ class Picture implements Drawable, WH, Job {
 
 	draw(
 		g: CanvasRenderingContext2D,
-		when: Timestamp,
+		when: Optional<Timestamp>,
 		rect: XYWH,
 		overlayStyle?: CanvasStyle,
 		overlayAlpha?: Alpha

@@ -1,10 +1,10 @@
 interface ItemDef {
-	tags: TAG[];	// supported skill tag
-	weight: Weight;
-	price: Gold;
-	ATK?: number;	// damage
-	DEF?: number;	// defence 1-100
-	enchants?: EnchantID[];
+	readonly tags: TAG[];	// supported skill tag
+	readonly weight: Weight;
+	readonly price: Gold;
+	readonly ATK?: number;	// damage
+	readonly DEF?: number;	// defence 1-100
+	readonly enchants?: EnchantID[];
 }
 
 const ITEMS: { [IID: string/*ItemID*/]: ItemDef } = {

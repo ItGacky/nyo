@@ -12,7 +12,7 @@ const ITEM_DISCOUNT_TO_SELL = 0.5;
 let TAG2NAME: Word[];
 
 function tags2str(tags: TAG[]): string {
-	if (TAG2NAME == null) {
+	if (!TAG2NAME) {
 		// NOTE: Order of tag names must match with TAG.
 		TAG2NAME = [
 			_("Tag", "Melee"),
@@ -82,7 +82,7 @@ class Enchant implements ToJSON<EnchantArchive> {
 
 	constructor(public EID: EnchantID) {
 		this.def = ENCHANTS[EID];
-		if (this.def == null) {
+		if (!this.def) {
 			throw new RangeError(`Enchantment not found: "${EID}"`);
 		}
 		this.name = Enchant.nameOf(EID);
@@ -141,21 +141,25 @@ class Item implements ToJSON<ItemArchive> {
 	public baseName: Word;
 	public spec: Word;
 	public tagbits: number;
+	public enchants: Enchant[];
 
 	constructor(
 		public IID: ItemID,
-		public enchants?: Enchant[]
+		enchants?: Enchant[]
 	) {
 		this.def = ITEMS[IID];
-		if (this.def == null) {
+		if (!this.def) {
 			throw new RangeError(`Item not found: "${IID}"`);
 		}
 		this.baseName = Item.nameOf(IID);
 		this.spec = Item.specOf(IID);
 		this.tagbits = tags2bits(this.def.tags);
-		if (this.enchants == null) {
-			let { enchants } = this.def;
-			this.enchants = (enchants || []).map(Enchant.from);
+		if (enchants) {
+			this.enchants = enchants;
+		} else if (this.def.enchants) {
+			this.enchants = this.def.enchants.map(Enchant.from);
+		} else {
+			this.enchants = [];
 		}
 	}
 
@@ -241,7 +245,7 @@ class Skill implements ToJSON<SkillArchive> {
 
 	constructor(public SID: SkillID) {
 		this.def = SKILLS[SID];
-		if (this.def == null) {
+		if (!this.def) {
 			throw new RangeError(`Skill not found: "${SID}"`);
 		}
 		this.name = Skill.nameOf(SID);
@@ -363,24 +367,26 @@ class Character implements ToJSON<CharacterArchive>, WH {
 				compose(parts[0], parts[5], parts[7]),
 				compose(parts[0], parts[6], parts[7])
 			));
-
-			function compose(...images: Picture[]): Picture {
-				if (images.length <= 0) { return null; }
-				let { w, h } = images[0];
-				let canvas = document.createElement("canvas");
-				canvas.width = w;
-				canvas.height = h;
-				let g = canvas.getContext("2d");
-				let rect = { x: 0, y: 0, w, h };
-				for (let image of images) {
-					image.draw(g, null, rect);
-				}
-				return Picture.from(canvas);
-			}
 		}
 		this.images = images;
 		this.blinkCycle = BLINK_CYCLE + BLINK_CYCLE_PER_INT * INT;
 		this.blinkOffset = rand(this.blinkCycle);
+
+		function compose(...images: Picture[]): Picture {
+			assert(images.length > 0);
+			let { w, h } = images[0];
+			let canvas = document.createElement("canvas");
+			canvas.width = w;
+			canvas.height = h;
+			let g = canvas.getContext("2d");
+			if (g) {
+				let rect = { x: 0, y: 0, w, h };
+				for (let image of images) {
+					image.draw(g, undefined, rect);
+				}
+			}
+			return Picture.from(canvas);
+		}
 	}
 
 	get w(): Pixel {
@@ -437,24 +443,24 @@ class Character implements ToJSON<CharacterArchive>, WH {
 		return 100 * (1 - this.equipments.reduce((total, item) => total * (1 - item.DEF / 100), 1));
 	}
 
-	costOf(skill: Skill): number {
-		if (skill == null) { return undefined; }
-		return skill.rawCost - this.INT;	// TODO: スキルコストの増減はここで。
+	costOf(skill: Skill): Optional<number> {
+		if (!skill) { return undefined; }
+		return skill.rawCost - this.INT;	// XXX: Handle passive skills that increase or decrease cost of skills.
 	}
 
-	rangeOf(skill: Skill): number {
-		if (skill == null) { return undefined; }
-		return skill.rawRange;	// TODO: スキルの射程を伸ばすような装備やパッシブスキルがあればここで。
+	rangeOf(skill: Skill): Optional<number> {
+		if (!skill) { return undefined; }
+		return skill.rawRange;	// XXX: Handle passive skills and equipments that increase range of skills.
 	}
 
 	// TODO: 攻撃力算出式を考える。基礎パラメータ値も加味すべきか？それとも武器の装備時にすでにパラメータは要求されているので不要か？
-	powerOf(skill: Skill): number {
+	powerOf(skill: Skill): Optional<number> {
 		let item = this.itemFor(skill);
 		return item ? (item.ATK * skill.rawPower / 100) : undefined;
 	}
 
-	itemFor(skill: Skill): Item {
-		let best: Item = undefined;
+	itemFor(skill: Skill): Optional<Item> {
+		let best: Optional<Item> = undefined;
 		if (skill) {
 			let max: number = 0;
 			for (let item of this.equipments) {
@@ -472,7 +478,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 
 	static adventurer(key: string): Character {
 		let def = ADVENTURERS[key];
-		if (def == null) {
+		if (!def) {
 			throw new RangeError(`Adventurer not found: "${key}"`);
 		}
 		return Character.from(_("Adventurer", key), 0, def);
@@ -480,7 +486,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 
 	static monster(key: string, level: number): Character {
 		let def = MONSTERS[key];
-		if (def == null) {
+		if (!def) {
 			throw new RangeError(`Monster not found: "${key}"`);
 		}
 		return Character.from(_("Monster", key), level, def);
@@ -539,7 +545,7 @@ interface Data {
 	shop: IID2Stock;
 	warehouse: Item[];
 	reservers: Character[];
-	party: Character[];
+	party: Optional<Character>[];
 	gold: Gold;
 }
 
@@ -547,6 +553,6 @@ interface DataArchive {
 	shop: IID2Stock;
 	warehouse: ItemArchive[];
 	reservers: CharacterArchive[];
-	party: CharacterArchive[];
+	party: Optional<CharacterArchive>[];
 	gold: Gold;
 }

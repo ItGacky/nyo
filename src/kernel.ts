@@ -2,6 +2,8 @@
 const DEBUG = (typeof NDEBUG === "undefined");
 const TOUCH_ONLY = false;	// set true to emulate touch-only devices.
 
+type Optional<T> = T | undefined;
+
 //interface Timestamp extends Number { Timestamp; };
 type Timestamp = number;
 //interface Duration extends Number { Duration; };
@@ -27,10 +29,10 @@ interface System {
 	// import
 	canvas: HTMLCanvasElement;
 	exit(): void;
-	getLocalStorage(key: string): string;
+	getLocalStorage(key: string): Optional<string>;
 	setLocalStorage(key: string, value: string): void;
-	getRoamingStorage(key: string): string;
-	setRoamingStorage(key: string, value: string): void;
+	getRoamingStorage(key: string): Optional<string>;
+	setRoamingStorage(key: string, value: Optional<string>): void;
 	getFullScreen(): boolean;
 	setFullScreenn(value: boolean): void;
 }
@@ -47,14 +49,14 @@ interface String {
 }
 
 interface Array<T> {
-	find(callback: (value: T, index: number, list: T[]) => boolean, thisArg?: any): T;
-	findIndex(callback: (value: T, index: number, list: T[]) => boolean, thisArg?: any): number;
+	find<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): T;
+	findIndex<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): number;
 }
 
 //================================================================================
 
 type Slot = () => void;
-type Signal = Slot | Slot[];
+type Signal = Optional<Slot | Slot[]>;
 
 const { keys } = Object;
 const { abs, min, max, floor, ceil, round, pow, sin, cos, atan2, PI, random } = Math;
@@ -78,26 +80,26 @@ function rand(upper: number): number {
 }
 
 const assert = (DEBUG
-	? function(condition: boolean) { if (!condition) { throw new Error("Assertion failure"); } }
-	: function() { }
+	? function (condition: any) { if (!condition) { throw new Error("Assertion failure"); } }
+	: function () { }
 );
 
 interface ToJSON<JSON> {
 	toJSON(): JSON;
 }
 
-function toJSON<JSON>(arr: ToJSON<JSON>[]): JSON[] {
-	if (arr == null) { return []; }
-	return arr.map(item => (item != null ? item.toJSON() : null));
+function toJSON<JSON>(arr?: ToJSON<JSON>[]): JSON[] {
+	if (!arr) { return []; }
+	return arr.map(item => (item != null ? item.toJSON() : undefined));
 }
 
 interface FromJSON<JSON, TYPE> {
 	fromJSON(json: JSON): TYPE;
 }
 
-function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: JSON[]): TYPE[] {
-	if (arr == null) { return []; }
-	return arr.map(json => (json != null ? type.fromJSON(json) : null));
+function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr?: JSON[]): TYPE[] {
+	if (!arr) { return []; }
+	return arr.map(json => (json != null ? type.fromJSON(json) : undefined));
 }
 
 function str(value: any): string {
@@ -166,7 +168,7 @@ function compare(lhs: any, rhs: any): number {
 	// same type; check by value
 	if (typeL === "object") {
 		if (lhs instanceof Date && rhs instanceof Date) {
-			return compare((lhs as Date).getTime(), (rhs as Date).getTime());
+			return compare(lhs.getTime(), rhs.getTime());
 		} else if (lhs instanceof Array && rhs instanceof Array) {
 			return compareArrays(lhs, rhs);
 		} else if (lhs.consructor === Object && rhs.constructor === Object) {
@@ -230,20 +232,22 @@ interface Job {
 	then(slot: Slot): this;
 }
 
-const committed = {
-	sig: null as Signal,
-	then: function(slot: Slot): Job {
+const committed = new class implements Job {
+	private sig?: Signal;
+
+	then(slot: Slot): this {
 		this.sig = connect(this.sig, slot);
 		return this;
-	},
-	finish: function(): void {
+	}
+
+	finish(): void {
 		let { sig } = this;
 		if (sig) {
-			this.sig = null;
+			this.sig = undefined;
 			if (typeof sig === "function") {
-				(sig as Slot)();
+				sig();
 			} else {
-				for (let slot of (sig as Slot[])) {
+				for (let slot of sig) {
 					slot();
 				}
 			}
@@ -252,25 +256,25 @@ const committed = {
 };
 
 function connect(sig: Signal, slot: Slot): Signal {
-	assert(slot != null);
-	if (sig == null) {
+	assert(slot);
+	if (!sig) {
 		return slot;
 	} else if (typeof sig === "function") {
-		return [sig as Slot, slot];
+		return [sig, slot];
 	} else {
-		(sig as Slot[]).push(slot);
+		sig.push(slot);
 		return sig;
 	}
 }
 
 function commit(sig: Signal): void {
-	if (sig == null) {
+	if (!sig) {
 		// no waiters
 	} else if (typeof sig === "function") {
-		committed.then(sig as Slot);
+		committed.then(sig);
 	} else {
-		for (let slot of (sig as Slot[])) {
-			committed.then(slot as Slot);
+		for (let slot of sig) {
+			committed.then(slot);
 		}
 	}
 }
@@ -280,7 +284,7 @@ function join(jobs: Job[]): Job {
 	let sig: Signal;
 	let remains = jobs.length;
 	let all = {
-		then: function(slot: Slot): Job {
+		then: function (this: Job, slot: Slot): Job {
 			if (remains > 0) {
 				sig = connect(sig, slot);
 			} else {
@@ -304,21 +308,25 @@ function join(jobs: Job[]): Job {
 
 function delay(fn: () => Job): Job & Slot {
 	let sig: Signal;
-	let job = function() {
+	let job = function () {
 		fn().then(() => {
 			commit(sig);
 			sig = undefined;
-			fn = null;	// done
+			job.then = thenAfter;
 		});
 	} as any;
-	job.then = function(slot: Slot): Job {
-		if (fn) {
-			sig = connect(sig, slot);
-		} else {	// done
-			committed.then(slot);
-		}
+	job.then = thenBefore;
+
+	function thenBefore(this: Job, slot: Slot): Job {
+		sig = connect(sig, slot);
 		return this;
 	};
+
+	function thenAfter(this: Job, slot: Slot): Job {
+		committed.then(slot);
+		return this;
+	}
+
 	return job;
 }
 
@@ -327,7 +335,7 @@ function delay(fn: () => Job): Job & Slot {
 //================================================================================
 
 class Word {
-	static language: string = (window.navigator.userLanguage || window.navigator.language || window.navigator.browserLanguage).substr(0, 2);
+	static language: string = window.navigator.language.substr(0, 2);
 	static fallback: string = "en";
 
 	// languages[locale]
@@ -338,8 +346,8 @@ class Word {
 	// - {}: successfully loaded
 	static languages: { [locale: string]: string | boolean | Dictionary } = {};
 
-	private _localized: string;
-	private _language: string;
+	private _localized?: string;
+	private _language?: string;
 
 	constructor(public src: string[]) {
 	}
@@ -347,19 +355,18 @@ class Word {
 	get localized(): string {
 		if (this._language !== Word.language) {
 			let localized = localize(this.src);
-			if (localized === null) {
-				return alt(this.src);
+			if (localized) {
+				this._language = Word.language;
+				this._localized = localized;
 			}
-			this._language = Word.language;
-			this._localized = localized;
 		}
-		return this._localized;
+		return this._localized || alt(this.src);
 
 		// returns localized string, or id as-is if not found, or null if localizer is not ready.
-		function localize(src: string[]): string {
+		function localize(src: string[]): Optional<string> {
 			let { languages, language } = Word;
 			let dict = languages[language];
-			if (dict == null) {
+			if (!dict) {
 				// unsupported language, so fallback
 				assert(languages[Word.fallback] !== undefined);
 				language = Word.language = Word.fallback;
@@ -368,16 +375,16 @@ class Word {
 			if (typeof dict === "string") {
 				languages[language] = true;
 				require(dict, () => { languages[language] = false; });
-				return null;	// now loading
+				return undefined;	// now loading
 			} else if (dict === true) {
-				return null;	// now loading
+				return undefined;	// now loading
 			} else if (dict === false) {
 				return alt(src);	// load error
 			} else {
 				let value = dict as Dictionary;
 				for (let i = 0, len = src.length; i < len; ++i) {
 					let child = value[src[i]];
-					if (child == null) {
+					if (!child) {
 						return alt(src);
 					}
 					value = child as Dictionary;
@@ -398,7 +405,7 @@ function _(...src: string[]): Word {
 	return new Word(src);
 }
 
-System.localize = function(lang: string, dict: Dictionary): void {
+System.localize = function (lang: string, dict: Dictionary): void {
 	Word.languages[lang] = dict;
 };
 
@@ -426,7 +433,7 @@ enum KEY {
 }
 
 class Component {
-	parent: Composite;
+	parent?: Composite;
 
 	onHover(x: Pixel, y: Pixel): void { }
 	onDrag(x: Pixel, y: Pixel): void { }
@@ -436,18 +443,18 @@ class Component {
 	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void { }
 
 	attach(parent: Composite): boolean {
-		assert(parent != null);
+		assert(parent);
 		return parent.onAttach(this);
 	}
 
-	detach(): Composite {
+	detach(): Optional<Composite> {
 		let { parent } = this;
 		if (parent) {
 			parent.onDetach(this);
-			assert(this.parent == null);
+			assert(!this.parent);
 			return parent;
 		} else {
-			return null;
+			return undefined;
 		}
 	}
 
@@ -474,7 +481,7 @@ class Composite extends Component {
 
 	onAttach(child: Component): boolean {
 		if (child.parent === this) { return false; }
-		assert(child.parent == null);
+		assert(!child.parent);
 
 		this.children.push(child);
 		child.parent = this;
@@ -482,10 +489,10 @@ class Composite extends Component {
 	}
 
 	onDetach(child: Component): boolean {
-		if (child.parent == null) { return false; }
+		if (!child.parent) { return false; }
 		assert(child.parent === this);
 
-		child.parent = null;
+		child.parent = undefined;
 		let { children } = this;
 		for (let i = 0; i < children.length; ++i) {
 			if (children[i] === child) {
@@ -574,17 +581,17 @@ interface CanvasRenderingContext2D {
 if (DEBUG) {
 	let { save, restore } = CanvasRenderingContext2D.prototype;
 
-	CanvasRenderingContext2D.prototype.save = function() {
+	CanvasRenderingContext2D.prototype.save = function (this: CanvasRenderingContext2D) {
 		this.debugSaveAndRestoreCount = (this.debugSaveAndRestoreCount || 0) + 1;
 		save.call(this);
 	};
 
-	CanvasRenderingContext2D.prototype.restore = function() {
+	CanvasRenderingContext2D.prototype.restore = function (this: CanvasRenderingContext2D) {
 		this.debugSaveAndRestoreCount = this.debugSaveAndRestoreCount - 1;
 		restore.call(this);
 	};
 
-	Composite.prototype.onDraw = function(g: CanvasRenderingContext2D, when: Timestamp): void {
+	Composite.prototype.onDraw = function (this: Composite, g: CanvasRenderingContext2D, when: Timestamp): void {
 		let before = (g.debugSaveAndRestoreCount || 0);
 		let { children } = this;	// keep it in local
 		for (let o of children) {
@@ -616,7 +623,7 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 
 	function canvasX(e: MouseEvent): Pixel {
 		let x: number;
-		if (e.pageX == null) {
+		if (e.pageX === undefined) {
 			x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - canvas.offsetLeft;
 		} else {
 			x = e.pageX - canvas.offsetLeft;
@@ -626,7 +633,7 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 
 	function canvasY(e: MouseEvent): Pixel {
 		let y: number;
-		if (e.pageY == null) {
+		if (e.pageY === undefined) {
 			y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - canvas.offsetTop;
 		} else {
 			y = e.pageY - canvas.offsetTop;
@@ -702,9 +709,9 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 		}
 	};
 
-	let timerResizeCanvas: number;
+	let timerResizeCanvas: Optional<number>;
 	function requestResizeCanvas() {
-		if (timerResizeCanvas != null) {
+		if (timerResizeCanvas) {
 			clearTimeout(timerResizeCanvas);
 		}
 		timerResizeCanvas = setTimeout(() => {
@@ -738,14 +745,16 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 		// draw
 		let { width, height } = canvas;
 		let g = canvas.getContext("2d");
-		g.clearRect(0, 0, width, height);
-		g.save();
-		g.font = font();
-		if (width !== logicalWidth || height !== logicalHeight) {
-			g.scale(width / logicalWidth, height / logicalHeight);
+		if (g) {
+			g.clearRect(0, 0, width, height);
+			g.save();
+			g.font = font();
+			if (width !== logicalWidth || height !== logicalHeight) {
+				g.scale(width / logicalWidth, height / logicalHeight);
+			}
+			root.onDraw(g, when);
+			g.restore();
 		}
-		root.onDraw(g, when);
-		g.restore();
 		// register next callback
 		window.requestAnimationFrame(draw);
 	}

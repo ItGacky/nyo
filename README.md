@@ -7,7 +7,7 @@ Try it on [GitHub](http://itgacky.github.io/nyo/).
 GNU General Public License, version 3 (GPL-3.0)
 
 ## Tips for Hackers
-- Written in [TypeScript](http://www.typescriptlang.org/) 1.8.
+- Written in [TypeScript](http://www.typescriptlang.org/) 2.0.
 - Checked by [tslint](https://www.npmjs.com/package/tslint) and [vscode-tslint](https://github.com/Microsoft/vscode-tslint/tree/master/tslint).
 - Developed with [gulp.js](http://gulpjs.com/) and [Visual Stdio Code](https://code.visualstudio.com/).
 
