@@ -21,9 +21,7 @@
 			new Gallery(0, 0, SCREEN_W, SCREEN_H, new Picture(URL_SCENE + "title.jpg")).attach(this);
 
 			let loaded = loadData();
-			let goTown = (data: Data) => {
-				new FadeOut(this, new Town.Home(data)).attach(this.parent!);
-			};
+			let goTown = (data: Data) => FadeOut.go(this, new Town.Home(data));
 
 			let label: Word;
 			let click: Slot;
@@ -36,7 +34,7 @@
 							label: _("Title", "Delete"),
 							click: () => {
 								deleteData();
-								new FadeOut(this, new Scene()).attach(this.parent!);
+								FadeOut.go(this, new Scene());
 								logger.log(_("Title", "NotifyDelete"));
 							},
 							mnemonic: MNEMONIC_YES

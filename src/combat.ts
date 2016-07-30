@@ -279,10 +279,7 @@
 	}
 
 	type Effect = (scene: Scene, unit: Unit, target: Unit) => SkillEffect;
-	let EFFECTS: { [key: string]: Effect };
-
 	type Action = (scene: Scene, unit: Unit, target: Unit) => Job;
-	let ACTIONS: { [key: string]: Action };
 
 	//================================================================================
 	// Hex
@@ -334,7 +331,7 @@
 	}
 
 	class HexMap<T> {
-		private cells: { [xH: number/*Coord*/]: T[] };
+		private readonly cells: { [xH: number/*Coord*/]: T[] };
 		public depth: Coord;
 
 		constructor(depth: Coord, public dummy?: T) {
@@ -423,7 +420,7 @@
 		}
 
 		// visit each valid cell
-		each(callback: (this: void, cell: T, xH: Coord, yH: Coord) => void): void {
+		each(callback: (cell: T, xH: Coord, yH: Coord) => void): void {
 			let { minXH, maxXH } = this;
 			for (let xH = minXH; xH < maxXH; ++xH) {
 				for (let yH = 0; yH < MAP_H; ++yH) {
@@ -433,7 +430,7 @@
 		}
 
 		// visit each visible cell
-		eachVisible(callback: (this: void, cell: T, xH: Coord, yH: Coord) => void): void {
+		eachVisible(callback: (cell: T, xH: Coord, yH: Coord) => void): void {
 			let { minVisibleXH, maxVisibleXH } = this;
 			for (let xH = minVisibleXH; xH < maxVisibleXH; ++xH) {
 				for (let yH = 0; yH < MAP_H; ++yH) {
@@ -443,7 +440,7 @@
 		}
 
 		// visit cells int the straight line up to range, excluding the starting hex.
-		straight(from: Hex, to: Hex, range: number, callback: (this: void, hex: Hex, steps: number) => void): void {
+		straight(from: Hex, to: Hex, range: number, callback: (hex: Hex, steps: number) => void): void {
 			if (same(from, to)) { return; }
 
 			let xFrom = from.xH;
@@ -472,7 +469,7 @@
 		}
 
 		// visit cells surround up to range, excluding the center hex.
-		surround(center: Hex, range: number, callback: (this: void, hex: Hex, steps: number) => void): void {
+		surround(center: Hex, range: number, callback: (hex: Hex, steps: number) => void): void {
 			if (range === 1) {
 				// fast path for near
 				for (let dir = DIR_BEGIN; dir < DIR_END; ++dir) {
@@ -682,13 +679,13 @@
 		public HP: number;
 		public SP: number;
 		public skill: Skill;	// selected active skill
-		private idleOffset: number;	// 0..1
 		private minCost: number;	// min cost in active skills
-		effectsOverTime: EffectOverTime[];
+		private readonly idleOffset: number;	// 0..1
+		readonly effectsOverTime: EffectOverTime[];
 
 		constructor(
-			public ch: Character,
-			public team: TEAM,
+			public readonly ch: Character,
+			public readonly team: TEAM,
 			public hex: Hex		// NOTICE: Do not set directly; Use Scene.setUnit instead.
 		) {
 			this.idleOffset = random();
@@ -779,11 +776,7 @@
 		// Estimate effect of the current skill.
 		estimate(scene: Scene, target: Unit): SkillEffect {
 			assert(this.isTarget(target));
-			let id = this.skill.effect;
-			let effect = EFFECTS[id];
-			if (!effect) {
-				throw new RangeError(`Effect not found: "${id}"`);
-			}
+			let effect = getEffect(this.skill.effect);
 			return effect(scene, this, target);
 		}
 
@@ -791,11 +784,7 @@
 		shoot(scene: Scene, target: Unit): Job {
 			assert(this.isTarget(target));
 			assert(this.SP >= this.cost);
-			let id = this.skill.action;
-			let action = ACTIONS[id];
-			if (!action) {
-				throw new RangeError(`Action not found: "${id}"`);
-			}
+			let action = getAction(this.skill.action);
 			let job = action(scene, this, target);
 			this.SP -= this.cost;
 			return job;
@@ -1314,16 +1303,16 @@
 
 	interface Controller {
 		visible: boolean;
-		caret?: Hex;
+		readonly caret?: Hex;
 	}
 
 	export class Scene extends Composite {
 		team: TEAM = TEAM.ALLY;
-		field: Field;
-		dying: Unit[];
-		deads: Unit[];
-		snapshots: Snapshot[];
 		enabled = false;
+		readonly field: Field;
+		readonly dying: Unit[];
+		readonly deads: Unit[];
+		readonly snapshots: Snapshot[];
 
 		constructor(public data: Data, public stage: Stage) {
 			super();
@@ -1371,7 +1360,10 @@
 					} else {
 						// XXX: Should use grayscaled CLOSED image? Some browser won't allow to read raw data from local image files.
 						let image = (ch.images[CharacterImage.CLOSED] || ch.images[CharacterImage.DEFAULT]);
+						g.save();
+						g.filter = "grayscale(100%)";	// TODO: This works only on Chrome, so we should make a grayscled bitmap using bit operations. NOTE: Chromes running on local machines prevent bits from reading for security reason.
 						image.draw(g, when, chRect);
+						g.restore();
 					}
 					drawBar(g, rect.x + ALLY_BAR_X, rect.y + ALLY_BAR_Y, ALLY_BAR_W, ALLY_BAR_H, unit.HP, unit.maxHP, undefined, BAR_STYLE_HP);
 				}
@@ -1522,7 +1514,7 @@
 			}
 		}
 
-		private _zoc: Optional<ZoC[]>;
+		private _zoc?: ZoC[];
 		get zoc(): Optional<ZoC[]> {
 			if (!this.enabled) { return undefined; }
 
@@ -1545,7 +1537,7 @@
 			return _zoc;
 		}
 
-		private maps: Optional<HexMap<ActionMap>>;
+		private maps?: HexMap<ActionMap>;
 		mapFor(unit?: Unit): Optional<ActionMap> {
 			if (!unit || !this.enabled) { return undefined; }
 
@@ -1671,7 +1663,7 @@
 					label: _("Combat", "Retire"),
 					click: () => {
 						this.controller.visible = false;
-						new FadeOut(this, new Town.Home(this.data)).attach(this.parent);
+						FadeOut.go(this, new Town.Home(this.data));
 					},
 					mnemonic: MNEMONIC_YES
 				},
@@ -1838,15 +1830,11 @@
 				if (this.parent && this.isGameOver) {
 					this.controller.visible = false;
 					(unit.state || committed).then(() => {
-						Dialog.confirm(this, _("Combat", "GameOver"),
-							{
-								label: _("Combat", "Retire"),
-								click: () => {
-									new FadeOut(this, new Town.Home(this.data)).attach(this.parent);
-								},
-								mnemonic: MNEMONIC_OK
-							}
-						);
+						Dialog.confirm(this, _("Combat", "GameOver"), {
+							label: _("Combat", "Retire"),
+							click: () => FadeOut.go(this, new Town.Home(this.data)),
+							mnemonic: MNEMONIC_OK
+						});
 					});
 				}
 			}
@@ -1905,7 +1893,7 @@
 		}
 
 		// visit all visible units
-		eachUnit(callback: (this: void, unit: Unit) => void): void {
+		eachUnit(callback: (unit: Unit) => void): void {
 			this.field.eachVisible(({ unit }) => {
 				if (unit) {
 					callback(unit);
@@ -2182,7 +2170,7 @@
 	class Human extends Component implements Controller {
 		private mode: Caret = Caret.Unlocked;
 
-		private _caret: Hex;
+		private _caret?: Hex;
 		get caret(): Hex { return this._caret; }
 		set caret(value: Hex) {
 			this._caret = value;
@@ -2739,7 +2727,7 @@
 		return ceil(power * pow(BASE_FOR_LEVEL, diff));
 	}
 
-	EFFECTS = {
+	const EFFECTS: { [id: string]: Effect } = {
 		Damage: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
 			let { skill } = unit;
 			return {
@@ -2782,6 +2770,14 @@
 			};
 		}
 	};
+
+	function getEffect(id: string): Effect {
+		let effect = EFFECTS[id];
+		if (!effect) {
+			throw new RangeError(`Effect not found: "${id}"`);
+		}
+		return effect;
+	}
 
 	//================================================================================
 	// Actions for Skills
@@ -2897,7 +2893,7 @@
 		}
 	}
 
-	ACTIONS = {
+	const ACTIONS: { [id: string]: Action } = {
 		// Charge tha target and come back.
 		Charge: standardCharge,
 		// Knockback the target.
@@ -3035,4 +3031,12 @@
 			return standardNova(scene, unit, unit.hex, unit.range || 0);
 		}
 	};
+
+	function getAction(id: string): Action {
+		let action = ACTIONS[id];
+		if (!action) {
+			throw new RangeError(`Action not found: "${id}"`);
+		}
+		return action;
+	}
 }

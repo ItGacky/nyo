@@ -153,6 +153,16 @@ class FadeOut extends Animation {
 		super(duration);
 	}
 
+	static go(
+		prev: Component,
+		next?: Component,
+		duration: Duration = SCENE_TRANSIT
+	): void {
+		let { parent } = prev;
+		assert(parent);
+		new FadeOut(prev, next, duration).attach(parent);
+	}
+
 	attach(parent: Composite): boolean {
 		if (super.attach(parent)) {
 			this.prev.detach();

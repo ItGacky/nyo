@@ -1,11 +1,11 @@
 {
     "rules": {
         "class-name": true,
-		"curly": true,
         "comment-format": [
             false,
             "check-space"
         ],
+		"curly": true,
 		"eofline": true,
 		"forin": false,
         "indent": [

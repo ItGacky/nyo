@@ -1,18 +1,12 @@
 var BIN_DIR = "./bin/";
 var DEBUG_DIR = "./bld/";
-var DEBUG_FILE = "main.js";
-var WRAPPED_DIR = DEBUG_DIR;
-var WRAPPED_FILE = "wrapped.js";
+var WRAPPED_DIR = DEBUG_DIR + "wrapped/";
 var RELEASE_DIR = "./assets/";
-var RELEASE_FILE = "main.js";
-
-var assert = require("assert");
-assert.notEqual(DEBUG_DIR + DEBUG_FILE, WRAPPED_DIR + WRAPPED_FILE);
-assert.notEqual(DEBUG_DIR + DEBUG_FILE, RELEASE_DIR + RELEASE_FILE);
+var OUT_NAME = "main.js";
 
 var gulp = require("gulp");
 var ts = require("gulp-typescript");
-var rename = require("gulp-rename");
+var newer = require("gulp-newer");
 var insert = require("gulp-insert");
 var minify = require("gulp-closurecompiler");
 var open = require("gulp-open");
@@ -20,32 +14,32 @@ var del = require("del");
 
 gulp.task("build", function () {
 	var project = ts.createProject("./src/tsconfig.json", {
-		outFile: DEBUG_FILE
+		outFile: OUT_NAME
 	});
 	return project.src().
+		pipe(newer(DEBUG_DIR + OUT_NAME)).
 		pipe(ts(project)).
 		pipe(gulp.dest(DEBUG_DIR));
 });
 
-gulp.task("release", function () {
+gulp.task("release", ["build"], function () {
 	return gulp.
-		src(DEBUG_DIR + DEBUG_FILE).
+		src(DEBUG_DIR + OUT_NAME).
+		pipe(newer(RELEASE_DIR)).
 		pipe(insert.wrap("(function() {\nvar NDEBUG=true;\n", "\n})();")).
-		pipe(rename(WRAPPED_FILE)).
 		pipe(gulp.dest(WRAPPED_DIR)).
-		pipe(minify({ fileName: WRAPPED_FILE })).
-		pipe(rename(RELEASE_FILE)).
+		pipe(minify({ fileName: OUT_NAME })).
 		pipe(gulp.dest(RELEASE_DIR));
 });
 
-gulp.task("test", function () {
+gulp.task("test", ["build"], function () {
 	gulp.src("./index-debug.html").pipe(open());
 });
 
-gulp.task("default", function () {
+gulp.task("default", ["release"], function () {
 	gulp.src("./index.html").pipe(open());
 });
 
 gulp.task("clean", function(cb) {
-	del([BIN_DIR, DEBUG_DIR, WRAPPED_DIR], cb);
+	del([BIN_DIR, DEBUG_DIR], cb);
 });

@@ -244,7 +244,7 @@
 	//================================================================================
 
 	class SceneWithSystemButtons extends Composite {
-		constructor(public data: Data) {
+		constructor(public readonly data: Data) {
 			super();
 		}
 
@@ -257,7 +257,7 @@
 		}
 
 		goTo(sceneClass: new (data: Data) => Composite): void {
-			new FadeOut(this, new sceneClass(this.data)).attach(this.parent!);
+			FadeOut.go(this, new sceneClass(this.data));
 		}
 	}
 
@@ -313,7 +313,7 @@
 			this.addSpot(3, KEY.C, "Shop", () => this.goTo(Shop));		// TODO: Shop or Trading Post?
 			this.addSpot(2, KEY.D, "Smith", () => { }).enabled = false;	// TODO: 武器や防具に Enchant を追加できる。
 			this.addSpot(1, KEY.E, "Dungeon", () => {
-				new FadeOut(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin], 0))).attach(this.parent!);
+				FadeOut.go(this, new Combat.Scene(data, new Combat.EndressStage(SKINS[skin], 0)));
 			}).enabled = data.party.some(ch => !!ch);
 
 			this.addButton(2, [KEY.L], _("Town", "Load"), () => {
@@ -323,7 +323,7 @@
 						click: () => {
 							let loaded = loadData();
 							if (loaded) {
-								new FadeOut(this, new Home(loaded)).attach(this.parent!);
+								FadeOut.go(this, new Home(loaded));
 								logger.log(_("Town", "NotifyLoad"));
 							}
 						},
@@ -344,7 +344,7 @@
 		onPortraitClick(index: number) {
 			let ch = this.data.party[index];
 			if (ch) {
-				new FadeOut(this, new CharacterDetails(this.data, index)).attach(this.parent!);
+				FadeOut.go(this, new CharacterDetails(this.data, index));
 			}
 		}
 
@@ -573,8 +573,8 @@
 			for (let i = 1; i < length; ++i) {
 				let prev = (index + length - i) % length;
 				if (party[prev]) {
-					this.addButton(5, [KEY.LEFT, KEY.UP], _("Town", "Prev"), () =>
-						new FadeOut(this, new CharacterDetails(this.data, prev)).attach(this.parent!)
+					this.addButton(5, [KEY.LEFT, KEY.UP], _("Town", "Prev"),
+						() => FadeOut.go(this, new CharacterDetails(this.data, prev))
 					);
 					break;
 				}
@@ -582,8 +582,8 @@
 			for (let i = 1; i < length; ++i) {
 				let next = (index + i) % length;
 				if (party[next]) {
-					this.addButton(4, [KEY.RIGHT, KEY.DOWN], _("Town", "Next"), () =>
-						new FadeOut(this, new CharacterDetails(this.data, next)).attach(this.parent!)
+					this.addButton(4, [KEY.RIGHT, KEY.DOWN], _("Town", "Next"),
+						() => FadeOut.go(this, new CharacterDetails(this.data, next))
 					);
 					break;
 				}

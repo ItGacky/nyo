@@ -18,7 +18,7 @@ const CANVAS_RESIZE_DELAY: Duration = 300;
 //================================================================================
 
 interface Dictionary {
-	[id: string]: string | Dictionary;
+	readonly [id: string]: string | Dictionary;
 }
 
 interface System {
@@ -27,7 +27,7 @@ interface System {
 	checkpoint(): void;
 	localize(lang: string, dict: Dictionary): void;
 	// import
-	canvas: HTMLCanvasElement;
+	readonly canvas: HTMLCanvasElement;
 	exit(): void;
 	getLocalStorage(key: string): Optional<string>;
 	setLocalStorage(key: string, value: string): void;
@@ -171,7 +171,7 @@ function compare(lhs: any, rhs: any): number {
 			return compare(lhs.getTime(), rhs.getTime());
 		} else if (lhs instanceof Array && rhs instanceof Array) {
 			return compareArrays(lhs, rhs);
-		} else if (lhs.consructor === Object && rhs.constructor === Object) {
+		} else if (lhs.constructor === Object && rhs.constructor === Object) {
 			return compareObjects(lhs, rhs);
 		} else {
 			throw new TypeError(`Cannot compare: (${lhs}) and (${rhs})`);
@@ -344,7 +344,7 @@ class Word {
 	// - true: now loading
 	// - false: load error
 	// - {}: successfully loaded
-	static languages: { [locale: string]: string | boolean | Dictionary } = {};
+	static readonly languages: { [locale: string]: string | boolean | Dictionary } = {};
 
 	private _localized?: string;
 	private _language?: string;
@@ -575,7 +575,10 @@ class Composite extends Component {
 }
 
 interface CanvasRenderingContext2D {
-	debugSaveAndRestoreCount: number;
+	// https://developer.mozilla.org/ja/docs/Web/API/CanvasRenderingContext2D/filter
+	filter?: string;	// only works on Chrome and Firefox (49+)
+	//
+	debugSaveAndRestoreCount?: number;
 }
 
 if (DEBUG) {
