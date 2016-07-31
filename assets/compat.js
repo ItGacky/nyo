@@ -15,7 +15,7 @@
 		String.prototype.endsWith = function (searchString, position) {
 			position = position || this.length;
 			position = position - searchString.length;
-			return this.lastIndexOf(searchString) === position;
+			return position >= 0 && this.lastIndexOf(searchString) === position;
 		};
 	}
 	// https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array/find

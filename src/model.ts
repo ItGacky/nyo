@@ -322,7 +322,8 @@ enum CharacterImage {
 	BLINK_2,
 	BLINK_3,
 	BLINK_4,
-	CLOSED
+	CLOSED,
+	DEAD
 }
 
 // TODO: 装備変更までキャッシュ可能な値について、必要性を確認する。
@@ -359,14 +360,19 @@ class Character implements ToJSON<CharacterArchive>, WH {
 				new Picture(path + "/fore.png")
 			];
 
-			join(parts).then(() => images.push(
-				compose(parts[0], parts[1], parts[7]),
-				compose(parts[0], parts[2], parts[7]),
-				compose(parts[0], parts[3], parts[7]),
-				compose(parts[0], parts[4], parts[7]),
-				compose(parts[0], parts[5], parts[7]),
-				compose(parts[0], parts[6], parts[7])
-			));
+			join(parts).then(() => {
+				images.push(
+					compose(parts[0], parts[1], parts[7]),
+					compose(parts[0], parts[2], parts[7]),
+					compose(parts[0], parts[3], parts[7]),
+					compose(parts[0], parts[4], parts[7]),
+					compose(parts[0], parts[5], parts[7]),
+					compose(parts[0], parts[6], parts[7])
+				);
+				images.push(
+					grayscale(images[CharacterImage.CLOSED])
+				);
+			});
 		}
 		this.images = images;
 		this.blinkCycle = BLINK_CYCLE + BLINK_CYCLE_PER_INT * INT;
@@ -383,6 +389,41 @@ class Character implements ToJSON<CharacterArchive>, WH {
 				let rect = { x: 0, y: 0, w, h };
 				for (let image of images) {
 					image.draw(g, undefined, rect);
+				}
+			}
+			return Picture.from(canvas);
+		}
+
+		function grayscale(image: Picture): Picture {
+			assert(images.length > 0);
+			let { w, h } = images[0];
+			let canvas = document.createElement("canvas");
+			canvas.width = w;
+			canvas.height = h;
+			let g = canvas.getContext("2d");
+			if (g) {
+				let rect = { x: 0, y: 0, w, h };
+				if (g.filter !== undefined) {
+					// Fast path for Chrome and Firefox 49+.
+					g.save();
+					g.filter = "grayscale(100%)";
+					image.draw(g, undefined, rect);
+					g.restore();
+				} else {
+					// Slow path using pixel operations.
+					image.draw(g, undefined, rect);
+					let pixels = g.getImageData(0, 0, w, h);
+					let { data, width, height } = pixels;
+					for (let y = 0; y < height; ++y) {
+						for (let x = 0; x < width; ++x) {
+							let i = (y * 4) * width + x * 4;
+							let c = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+							data[i] = c;
+							data[i + 1] = c;
+							data[i + 2] = c;
+						}
+					}
+					g.putImageData(pixels, 0, 0, 0, 0, width, height);
 				}
 			}
 			return Picture.from(canvas);

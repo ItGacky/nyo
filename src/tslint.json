@@ -5,29 +5,41 @@
             false,
             "check-space"
         ],
-		"curly": true,
-		"eofline": true,
-		"forin": false,
+        "curly": true,
+        "eofline": true,
+        "forin": false,
         "indent": [
             true,
             "tabs"
         ],
-		"no-arg": true,
-		"no-consecutive-blank-lines": true,
-		"no-construct": true,
+        "interface-name": [
+            true,
+            "never-prefix"
+        ],
+        "no-angle-bracket-type-assertion": true,
+        "no-arg": true,
+        "no-conditional-assignment": true,
+        "no-consecutive-blank-lines": true,
+        "no-construct": true,
+        "no-duplicate-key": true,
         "no-duplicate-variable": true,
-		"no-empty": false,
+        "no-empty": false,
         "no-eval": true,
+        "no-invalid-this": false,
         "no-internal-module": true,
-		"no-shadowed-variable": false,
+        "no-null-keyword": false,
+        "no-shadowed-variable": false,
         "no-trailing-whitespace": true,
-		"no-unused-expression": true,
-		"no-use-before-declare": true,
+        "no-unreachable": true,
+        "no-unused-expression": true,
+        "no-unused-new": true,
+        "no-unused-variable": false,
+        "no-use-before-declare": true,
         "no-var-keyword": true,
         "one-line": [
             true,
-			"check-catch",
-			"check-else",
+            "check-catch",
+            "check-else",
             "check-open-brace",
             "check-whitespace"
         ],
@@ -35,7 +47,7 @@
             true,
             "double"
         ],
-		"radix ": true,
+        "radix ": true,
         "semicolon": [
             true,
             "always"
@@ -56,15 +68,17 @@
         ],
         "variable-name": [
             true,
-			"allow-leading-underscore",
+            "allow-leading-underscore",
             "ban-keywords"
         ],
         "whitespace": [
             true,
             "check-branch",
             "check-decl",
+            "check-module",
             "check-operator",
-            "check-type"
+            "check-type",
+            "check-typecast"
         ]
     }
 }

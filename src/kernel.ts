@@ -173,9 +173,8 @@ function compare(lhs: any, rhs: any): number {
 			return compareArrays(lhs, rhs);
 		} else if (lhs.constructor === Object && rhs.constructor === Object) {
 			return compareObjects(lhs, rhs);
-		} else {
-			throw new TypeError(`Cannot compare: (${lhs}) and (${rhs})`);
 		}
+		throw new TypeError(`Cannot compare: (${lhs}) and (${rhs})`);
 	}
 	// default comparison
 	if (lhs < rhs) { return -1; }

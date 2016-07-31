@@ -252,15 +252,15 @@
 	const SKILL_H = (PANEL_H - MARGIN * (1 + SKILL_ROWS)) / SKILL_ROWS;
 
 	const enum DIR {
-		NE,
+		BEGIN,
+		NE = BEGIN,
 		E,
 		SE,
 		SW,
 		W,
-		NW
+		NW,
+		END
 	}
-	const DIR_BEGIN: DIR = DIR.NE;
-	const DIR_END: DIR = DIR.NW + 1;
 
 	const enum TEAM {
 		ALLY,
@@ -472,7 +472,7 @@
 		surround(center: Hex, range: number, callback: (hex: Hex, steps: number) => void): void {
 			if (range === 1) {
 				// fast path for near
-				for (let dir = DIR_BEGIN; dir < DIR_END; ++dir) {
+				for (let dir = DIR.BEGIN; dir < DIR.END; ++dir) {
 					let hex = shift(center, dir);
 					if (this.contains(hex)) {
 						callback(hex, 1);
@@ -500,7 +500,7 @@
 	//================================================================================
 
 	abstract class UnitState implements Job {
-		public start: Timestamp;
+		public start?: Timestamp;
 		public duration?: Duration;
 
 		constructor(duration: Duration) {
@@ -1038,7 +1038,7 @@
 				for (let from = hex; from; from = deque.shift()) {
 					let remain = this.get(from).SP - (step + zoc.get(from));
 					if (remain >= 0) {
-						for (let dir = DIR_BEGIN; dir < DIR_END; ++dir) {
+						for (let dir = DIR.BEGIN; dir < DIR.END; ++dir) {
 							let near = shift(from, dir);
 							let cell = field.rawget(near);
 							if (cell && cell.type === CELL.NORMAL && !unit.isEnemy(cell.unit)) {
@@ -1358,12 +1358,9 @@
 					if (unit.hex || unit.canRevive) {
 						ch.draw(g, when, chRect);
 					} else {
-						// XXX: Should use grayscaled CLOSED image? Some browser won't allow to read raw data from local image files.
-						let image = (ch.images[CharacterImage.CLOSED] || ch.images[CharacterImage.DEFAULT]);
-						g.save();
-						g.filter = "grayscale(100%)";	// TODO: This works only on Chrome, so we should make a grayscled bitmap using bit operations. NOTE: Chromes running on local machines prevent bits from reading for security reason.
+						let { images } = ch;
+						let image = (images[CharacterImage.DEAD] || images[CharacterImage.DEFAULT]);
 						image.draw(g, when, chRect);
-						g.restore();
 					}
 					drawBar(g, rect.x + ALLY_BAR_X, rect.y + ALLY_BAR_Y, ALLY_BAR_W, ALLY_BAR_H, unit.HP, unit.maxHP, undefined, BAR_STYLE_HP);
 				}

@@ -452,7 +452,7 @@
 					let price = item.priceToSell;
 					warehouse.splice(index, 1);
 					let stock = shop[IID];
-					if (!stock) {
+					if (stock == null) {
 						// new item
 						shop[IID] = 1;
 						buy.rows.push(IID);
