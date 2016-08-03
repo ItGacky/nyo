@@ -371,7 +371,7 @@ class Picture implements Drawable, WH, Job {
 	// - null: loading or not found.
 	private _image: DrawableElement | null | undefined = undefined;
 
-	constructor(public src?: string) {
+	constructor(public readonly src?: string) {
 	}
 
 	static from(elem: DrawableElement): Picture {

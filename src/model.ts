@@ -214,14 +214,14 @@ class Item implements ToJSON<ItemArchive> {
 	static fromJSON(o: ItemArchive): Item {
 		return new Item(
 			o.IID,
-			fromJSON(Enchant, o.enchants)
+			fromJSON(Enchant, o.enchants, never)
 		);
 	}
 
 	toJSON(): ItemArchive {
 		return {
 			IID: this.IID,
-			enchants: toJSON(this.enchants)
+			enchants: toJSON(this.enchants, never)
 		};
 	}
 }
@@ -257,7 +257,7 @@ class Skill implements ToJSON<SkillArchive> {
 	get rawCost() { return this.def.cost; }
 	get rawRange() { return this.def.range; }
 	get rawPower() { return this.def.power; }
-	get target() { return this.def.usage; }
+	get usage() { return this.def.usage; }
 	get hostile() { return isHostile(this.def.usage); }
 	get effect() { return this.def.effect; }
 	get action() { return this.def.action; }
@@ -554,9 +554,9 @@ class Character implements ToJSON<CharacterArchive>, WH {
 			o.INT,
 			o.DEX,
 			o.STR,
-			fromJSON(Item, o.equipments),
-			fromJSON(Skill, o.skills),
-			fromJSON(Skill, o.known),
+			fromJSON(Item, o.equipments, never),
+			fromJSON(Skill, o.skills, never),
+			fromJSON(Skill, o.known, never),
 			o.image
 		);
 	}
@@ -568,9 +568,9 @@ class Character implements ToJSON<CharacterArchive>, WH {
 			INT: this.INT,
 			DEX: this.DEX,
 			STR: this.STR,
-			equipments: toJSON(this.equipments),
-			skills: toJSON(this.skills),
-			known: toJSON(this.known),
+			equipments: toJSON(this.equipments, never),
+			skills: toJSON(this.skills, never),
+			known: toJSON(this.known, never),
 			image: this.src
 		};
 	}

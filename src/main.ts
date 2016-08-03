@@ -98,9 +98,7 @@ function addConfigButton(parent: Composite): Button {
 		let MODAL_BUTTON_W = SCREEN_W / 4;
 		let MODAL_BUTTON_X = (SCREEN_W - MODAL_BUTTON_W) / 2;
 		new Button(MODAL_BUTTON_X, CONFIRM_BUTTON_Y, MODAL_BUTTON_W, CONFIRM_BUTTON_H,
-			new Label(_("Config", "OK")), () => {
-				self.detach();
-			},
+			new Label(_("Config", "OK")), () => self.detach(),
 			MNEMONIC_OK
 		).attach(self);
 
@@ -270,9 +268,9 @@ function loadData(): Optional<Data> {
 		let json = parse(value) as DataArchive;
 		return {
 			shop: json.shop,
-			warehouse: fromJSON(Item, json.warehouse),
-			reservers: fromJSON(Character, json.reservers),
-			party: fromJSON(Character, json.party),
+			warehouse: fromJSON(Item, json.warehouse, never),
+			reservers: fromJSON(Character, json.reservers, never),
+			party: fromJSON(Character, json.party, undefined),
 			gold: json.gold
 		};
 	} catch (e) {

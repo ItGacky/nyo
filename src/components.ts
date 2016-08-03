@@ -160,7 +160,7 @@ class FadeOut extends Animation {
 	): void {
 		let { parent } = prev;
 		assert(parent);
-		new FadeOut(prev, next, duration).attach(parent);
+		new FadeOut(prev, next, duration).attach(parent!);
 	}
 
 	attach(parent: Composite): boolean {
@@ -481,7 +481,7 @@ class Button extends Widget {
 
 class SwappableButton extends Button {
 	private dragged?: {
-		xDown?: Pixel;
+		xDown?: Pixel;	// not exists after swap.
 		yDown?: Pixel;
 		xOrig: Pixel;
 		yOrig: Pixel;
@@ -513,25 +513,31 @@ class SwappableButton extends Button {
 
 	onDrag(x: Pixel, y: Pixel): void {
 		super.onDrag(x, y);
-		if (this.dragged && !this.swapping) {
+		let { dragged, swapping} = this;
+		if (dragged && !swapping) {
 			let that = this.group.find(o => o !== this && o.contains(x, y) && !o.swapping);
 			if (that) {
 				let when = now();
 				this.onSwap(that, when);
 				that.onSwap(this, when);
+				swapping = this.swapping!;
 				this.dragged = {
-					xOrig: this.swapping!.xTo,
-					yOrig: this.swapping!.yTo
+					xOrig: swapping.xTo,
+					yOrig: swapping.yTo
 				};
 				if (this.swap) {
 					this.swap(that);
 				}
-			} else if (this.dragged.xDown != null) {
-				this.x = (this.dragged.xOrig - this.dragged.xDown + x);
-				this.y = (this.dragged.yOrig - this.dragged.yDown + y);
+			} else if (dragged.xDown != null) {
+				this.x = (dragged.xOrig - dragged.xDown + x);
+				this.y = (dragged.yOrig - dragged.yDown + y);
+			} else if (this.contains(x, y)) {
+				dragged.xDown = x;
+				dragged.yDown = y;
 			} else {
-				this.dragged.xDown = x;
-				this.dragged.yDown = y;
+				this.dragged = undefined;
+				this.pressed = undefined;
+				this.hover = false;
 			}
 		}
 	}
@@ -889,7 +895,7 @@ class ListView<T> extends Widget {
 		let { extract } = col;
 		switch (typeof extract) {
 			case "function":
-				return (extract as (row: T) => string)(row);
+				return (extract as (row: T) => any)(row);
 			case "number":
 				return (row as any)[extract as number];
 			default:

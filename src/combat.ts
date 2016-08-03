@@ -272,14 +272,14 @@
 	}
 
 	interface SkillEffect {
-		deltaHP?: number;	// changes to target's HP.
-		deltaSP?: number;	// changes to target's SP.
-		duration?: number;	// turns for effect over time.
-		deltaHPoT?: number;	// changes over time to target's HP.
+		deltaHP?: number;	// changes target's HP.
+		deltaSP?: number;	// changes target's SP.
+		duration?: number;	// number of turns for effect over time.
+		deltaHPoT?: number;	// changes target's HP over time.
 	}
 
-	type Effect = (scene: Scene, unit: Unit, target: Unit) => SkillEffect;
-	type Action = (scene: Scene, unit: Unit, target: Unit) => Job;
+	type Effect = (scene: Scene, unit: Unit, target: Unit, skill: Skill) => SkillEffect;
+	type Action = (scene: Scene, unit: Unit, target: Unit, skill: Skill) => Job;
 
 	//================================================================================
 	// Hex
@@ -334,7 +334,10 @@
 		private readonly cells: { [xH: number/*Coord*/]: T[] };
 		public depth: Coord;
 
-		constructor(depth: Coord, public dummy?: T) {
+		constructor(
+			depth: Coord,
+			public readonly dummy?: T
+		) {
 			this.cells = {};
 			this.depth = floor(depth);
 		}
@@ -679,7 +682,7 @@
 		public HP: number;
 		public SP: number;
 		public skill: Skill;	// selected active skill
-		private minCost: number;	// min cost in active skills
+		public minCost: number;	// min cost in active skills
 		private readonly idleOffset: number;	// 0..1
 		readonly effectsOverTime: EffectOverTime[];
 
@@ -723,9 +726,6 @@
 		rangeOf(skill: Skill) { return this.ch.rangeOf(skill); }
 		powerOf(skill: Skill) { return this.ch.powerOf(skill); }
 
-		get cost() { return this.costOf(this.skill); }
-		get range() { return this.rangeOf(this.skill); }
-
 		getPassive(tagbits: number, action: string): number {
 			let total = 0;
 			for (let skill of this.ch.skills) {
@@ -736,18 +736,20 @@
 			return total;
 		}
 
-		getOffencePassive(tagbits: number): number { return this.getPassive(tagbits, "Offence"); }
-		getDefencePassive(tagbits: number): number { return this.getPassive(tagbits, "Defence"); }
+		getOffenceModifier(tagbits: number): number { return this.getPassive(tagbits, "Offence"); }
+		getDefenceModifier(tagbits: number): number { return this.getPassive(tagbits, "Defence"); }
 
-		isEnemy(other: Unit): boolean {
+		isEnemy(other?: Unit): boolean {
 			return !!other && this.team !== other.team;
 		}
 
 		// Check: team
-		isTarget(target: Optional<Unit>): boolean {
+		isTarget(target: Optional<Unit>, skill: Skill): boolean {
 			if (!target) {
 				return false;
-			} else if (this.skill.hostile) {
+			} else if (skill.usage === USAGE.DOSE) {
+				return this === target;
+			} else if (skill.hostile) {
 				return this.isEnemy(target);
 			} else {
 				return this !== target && !this.isEnemy(target);
@@ -759,7 +761,7 @@
 			let r = field.get(hex);
 			if (r) {
 				let { unit } = r;
-				if (this.isTarget(unit)) {
+				if (this.isTarget(unit, this.skill)) {
 					return unit;
 				}
 			}
@@ -774,19 +776,20 @@
 		}
 
 		// Estimate effect of the current skill.
-		estimate(scene: Scene, target: Unit): SkillEffect {
-			assert(this.isTarget(target));
-			let effect = getEffect(this.skill.effect);
-			return effect(scene, this, target);
+		estimate(scene: Scene, target: Unit, skill: Skill): SkillEffect {
+			assert(this.isTarget(target, skill));
+			let effect = getEffect(skill.effect);
+			return effect(scene, this, target, skill);
 		}
 
-		// Activate the current skill.
-		shoot(scene: Scene, target: Unit): Job {
-			assert(this.isTarget(target));
-			assert(this.SP >= this.cost);
-			let action = getAction(this.skill.action);
-			let job = action(scene, this, target);
-			this.SP -= this.cost;
+		// Use the skill to the target.
+		shoot(scene: Scene, target: Unit, skill: Skill): Job {
+			assert(this.isTarget(target, skill));
+			let cost = this.costOf(skill);
+			assert(this.SP >= cost);
+			let action = getAction(skill.action);
+			let job = action(scene, this, target, skill);
+			this.SP -= cost;
 			return job;
 		}
 
@@ -1030,7 +1033,9 @@
 			let { field } = scene;
 			super(field.depth, ActionMap.DUMMY);
 			let zoc = scene.zoc[unit.team];
-			let { step, cost, hex } = unit;
+			let { step, skill, hex } = unit;
+			const cost = unit.costOf(skill);
+			const range = unit.rangeOf(skill) || 0;
 			this.ensure(hex).SP = baseSP;
 			// walk/dash
 			if (baseSP >= step + zoc.get(hex)) {
@@ -1056,58 +1061,57 @@
 				}
 			}
 			// skill
-			if (baseSP >= cost) {
-				expandRange.call(this, scene, unit, zoc, hex);
+			if (baseSP >= cost && range >= 1) {
+				expandRange.call(this, hex);
 				this.each(({ SP }, xH, yH) => {
 					if (SP >= cost && field.rawget(xH, yH).empty) {
-						expandRange.call(this, scene, unit, zoc, { xH, yH });
+						expandRange.call(this, { xH, yH });
 					}
 				});
 			}
 
-			function expandRange(this: ActionMap, scene: Scene, unit: Unit, zoc: ZoC, from: Hex): void {
-				let range = unit.range || 0;
-				if (range >= 1) {
-					let hexUnit = unit.hex;
-					let { field, numScrollsPerTurn } = scene;
+			function expandRange(this: ActionMap, from: Hex): void {
+				assert(range >= 1);
 
-					// XXX: This evaluation function can be moved to CPU class.
-					let spL = this.get(from).SP;
-					let zL = zoc.get(from);
-					let yL = yScore(from);
-					let edge = field.minXH + numScrollsPerTurn;
-					let edgeL = (from.xH < edge);
-					let better = (rhs: Hex): boolean => {
-						let spR = this.get(rhs).SP;
-						if (spL > spR) { return true; }
-						if (spL < spR) { return false; }
-						let edgeR = (rhs.xH < edge);
-						if (!edgeL && edgeR) { return true; }
-						if (edgeL && !edgeR) { return false; }
-						let zR = zoc.get(rhs);
-						if (zL < zR) { return true; }
-						if (zL > zR) { return false; }
-						if (from.xH < rhs.xH) { return true; }
-						if (from.xH > rhs.xH) { return false; }
-						return yL < yScore(rhs);
-					};
+				let hexUnit = unit.hex;
+				let { field, numScrollsPerTurn } = scene;
 
-					field.surround(from, range, hex => {
-						if (!same(hex, hexUnit)) {
-							let cell = field.rawget(hex);
-							let r = this.ensure(hex);
-							if (!r.shotFrom) {
-								r.shotFrom = from;
-								let target = cell.unit;
-								if (unit.isTarget(target)) {
-									r.effect = unit.estimate(scene, target!);
-								}
-							} else if (better(r.shotFrom)) {
-								r.shotFrom = from;
+				// XXX: This evaluation function can be moved to CPU class.
+				let spL = this.get(from).SP;
+				let zL = zoc.get(from);
+				let yL = yScore(from);
+				let edge = field.minXH + numScrollsPerTurn;
+				let edgeL = (from.xH < edge);
+				let better = (rhs: Hex): boolean => {
+					let spR = this.get(rhs).SP;
+					if (spL > spR) { return true; }
+					if (spL < spR) { return false; }
+					let edgeR = (rhs.xH < edge);
+					if (!edgeL && edgeR) { return true; }
+					if (edgeL && !edgeR) { return false; }
+					let zR = zoc.get(rhs);
+					if (zL < zR) { return true; }
+					if (zL > zR) { return false; }
+					if (from.xH < rhs.xH) { return true; }
+					if (from.xH > rhs.xH) { return false; }
+					return yL < yScore(rhs);
+				};
+
+				field.surround(from, range, hex => {
+					if (!same(hex, hexUnit)) {
+						let cell = field.rawget(hex);
+						let r = this.ensure(hex);
+						if (!r.shotFrom) {
+							r.shotFrom = from;
+							let target = cell.unit;
+							if (unit.isTarget(target, skill)) {
+								r.effect = unit.estimate(scene, target!, skill);
 							}
+						} else if (better(r.shotFrom)) {
+							r.shotFrom = from;
 						}
-					});
-				}
+					}
+				});
 			}
 
 			function yScore(hex: Hex): number {
@@ -1129,7 +1133,7 @@
 			let r = this.get(hex);
 			if (!r) { return undefined; }
 			let { effect, comeFrom, shotFrom } = r;
-			let path: Hex[];
+			let path: Optional<Hex[]>;
 			if (effect) {
 				if (!field.get(shotFrom).empty) { return undefined; }
 				path = [shotFrom];
@@ -1163,11 +1167,11 @@
 				if (focus) {
 					let skill = focus.skills[index];
 					if (skill) {
-						let range = focus.rangeOf(skill);
-						if (range > 0) {
+						if (skill.isActive) {
 							// Active Skills
 							let selected = (focus.skill === skill);
 							let cost = focus.costOf(skill);
+							let range = focus.rangeOf(skill) || 0;
 							let power = focus.powerOf(skill);
 							return `${selected ? "E " : ""}${skill.name.localized}\n${cost} / ${range} / ${power > 0 ? power.toFixed(1) : "-"}`;
 						} else {
@@ -1179,11 +1183,13 @@
 				return undefined;
 			}
 
-			function equip() {
-				let { focus } = scene;
-				if (focus) {
-					let skill = focus.skills[index];
-					if (skill && focus.rangeOf(skill) > 0) {
+			function equip(this: SkillButton) {
+				let { focus } = this.scene;
+				if (this.enabled) {
+					let skill = focus.skills[this.index];
+					if (skill.usage === USAGE.DOSE) {
+						scene.controller.dose(focus, skill);
+					} else {
 						focus.skill = skill;
 						scene.onSkillChanged(focus);
 					}
@@ -1198,7 +1204,17 @@
 
 		get enabled(): boolean {
 			let { focus } = this.scene;
-			return !!focus && focus.rangeOf(focus.skills[this.index]) > 0;
+			if (focus) {
+				let skill = focus.skills[this.index];
+				if (skill) {
+					if (skill.usage === USAGE.DOSE) {
+						return focus.SP >= focus.costOf(skill);
+					} else {
+						return focus.rangeOf(skill) > 0;
+					}
+				}
+			}
+			return false;
 		}
 	}
 
@@ -1304,6 +1320,7 @@
 	interface Controller {
 		visible: boolean;
 		readonly caret?: Hex;
+		dose(unit: Unit, skill: Skill): void;
 	}
 
 	export class Scene extends Composite {
@@ -1718,6 +1735,27 @@
 			}).attach(this);
 		}
 
+		dose(unit: Unit, skill: Skill): Job {
+			assert(this.enabled);
+			assert(unit.SP >= unit.costOf(skill));
+
+			let finish = (): void => {
+				this.enabled = true;
+				if (unit.done(this)) {
+					this.focus = undefined;
+				}
+			};
+
+			this.focus = unit;
+			let { field } = this;
+			// wait for skill animation
+			this.enabled = false;
+
+			this.snapshots.length = 0;
+			this.invalidate();
+			return unit.shoot(this, unit, skill).then(finish);
+		}
+
 		// Caller is responsible to check the action is valid.
 		move(unit: Unit, hex: Hex): Job {
 			assert(this.enabled);
@@ -1732,20 +1770,22 @@
 
 			this.focus = unit;
 			let { field } = this;
+			let { skill } = unit;
 			let map = this.mapFor(unit);
 			let r = map.get(hex);
 			if (r.effect) {
+				assert(unit.SP >= unit.costOf(skill));
+
 				// wait for skill animation
 				this.enabled = false;
 
 				let target = field.get(hex).unit;
-				assert(unit.SP >= unit.cost);
-				assert(unit.isTarget(target));
+				assert(unit.isTarget(target, skill));
 
 				let shoot = (): Job => {
 					this.snapshots.length = 0;
 					this.invalidate();
-					return unit.shoot(this, target).then(finish);
+					return unit.shoot(this, target, skill).then(finish);
 				};
 
 				// fast path for shoot only
@@ -1857,7 +1897,7 @@
 			);
 		}
 
-		// return an animation that deals or heals target and raises a popup on attach.
+		// return an animation that damages or heals target and raises a popup on attach.
 		promiseEffect(target: Unit, effect: SkillEffect, hex?: Hex): Animation {
 			let deltaHP = (effect.deltaHP || 0);
 			let text = abs(deltaHP).toString();
@@ -1955,11 +1995,11 @@
 				field.depth = depth;
 				let minXH2 = field.minVisibleXH;
 				let maxXH2 = field.maxVisibleXH;
-				// remove field scrolling out
+				// remove lines scrolling out
 				for (let xH = minXH1; xH < minXH2; ++xH) {
 					field.deleteLine(xH);
 				}
-				// ensure field in display
+				// ensure lines in display
 				for (let xH = max(minXH2, maxXH1); xH < maxXH2; ++xH) {
 					field.setLine(xH, this.stage.generate(this, xH));
 				}
@@ -1986,7 +2026,7 @@
 			let progress = Animation.clamp(when, startTime, MARKER_DURATION);
 			if (progress <= 0) { return; }
 
-			let { cost } = unit;
+			const cost = unit.costOf(unit.skill);
 			const { DASH_OR_RANGE, RANGE, TARGET } = (unit.skill.hostile ? MARKER_HOSTILE : MARKER_FRIENDLY);
 
 			g.save();
@@ -2074,8 +2114,8 @@
 				}
 				unit.draw(g, when, x, y, overlayStyle, overlayAlpha);
 				if (!unit.state && zoc) {
-					let { hex, SP, step, cost, team } = unit;
-					if (hex && SP < cost) {
+					let { hex, SP, step, minCost, team } = unit;
+					if (hex && SP < minCost) {
 						if (SP < step) {
 							drawText(g, doneText, x, y, UNIT_DONE_STYLE);
 						} else if (SP < step + zoc[team].get(hex)) {
@@ -2103,11 +2143,12 @@
 					let r = map.get(caret);
 					if (r.effect) {
 						let { shotFrom } = r;
+						let cost = unit.costOf(unit.skill);
 						if (same(shotFrom, unit.hex)) {
-							unit.drawBars(g, when, this, null, -unit.cost);
+							unit.drawBars(g, when, this, null, -cost);
 						} else {
 							drawHP(g, when, this, unit, unit.hex);
-							drawSP(g, when, this, unit, shotFrom, map.get(shotFrom).SP - unit.cost);
+							drawSP(g, when, this, unit, shotFrom, map.get(shotFrom).SP - cost);
 						}
 					} else {
 						if (r.SP > 0 && field.get(caret).empty) {
@@ -2135,7 +2176,8 @@
 
 				const PANEL_NAME_X: Pixel = UNIT_MAX_W + MARGIN * 2;
 				const PANAL_NAME_Y: Pixel = MARGIN;
-				let MVW = (unit.SP >= unit.cost ? floor((unit.SP - unit.cost) / unit.step) : "-");
+				let cost = unit.costOf(unit.skill);
+				let MVW = (unit.SP >= cost ? floor((unit.SP - cost) / unit.step) : "-");
 				let ATK = unit.powerOf(unit.skill);
 				drawText(g,
 					`${unit.name} / Lv: ${toFixed(unit.level)}\n` +
@@ -2175,6 +2217,26 @@
 				let scene = this.parent as Scene;
 				scene.focus = (value ? scene.field.get(value).unit : undefined);
 			}
+		}
+
+		private finish(job: Job): void {
+			let scene = this.parent as Scene;
+			let checkFocus = () => {
+				if (!scene.focus) {
+					this.mode = Caret.Unlocked;
+				}
+			};
+			if (scene.enabled) {
+				checkFocus();
+			} else {
+				job.then(checkFocus);
+			}
+		}
+
+		dose(unit: Unit, skill: Skill): void {
+			let scene = this.parent as Scene;
+			this.mode = Caret.Locked;
+			this.finish(scene.dose(unit, skill));
 		}
 
 		get canUndo(): boolean {
@@ -2272,17 +2334,7 @@
 			}
 
 			this.mode = Caret.Locked;
-			let job = scene.move(focus, hex);
-			let checkFocus = () => {
-				if (!scene.focus) {
-					this.mode = Caret.Unlocked;
-				}
-			};
-			if (scene.enabled) {
-				checkFocus();
-			} else {
-				job.then(checkFocus);
-			}
+			this.finish(scene.move(focus, hex));
 		}
 
 		onUp(x: Pixel, y: Pixel): void {
@@ -2392,7 +2444,7 @@
 						// Caret(s)
 						if (r.effect) {
 							let { skill } = focus;
-							switch (skill.target) {
+							switch (skill.usage) {
 								case USAGE.SINGLE_HOSTILE:
 									drawCaret(g, scene, caret, CARET_HOSTILE);
 									break;
@@ -2400,16 +2452,16 @@
 									drawCaret(g, scene, caret, CARET_FRIENDLY);
 									break;
 								case USAGE.STRAIGHT_HOSTILE:
-									field.straight(r.shotFrom, caret, focus.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
+									field.straight(r.shotFrom, caret, focus.rangeOf(skill), hex => drawCaret(g, scene, hex, CARET_HOSTILE));
 									break;
 								case USAGE.STRAIGHT_FRIENDLY:
-									field.straight(r.shotFrom, caret, focus.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
+									field.straight(r.shotFrom, caret, focus.rangeOf(skill), hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
 									break;
 								case USAGE.SURROUND_HOSTILE:
-									field.surround(r.shotFrom, focus.range, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
+									field.surround(r.shotFrom, focus.rangeOf(skill), hex => drawCaret(g, scene, hex, CARET_HOSTILE));
 									break;
 								case USAGE.SURROUND_FRIENDLY:
-									field.surround(r.shotFrom, focus.range, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
+									field.surround(r.shotFrom, focus.rangeOf(skill), hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
 									break;
 							}
 						} else if (r.SP >= 0) {
@@ -2518,6 +2570,10 @@
 
 		caret?: Hex;
 
+		dose(unit: Unit, skill: Skill): void {
+			throw new Error("not implemented");	// TODO: allow CPU to dose.
+		}
+
 		private run(ignored: Unit[]): void {
 			let scene = this.parent as Scene;
 			let job: Optional<Job>;
@@ -2605,7 +2661,8 @@
 			function getBestMovement(scene: Scene, unit: Unit, map: ActionMap, best?: Score): Score {
 				let { field, numScrollsPerTurn } = scene;
 				let { minXH, maxXH } = field;
-				let { maxSP, hex, cost } = unit;
+				let { maxSP, hex } = unit;
+				let cost = unit.costOf(unit.skill);
 				let edge = minXH + numScrollsPerTurn;
 
 				// Baseline is "noop".
@@ -2713,53 +2770,48 @@
 	function calcDamage(scene: Scene, unit: Unit, skill: Skill, target: Unit): number {
 		let { tagbits } = skill;
 		let power = unit.powerOf(skill);
-		let diff = unit.level + unit.getOffencePassive(tagbits) - target.level - target.getDefencePassive(tagbits);
+		let diff = unit.level + unit.getOffenceModifier(tagbits) - target.level - target.getDefenceModifier(tagbits);
 		return ceil(power * (100 - target.DEF) / 100 * pow(BASE_FOR_LEVEL, diff));
 	}
 
 	function calcHeal(scene: Scene, unit: Unit, skill: Skill): number {
 		let { tagbits } = skill;
 		let power = unit.powerOf(skill);
-		let diff = unit.level + unit.getOffencePassive(tagbits) - scene.level;
+		let diff = unit.level + unit.getOffenceModifier(tagbits) - scene.level;
 		return ceil(power * pow(BASE_FOR_LEVEL, diff));
 	}
 
 	const EFFECTS: { [id: string]: Effect } = {
-		Damage: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
-			let { skill } = unit;
+		Damage: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): SkillEffect {
 			return {
 				deltaHP: -calcDamage(scene, unit, skill, target)
 			};
 		},
 		// Damage to HP, and also the half to SP.
-		DamageHPandSP: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
-			let { skill } = unit;
+		DamageHPandSP: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): SkillEffect {
 			let deltaHP = -calcDamage(scene, unit, skill, target);
 			return {
 				deltaHP: deltaHP,
 				deltaSP: floor(deltaHP / 2)
 			};
 		},
-		DamageOverTime: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
-			let { skill } = unit;
+		DamageOverTime: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): SkillEffect {
 			let deltaHP = -calcDamage(scene, unit, skill, target);
-			let duration = 2;
+			let duration = 2;	// TODO: skill.duration
 			return {
 				deltaHP: deltaHP,
 				duration: duration,
 				deltaHPoT: floor(deltaHP / duration)
 			};
 		},
-		Heal: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
-			let { skill } = unit;
+		Heal: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): SkillEffect {
 			return {
 				deltaHP: calcHeal(scene, unit, skill)
 			};
 		},
-		HealOverTime: function (scene: Scene, unit: Unit, target: Unit): SkillEffect {
-			let { skill } = unit;
+		HealOverTime: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): SkillEffect {
 			let deltaHP = calcHeal(scene, unit, skill);
-			let duration = 2;
+			let duration = 2;	// TODO: skill.duration
 			return {
 				deltaHP: deltaHP,
 				duration: duration,
@@ -2814,8 +2866,8 @@
 		return rearHex;
 	}
 
-	function standardCharge(scene: Scene, unit: Unit, target: Unit): Job {
-		let effect = unit.estimate(scene, target);
+	function standardCharge(scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
+		let effect = unit.estimate(scene, target, skill);
 		let popup = scene.promiseEffect(target, effect);
 		let action = new UnitCharge(scene, unit.hex, target.hex);
 		unit.state = action;
@@ -2847,6 +2899,7 @@
 	function standardNova(
 		scene: Scene,
 		unit: Unit,
+		skill: Skill,
 		center: Hex,
 		range: number,
 		factor?: (deltaHP: number, steps: number) => number
@@ -2857,7 +2910,7 @@
 		function trySkill(hex: Hex, steps: number) {
 			let target = unit.getTarget(field, hex);
 			if (target) {
-				let effect = unit.estimate(scene, target);
+				let effect = unit.estimate(scene, target, skill);
 				if (factor) {
 					effect.deltaHP = factor(effect.deltaHP, steps);
 				}
@@ -2870,7 +2923,7 @@
 		trySkill(center, 0);
 		field.surround(center, range, trySkill);
 
-		let color = colorOf(unit.skill);
+		let color = colorOf(skill);
 		let outerStyle = RGBtoString(color, 0);
 		let action = new Animation(400, (progress, g) => {
 			let x = scene.toX(center) + CELL_W / 2;
@@ -2894,14 +2947,14 @@
 		// Charge tha target and come back.
 		Charge: standardCharge,
 		// Knockback the target.
-		Knockback: function (scene: Scene, unit: Unit, target: Unit): Job {
+		Knockback: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let { hex } = target;
 			let hexTo = rearHexOf(scene.field, unit.hex, hex);
 			if (!hexTo) {
-				return standardCharge(scene, unit, target);	// no space; just charge
+				return standardCharge(scene, unit, target, skill);	// no space; just charge
 			}
 
-			let effect = unit.estimate(scene, target);
+			let effect = unit.estimate(scene, target, skill);
 			let popup = scene.promiseEffect(target, effect, hexTo);
 			let action = new UnitCharge(scene, unit.hex, target.hex);
 			let knockback = new UnitWalk([hex, hexTo]);
@@ -2911,34 +2964,34 @@
 				scene.setUnit(target, hexTo);
 				target.state = knockback;
 			});
-			knockback.then(() => { popup.attach(scene); });
+			knockback.then(() => popup.attach(scene));
 			return (config.wait.POPUP ? join([popup, action]) : action);
 		},
 		// Go to behind of the target
-		GoBehind: function (scene: Scene, unit: Unit, target: Unit): Job {
+		GoBehind: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let { hex } = target;
 			let hexTo = rearHexOf(scene.field, unit.hex, hex);
 			if (!hexTo) {
-				return standardCharge(scene, unit, target);	// no space; just charge
+				return standardCharge(scene, unit, target, skill);	// no space; just charge
 			}
 			let hexFrom = unit.hex;
-			let effect = unit.estimate(scene, target);
+			let effect = unit.estimate(scene, target, skill);
 			let popup = scene.promiseEffect(target, effect);
 			let action = new UnitWalk([hexFrom, hex]);
 			scene.setUnit(unit, hexTo);
 			unit.state = action;
-			action.then(() => { popup.attach(scene); });
+			action.then(() => popup.attach(scene));
 			return (config.wait.POPUP ? popup : action);
 		},
 		// Charge and Knockback the target.
-		Trample: function (scene: Scene, unit: Unit, target: Unit): Job {
+		Trample: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let { hex } = target;
 			let hexTo = rearHexOf(scene.field, unit.hex, hex);
 			if (!hexTo) {
-				return standardCharge(scene, unit, target);	// no space; just charge
+				return standardCharge(scene, unit, target, skill);	// no space; just charge
 			}
 			let hexFrom = unit.hex;
-			let effect = unit.estimate(scene, target);
+			let effect = unit.estimate(scene, target, skill);
 			let popup = scene.promiseEffect(target, effect, hexTo);
 			let action = new UnitWalk([hexFrom, hex]);
 			let knockback = new UnitWalk([hex, hex, hexTo]);	// HACK: use the first hex twice to delay animation
@@ -2946,39 +2999,39 @@
 			target.state = knockback;
 			scene.setUnit(unit, hex);
 			unit.state = action;
-			knockback.then(() => { popup.attach(scene); });
+			knockback.then(() => popup.attach(scene));
 			return (config.wait.POPUP ? popup : knockback);
 		},
 		// Shoot a projectile.
-		Shoot: function (scene: Scene, unit: Unit, target: Unit): Job {
-			let effect = unit.estimate(scene, target);
+		Shoot: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
+			let effect = unit.estimate(scene, target, skill);
 			let popup = scene.promiseEffect(target, effect);
-			let action = shootProjectile(scene, unit.hex, target.hex, unit.skill);
+			let action = shootProjectile(scene, unit.hex, target.hex, skill);
 			action.then(() => popup.attach(scene));
 			return (config.wait.POPUP ? popup : action);
 		},
 		// Damage to HP, and heal the caster.
-		Drain: function (scene: Scene, unit: Unit, target: Unit): Job {
-			let effect = unit.estimate(scene, target);
+		Drain: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
+			let effect = unit.estimate(scene, target, skill);
 			let damage = scene.promiseEffect(target, effect);
 			let heal = scene.promiseEffect(unit, { deltaHP: -effect.deltaHP });
-			let action = shootProjectile(scene, target.hex, unit.hex, unit.skill);
+			let action = shootProjectile(scene, target.hex, unit.hex, skill);
 			action.then(() => heal.attach(scene));
 			damage.attach(scene);
 			return (config.wait.POPUP ? heal : action);
 		},
 		// Damage target, and also ones near of it.
-		Explode: function (scene: Scene, unit: Unit, target: Unit): Job {
+		Explode: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let radius = 1;
-			let action = shootProjectile(scene, unit.hex, target.hex, unit.skill);
-			let nova = delay(() => standardNova(scene, unit, target.hex, radius, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
+			let action = shootProjectile(scene, unit.hex, target.hex, skill);
+			let nova = delay(() => standardNova(scene, unit, skill, target.hex, radius, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
 			action.then(nova);
 			return nova;
 		},
 		// Action for STRAIGHT
-		Laser: function (scene: Scene, unit: Unit, target: Unit): Job {
+		Laser: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let { field } = scene;
-			let range = unit.range || 0;
+			let range = unit.rangeOf(skill) || 0;
 
 			let hexFrom = unit.hex;
 			let hexTo: Hex;
@@ -2986,7 +3039,7 @@
 			field.straight(hexFrom, target.hex, range, hex => {
 				let target = unit.getTarget(field, hex);
 				if (target) {
-					let effect = unit.estimate(scene, target);
+					let effect = unit.estimate(scene, target, skill);
 					let popup = scene.promiseEffect(target, effect);
 					popup.attach(scene);
 					effects.push(popup);
@@ -2994,7 +3047,7 @@
 				hexTo = hex;
 			});
 
-			let color = colorOf(unit.skill);
+			let color = colorOf(skill);
 			let action = new Animation(400, (progress, g) => {
 				let xFrom = scene.toX(hexFrom) + CELL_W / 2;
 				let yFrom = scene.toY(hexFrom) + CELL_H / 2;
@@ -3024,8 +3077,15 @@
 			}
 		},
 		// Action for SURROUND
-		Nova: function (scene: Scene, unit: Unit, target: Unit): Job {
-			return standardNova(scene, unit, unit.hex, unit.range || 0);
+		Nova: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
+			return standardNova(scene, unit, skill, unit.hex, unit.rangeOf(skill) || 0);
+		},
+		// Just popup the effect.
+		Dose: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
+			let effect = unit.estimate(scene, target, skill);
+			let popup = scene.promiseEffect(target, effect);
+			popup.attach(scene);
+			return (config.wait.POPUP ? popup : undefined);
 		}
 	};
 
@@ -3035,5 +3095,15 @@
 			throw new RangeError(`Action not found: "${id}"`);
 		}
 		return action;
+	}
+
+	// Check we have all actions and effects.
+	if (DEBUG) {
+		for (let SID in SKILLS) {
+			let { action, effect } = SKILLS[SID];
+			if (effect === "Aura") { continue; }
+			assert(ACTIONS[action]);
+			assert(EFFECTS[effect]);
+		}
 	}
 }

@@ -376,6 +376,14 @@
 			Name: "First Aid",
 			Spec: "Heal a member of your party, and also heals over time."
 		},
+		PotionOfHealth: {
+			Name: "Potion of Health",
+			Spec: "Heal self."
+		},
+		PotionOfRegeneration: {
+			Name: "Potion of Regeneration",
+			Spec: "Heal self, and also heals over time."
+		},
 		PathToWarrior: {
 			Name: "Path to Warrior",
 			Spec: "Increase power of melee."

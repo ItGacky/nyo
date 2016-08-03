@@ -12,16 +12,16 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		INT: 4,
 		DEX: 4,
 		STR: 7,
-		equipments: ["Mace", "PlateArmor", "Mace"],
-		skills: ["Swing", "Crash", "Bash", "PathToWarrior"],
+		equipments: ["Mace", "PlateArmor", "Mace", "FirstAidKit"],
+		skills: ["Swing", "Crash", "Bash", "PathToWarrior", "PotionOfRegeneration"],
 		image: "nazrin"
 	},
 	Samurai: {
 		INT: 3,
 		DEX: 7,
 		STR: 5,
-		equipments: ["Katana", "Chainmail"],
-		skills: ["Swing", "Slash", "CutThrough", "Sweep"],
+		equipments: ["Katana", "Chainmail", "FirstAidKit"],
+		skills: ["Swing", "Slash", "CutThrough", "Sweep", "PotionOfHealth"],
 		image: "rin"
 	},
 	Knight: {

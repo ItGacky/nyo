@@ -512,7 +512,7 @@
 			super(data);
 			let { warehouse, party } = data;
 
-			let ch = party[index];
+			let ch = party[index]!;
 			assert(ch);
 
 			let sz = scaleProportionally(ch, SCREEN_W, SCREEN_H, true);

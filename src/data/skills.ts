@@ -193,11 +193,27 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	FirstAid: {
 		tags: [TAG.ALCHEMY, TAG.LIFE],
 		usage: USAGE.SINGLE_FRIENDLY,
-		power: 100,
+		power: 50,
 		cost: 24,
 		range: 1,
 		effect: "HealOverTime",
 		action: "Charge"
+	},
+	PotionOfHealth: {
+		tags: [TAG.ALCHEMY, TAG.LIFE],
+		usage: USAGE.DOSE,
+		power: 100,
+		cost: 24,
+		effect: "Heal",
+		action: "Dose"
+	},
+	PotionOfRegeneration: {
+		tags: [TAG.ALCHEMY, TAG.LIFE],
+		usage: USAGE.DOSE,
+		power: 75,
+		cost: 24,
+		effect: "HealOverTime",
+		action: "Dose"
 	},
 	//================================================================================
 	// Passive Skills - power: 1=7%, 2=15%, 3=23%, 4=32%

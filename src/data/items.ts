@@ -88,7 +88,7 @@ const ITEMS: { [IID: string/*ItemID*/]: ItemDef } = {
 		tags: [TAG.ALCHEMY],
 		weight: 10,
 		price: 100,
-		ATK: 10
+		ATK: 20
 	},
 	// SHIELD
 	Buckler: {

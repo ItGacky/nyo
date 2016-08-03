@@ -376,6 +376,14 @@
 			Name: "応急手当",
 			Spec: "味方単体のHPを回復し、さらに継続的に回復します。"
 		},
+		PotionOfHealth: {
+			Name: "傷薬",
+			Spec: "自分自身のHPを回復します。"
+		},
+		PotionOfRegeneration: {
+			Name: "再生薬",
+			Spec: "自分自身のHPを回復し、さらに継続的に回復します。"
+		},
 		PathToWarrior: {
 			Name: "戦士の心得",
 			Spec: "近接攻撃力が上昇します。"

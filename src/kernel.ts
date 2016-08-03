@@ -3,6 +3,7 @@ const DEBUG = (typeof NDEBUG === "undefined");
 const TOUCH_ONLY = false;	// set true to emulate touch-only devices.
 
 type Optional<T> = T | undefined;
+const never = undefined as never;	// HACK: used in toJSON/fromJSON.
 
 //interface Timestamp extends Number { Timestamp; };
 type Timestamp = number;
@@ -88,18 +89,18 @@ interface ToJSON<JSON> {
 	toJSON(): JSON;
 }
 
-function toJSON<JSON>(arr?: ToJSON<JSON>[]): JSON[] {
+function toJSON<JSON, ALT>(arr: ToJSON<JSON>[], alt: ALT): (JSON | ALT)[] {
 	if (!arr) { return []; }
-	return arr.map(item => (item != null ? item.toJSON() : undefined));
+	return arr.map(item => (item != null ? item.toJSON() : alt));
 }
 
 interface FromJSON<JSON, TYPE> {
 	fromJSON(json: JSON): TYPE;
 }
 
-function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr?: JSON[]): TYPE[] {
+function fromJSON<JSON, TYPE, ALT>(type: FromJSON<JSON, TYPE>, arr: JSON[], alt: ALT): (TYPE | ALT)[] {
 	if (!arr) { return []; }
-	return arr.map(json => (json != null ? type.fromJSON(json) : undefined));
+	return arr.map(json => (json != null ? type.fromJSON(json) : alt));
 }
 
 function str(value: any): string {
@@ -113,10 +114,7 @@ function str(value: any): string {
 }
 
 function format(s: string, ...args: any[]): string {
-	return s.replace(/\$\{(\d+)\}/g, (match: string, id: string) => {
-		let n = parseInt(id, 10);
-		return str(args[n]);
-	});
+	return s.replace(/\$\{(\d+)\}/g, (match: string, id: string) => str(args[parseInt(id, 10)]));
 }
 
 function defineProperty<T>(self: T, name: string, value: any): T {
@@ -171,10 +169,23 @@ function compare(lhs: any, rhs: any): number {
 			return compare(lhs.getTime(), rhs.getTime());
 		} else if (lhs instanceof Array && rhs instanceof Array) {
 			return compareArrays(lhs, rhs);
-		} else if (lhs.constructor === Object && rhs.constructor === Object) {
-			return compareObjects(lhs, rhs);
 		}
-		throw new TypeError(`Cannot compare: (${lhs}) and (${rhs})`);
+
+		let constructorL = lhs.constructor;
+		if (constructorL === rhs.constructor) {
+			let compareL = lhs.compare;
+			if (typeof compareL === "function" && compareL === rhs.compare) {
+				let r = lhs.compare(rhs);
+				if (typeof r !== "number") {
+					throw new TypeError(`Cannot compare "${lhs}" and "${rhs}": operator returns non-number "${r}"`);
+				}
+				return r;
+			} else if (constructorL === Object) {
+				return compareObjects(lhs, rhs);
+			}
+		}
+
+		throw new TypeError(`Cannot compare "${lhs}" and "${rhs}": not supported`);
 	}
 	// default comparison
 	if (lhs < rhs) { return -1; }
@@ -398,6 +409,7 @@ class Word {
 	}
 
 	toString(): string { return this.localized; }
+	compare(that: Word) { return compare(this.localized, that.localized); }
 }
 
 function _(...src: string[]): Word {
