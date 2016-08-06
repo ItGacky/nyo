@@ -514,7 +514,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 				}
 			}
 		}
-		return best;
+		return best;	/// XXX: Should return BareHands instead of undefined?
 	}
 
 	static adventurer(key: string): Character {

@@ -2360,9 +2360,11 @@
 
 		onPress(key: KEY): void {
 			switch (key) {
+				case KEY.BACKSPACE:
 				case KEY.TAB:
 				case KEY.DELETE:
 				case KEY.Q:
+					// NOTE: We cannot use mnemonic of system buttons because they are not visible if an unit is locked.
 					this.undo();
 					break;
 				case KEY.PAGE_DOWN:

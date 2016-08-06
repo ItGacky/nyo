@@ -384,7 +384,7 @@
 				Array_overwrite(data.party, savedParty);
 				Array_overwrite(data.reservers, savedReservers);
 			});
-			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
+			this.addButton(1, MNEMONIC_BACK, _("Town", "Back"), () => this.goTo(Home));
 
 			new ListView<Character>(TOWN_LISTVIEW_X, TOWN_LISTVIEW_Y, TOWN_LISTVIEW_W, ListView.heightOf(10),
 				createColumnsForCharacters(),
@@ -479,7 +479,7 @@
 				btnBuy.enabled = true;
 				btnSell.enabled = false;
 			});
-			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
+			this.addButton(1, MNEMONIC_BACK, _("Town", "Back"), () => this.goTo(Home));
 
 			btnBuy.onClick();
 		}
@@ -573,7 +573,7 @@
 			for (let i = 1; i < length; ++i) {
 				let prev = (index + length - i) % length;
 				if (party[prev]) {
-					this.addButton(5, [KEY.LEFT, KEY.UP], _("Town", "Prev"),
+					this.addButton(5, MNEMONIC_PREV, _("Town", "Prev"),
 						() => FadeOut.go(this, new CharacterDetails(this.data, prev))
 					);
 					break;
@@ -582,7 +582,7 @@
 			for (let i = 1; i < length; ++i) {
 				let next = (index + i) % length;
 				if (party[next]) {
-					this.addButton(4, [KEY.RIGHT, KEY.DOWN], _("Town", "Next"),
+					this.addButton(4, MNEMONIC_NEXT, _("Town", "Next"),
 						() => FadeOut.go(this, new CharacterDetails(this.data, next))
 					);
 					break;
@@ -602,7 +602,7 @@
 				btnSkills.enabled = false;
 				btnEquip.enabled = true;
 			});
-			this.addButton(1, [KEY.TAB, KEY.DELETE], _("Town", "Back"), () => this.goTo(Home));
+			this.addButton(1, MNEMONIC_BACK, _("Town", "Back"), () => this.goTo(Home));
 
 			btnEquip.onClick();
 		}

@@ -425,19 +425,19 @@ System.localize = function (lang: string, dict: Dictionary): void {
 //================================================================================
 
 enum KEY {
+	BACKSPACE = 8,
 	TAB = 9,
 	ENTER = 13,
 	ESCAPE = 27,
 	SPACE = 32,
 	PAGE_UP = 33,
 	PAGE_DOWN = 34,
-	_END = 35,
-	_HOME = 36,
+	END = 35,
+	HOME = 36,
 	LEFT = 37,
 	UP = 38,
 	RIGHT = 39,
 	DOWN = 40,
-	_INSERT = 45,
 	DELETE = 46,
 	$0 = 48, $1, $2, $3, $4, $5, $6, $7, $8, $9,
 	A = 65, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
