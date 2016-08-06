@@ -3,9 +3,9 @@ const STORAGE_KEY = "NYO";
 const URL_ASSETS = "assets/";
 const URL_CHAR = URL_ASSETS + "char/";
 const URL_SCENE = URL_ASSETS + "scene/";
-const URL_LANG = URL_ASSETS + "lang/";
-Word.languages["en"] = URL_LANG + "en.js";
-Word.languages["ja"] = URL_LANG + "ja.js";
+Word.path = URL_ASSETS + "lang/";
+Word.languages["en"] = undefined;
+Word.languages["ja"] = undefined;
 
 const enum TAG {
 	// Weapon Attributes

@@ -271,7 +271,6 @@
 
 			const DH = SCREEN_H - PORTRAIT_Y - (PORTRAIT_H + PORTRAIT_MARGIN) * (PARTY_MAX / 2);
 			let { party } = data;
-			assert(party);
 			let scene = this;
 			let portraits: SwappableButton[] = [];
 			for (let i = 0; i < PARTY_MAX; ++i) {
@@ -512,8 +511,7 @@
 			super(data);
 			let { warehouse, party } = data;
 
-			let ch = party[index]!;
-			assert(ch);
+			let ch = assume(party[index]);
 
 			let sz = scaleProportionally(ch, SCREEN_W, SCREEN_H, true);
 			new Gallery(0, 0, sz.w, sz.h, ch).attach(this);	// character large image

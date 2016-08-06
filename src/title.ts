@@ -27,7 +27,7 @@
 			let click: Slot;
 			if (loaded) {
 				label = _("Title", "Continue");
-				click = () => goTown(loaded!);
+				click = () => goTown(loaded!);		// FIXME: retandant ! for bug in strictNullChecks
 				new Button(TITLE_DELETE_X, TITLE_DELETE_Y, TITLE_DELETE_W, TITLE_DELETE_H, new Label(_("Title", "Delete")), () => {
 					Dialog.confirm(this, _("Title", "ConfirmDelete"),
 						{

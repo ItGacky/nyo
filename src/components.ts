@@ -158,9 +158,7 @@ class FadeOut extends Animation {
 		next?: Component,
 		duration: Duration = SCENE_TRANSIT
 	): void {
-		let { parent } = prev;
-		assert(parent);
-		new FadeOut(prev, next, duration).attach(parent!);
+		new FadeOut(prev, next, duration).attach(assume(prev.parent));
 	}
 
 	attach(parent: Composite): boolean {
@@ -229,7 +227,6 @@ class Dialog extends Composite {
 		message: Word,
 		...options: ConfirmOption[]
 	): Dialog {
-		assert(options);
 		assert(options.length > 0);
 
 		let self = new Dialog();
@@ -244,7 +241,7 @@ class Dialog extends Composite {
 			new Button(MODAL_BUTTON_X + (MODAL_BUTTON_W + MODAL_BUTTON_MARGIN) * i, CONFIRM_BUTTON_Y, MODAL_BUTTON_W, CONFIRM_BUTTON_H,
 				new Label(label),
 				click
-					? () => { self.detach(); click!(); }
+					? () => { self.detach(); click!(); }	// FIXME: retandant ! for bug in strictNullChecks
 					: () => { self.detach(); },
 				mnemonic
 			).attach(self);
@@ -470,8 +467,9 @@ class Button extends Widget {
 	}
 
 	onClick(): void {
-		if (this.click) {
-			committed.then(() => this.click!());
+		let { click } = this;
+		if (click) {
+			committed.then(() => click!.call(this));	// FIXME: retandant ! for bug in strictNullChecks
 		}
 	}
 

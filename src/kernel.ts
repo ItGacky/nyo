@@ -57,7 +57,7 @@ interface Array<T> {
 //================================================================================
 
 type Slot = () => void;
-type Signal = Optional<Slot | Slot[]>;
+type Signal = undefined | Slot | Slot[];
 
 const { keys } = Object;
 const { abs, min, max, floor, ceil, round, pow, sin, cos, atan2, PI, random } = Math;
@@ -83,6 +83,17 @@ function rand(upper: number): number {
 const assert = (DEBUG
 	? function (condition: any) { if (!condition) { throw new Error("Assertion failure"); } }
 	: function () { }
+);
+
+const assume = (DEBUG
+	? function<T>(o: T | null | undefined): T {
+		if (o == null) {
+			throw new Error("Cannot be null or undefined");
+		} else {
+			return o;
+		}
+	}
+	: function<T>(o: T | null | undefined): T { return o!; }
 );
 
 interface ToJSON<JSON> {
@@ -243,7 +254,7 @@ interface Job {
 }
 
 const committed = new class implements Job {
-	private sig?: Signal;
+	private sig: Signal;
 
 	then(slot: Slot): this {
 		this.sig = connect(this.sig, slot);
@@ -266,7 +277,6 @@ const committed = new class implements Job {
 };
 
 function connect(sig: Signal, slot: Slot): Signal {
-	assert(slot);
 	if (!sig) {
 		return slot;
 	} else if (typeof sig === "function") {
@@ -347,14 +357,15 @@ function delay(fn: () => Job): Job & Slot {
 class Word {
 	static language: string = window.navigator.language.substr(0, 2);
 	static fallback: string = "en";
+	static path: string = "";
 
 	// languages[locale]
-	// - undefined: not supported
-	// - string: supported, but not loaded yet
+	// - key not exists: not supported
+	// - key exists: supported, but not loaded yet
 	// - true: now loading
 	// - false: load error
 	// - {}: successfully loaded
-	static readonly languages: { [locale: string]: string | boolean | Dictionary } = {};
+	static readonly languages: { [locale: string]: undefined | boolean | Dictionary } = {};
 
 	private _localized?: string;
 	private _language?: string;
@@ -376,15 +387,15 @@ class Word {
 		function localize(src: string[]): Optional<string> {
 			let { languages, language } = Word;
 			let dict = languages[language];
-			if (!dict) {
-				// unsupported language, so fallback
-				assert(languages[Word.fallback] !== undefined);
-				language = Word.language = Word.fallback;
-				dict = languages[language];
-			}
-			if (typeof dict === "string") {
+			if (dict === undefined) {
+				if (!(language in languages)) {
+					// unsupported language, so fallback
+					assert(Word.fallback in languages);
+					language = Word.language = Word.fallback;
+					dict = languages[language];
+				}
 				languages[language] = true;
-				require(dict, () => { languages[language] = false; });
+				require(Word.path + language + ".js", () => { languages[language] = false; });
 				return undefined;	// now loading
 			} else if (dict === true) {
 				return undefined;	// now loading
@@ -454,7 +465,6 @@ class Component {
 	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void { }
 
 	attach(parent: Composite): boolean {
-		assert(parent);
 		return parent.onAttach(this);
 	}
 

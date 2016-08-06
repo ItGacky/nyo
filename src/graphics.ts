@@ -100,7 +100,7 @@ function drawRect(
 		g.save();
 		setupStyle(g, style);
 		if (!style || style.fillStyle) {
-			g.fillRect(x, y, w, h!);
+			g.fillRect(x, y, w, h!);	// FIXME: retandant ! for bug in strictNullChecks
 		}
 		if (!style || style.strokeStyle) {
 			let offset = g.lineWidth - 1;
@@ -139,7 +139,7 @@ function drawRoundedRect(
 			w -= offset;
 			h -= offset;
 		}
-		let r = min(w, h) * 0.2;
+		let r = min(w, h!) * 0.2;	// FIXME: retandant ! for bug in strictNullChecks
 		g.beginPath();
 		g.moveTo(x + r, y);
 		g.lineTo(x + w - r, y);
