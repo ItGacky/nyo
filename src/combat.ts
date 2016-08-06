@@ -1160,7 +1160,7 @@
 		) {
 			super(x, y, w, h, new Label(label, {
 				fontSize: 20
-			}), equip);
+			}), equip, undefined, SkillButton.design);
 
 			function label(): Optional<string> {
 				let { focus } = scene;
@@ -1216,6 +1216,23 @@
 			}
 			return false;
 		}
+
+		static design: ButtonDesign = {
+			draw: function(g: CanvasRenderingContext2D, when: Timestamp, owner: SkillButton): void {
+				let { focus } = owner.scene;
+				if (owner.visible) {
+					let skill = focus.skills[owner.index];
+					if (skill.usage === USAGE.DOSE) {
+						drawRoundedRect(g, owner, Button.defaultDesign.getStyle(owner.state));
+						if (owner.drawable) {
+							owner.drawable.draw(g, when, owner);
+						}
+					} else {
+						Button.defaultDesign.draw(g, when, owner);
+					}
+				}
+			}
+		};
 	}
 
 	//================================================================================

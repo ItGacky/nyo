@@ -365,33 +365,34 @@ class Button extends Widget {
 		super(x, y, w, h);
 	}
 
-	static defaultDesign: ButtonDesign = {
+	static defaultDesign = {
 		draw: function(g: CanvasRenderingContext2D, when: Timestamp, owner: Button): void {
-			g.save();
-			switch (owner.state) {
-				case ButtonState.Normal:
-					g.fillStyle = rgba(0, 0, 0, 0.8);
-					g.strokeStyle = rgb(200, 200, 200);
-					break;
-				case ButtonState.Hover:
-					g.fillStyle = rgba(0, 0, 50, 0.8);
-					g.strokeStyle = rgb(100, 100, 200);
-					break;
-				case ButtonState.Pressed:
-					g.fillStyle = rgba(0, 0, 150, 0.8);
-					g.strokeStyle = rgb(100, 100, 255);
-					break;
-				case ButtonState.Disabled:
-					g.fillStyle = rgba(200, 200, 200, 0.8);
-					g.strokeStyle = rgb(200, 200, 200);
-					break;
-			}
-			fillRect(g, owner);
-			strokeRect(g, owner);
-			g.restore();
+			drawRect(g, owner, Button.defaultDesign.getStyle(owner.state));
 			if (owner.drawable) {
 				owner.drawable.draw(g, when, owner);
 			}
+		},
+		getStyle: function(state: ButtonState): ShapeStyle {
+			let style: ShapeStyle = {};
+			switch (state) {
+				case ButtonState.Normal:
+					style.fillStyle = rgba(0, 0, 0, 0.8);
+					style.strokeStyle = rgb(200, 200, 200);
+					break;
+				case ButtonState.Hover:
+					style.fillStyle = rgba(0, 0, 50, 0.8);
+					style.strokeStyle = rgb(100, 100, 200);
+					break;
+				case ButtonState.Pressed:
+					style.fillStyle = rgba(0, 0, 150, 0.8);
+					style.strokeStyle = rgb(100, 100, 255);
+					break;
+				case ButtonState.Disabled:
+					style.fillStyle = rgba(200, 200, 200, 0.8);
+					style.strokeStyle = rgb(200, 200, 200);
+					break;
+			}
+			return style;
 		}
 	};
 

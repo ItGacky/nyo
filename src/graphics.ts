@@ -110,6 +110,56 @@ function drawRect(
 	}
 }
 
+function drawRoundedRect(g: CanvasRenderingContext2D, rect: XYWH, style?: ShapeStyle): void;
+function drawRoundedRect(g: CanvasRenderingContext2D, x: Pixel, y: Pixel, w: Pixel, h: Pixel, style?: ShapeStyle): void;
+function drawRoundedRect(
+	g: CanvasRenderingContext2D,
+	x_or_rect?: Pixel | XYWH,
+	y_or_style?: Pixel | ShapeStyle,
+	w?: Pixel,
+	h?: Pixel,
+	style?: ShapeStyle
+): void {
+	let x: Pixel;
+	let y: Pixel;
+	if (w == null) {
+		({ x, y, w, h } = x_or_rect as XYWH);
+		style = y_or_style as ShapeStyle;
+	} else {
+		x = x_or_rect as number;
+		y = y_or_style as number;
+	}
+	if (w > 0 && h > 0) {
+		g.save();
+		setupStyle(g, style);
+		if (!style || style.strokeStyle) {
+			let offset = g.lineWidth - 1;
+			x += offset / 2;
+			y += offset / 2;
+			w -= offset;
+			h -= offset;
+		}
+		let r = min(w, h) * 0.2;
+		g.beginPath();
+		g.moveTo(x + r, y);
+		g.lineTo(x + w - r, y);
+		g.quadraticCurveTo(x + w, y, x + w, y + r);
+		g.lineTo(x + w, y + h - r);
+		g.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+		g.lineTo(x + r, y + h);
+		g.quadraticCurveTo(x, y + h, x, y + h - r);
+		g.lineTo(x, y + r);
+		g.quadraticCurveTo(x, y, x + r, y);
+		if (!style || style.fillStyle) {
+			g.fill();
+		}
+		if (!style || style.strokeStyle) {
+			g.stroke();
+		}
+		g.restore();
+	}
+}
+
 function drawText(
 	g: CanvasRenderingContext2D,
 	text: string,
