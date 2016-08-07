@@ -20,6 +20,6 @@ gulp release  # minify js for release build.
 gulp default  # open index.html with browser.
 ```
 
-## Cregits
+## Credits
 - Character Images: とら 氏 - https://sites.google.com/site/trastrage/
 - Monster Images : qut_ixtab 氏 - http://lud.sakura.ne.jp/
