@@ -368,7 +368,7 @@ class Box implements Drawable {
 	constructor(public rectStyle: ShapeStyle) {
 	}
 
-	draw(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH): void {
+	draw(g: CanvasRenderingContext2D, _when: Timestamp, rect: XYWH): void {
 		drawRect(g, rect, this.rectStyle);
 	}
 }
@@ -394,7 +394,7 @@ class Label implements Drawable {
 		}
 	}
 
-	draw(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH): void {
+	draw(g: CanvasRenderingContext2D, _when: Timestamp, rect: XYWH): void {
 		let { x, y, w, h } = rect;
 		if (this.rectStyle) {
 			drawRect(g, x, y, w, h, this.rectStyle);
@@ -478,7 +478,7 @@ class Picture implements Drawable, WH, Job {
 
 	draw(
 		g: CanvasRenderingContext2D,
-		when: Optional<Timestamp>,
+		_when: Optional<Timestamp>,
 		rect: XYWH,
 		overlayStyle?: CanvasStyle,
 		overlayAlpha?: Alpha

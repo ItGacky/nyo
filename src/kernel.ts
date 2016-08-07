@@ -50,7 +50,7 @@ interface String {
 }
 
 interface Array<T> {
-	find<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): T;
+	find<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): T | undefined;
 	findIndex<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): number;
 }
 
@@ -125,7 +125,7 @@ function str(value: any): string {
 }
 
 function format(s: string, ...args: any[]): string {
-	return s.replace(/\$\{(\d+)\}/g, (match: string, id: string) => str(args[parseInt(id, 10)]));
+	return s.replace(/\$\{(\d+)\}/g, (_match: string, id: string) => str(args[parseInt(id, 10)]));
 }
 
 function defineProperty<T>(self: T, name: string, value: any): T {
@@ -239,7 +239,7 @@ function font(fontSize?: Pixel, fontFamily?: string): string {
 	return `${fontSize || DEFAULT_FONT_SIZE}px ${fontFamily || DEFAULT_FONT_FAMILY}`;
 }
 
-function getFontSize(g: CanvasRenderingContext2D, style?: TextStyle): Pixel {
+function getFontSize(_g: CanvasRenderingContext2D, style?: TextStyle): Pixel {
 	// TODO: extract size in g.font.
 	return (style && style.fontSize || DEFAULT_FONT_SIZE);
 }
@@ -457,12 +457,12 @@ enum KEY {
 class Component {
 	parent?: Composite;
 
-	onHover(x: Pixel, y: Pixel): void { }
-	onDrag(x: Pixel, y: Pixel): void { }
-	onDown(x: Pixel, y: Pixel): void { }
-	onUp(x: Pixel, y: Pixel): void { }
-	onPress(key: KEY): void { }
-	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void { }
+	onHover(_x: Pixel, _y: Pixel): void { }
+	onDrag(_x: Pixel, _y: Pixel): void { }
+	onDown(_x: Pixel, _y: Pixel): void { }
+	onUp(_x: Pixel, _y: Pixel): void { }
+	onPress(_key: KEY): void { }
+	onDraw(_g: CanvasRenderingContext2D, _when: Timestamp): void { }
 
 	attach(parent: Composite): boolean {
 		return parent.onAttach(this);

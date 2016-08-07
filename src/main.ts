@@ -194,7 +194,7 @@ function addConfigButton(parent: Composite): Button {
 
 //================================================================================
 
-System.main = function(canvas: HTMLCanvasElement, resume: boolean): void {
+System.main = function(canvas: HTMLCanvasElement, _resume: boolean): void {
 	let dummy = new Image();
 	dummy.src = URL_ASSETS + "dummy.png";
 	Picture.DUMMY = dummy;

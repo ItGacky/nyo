@@ -15,6 +15,8 @@
 	// Cell
 	const CELL_W: Pixel = 128;
 	const CELL_H: Pixel = 80;
+	const CELL_INFLATE_W = CELL_W / 4;
+	const CELL_INFLATE_H = CELL_H / 4;
 
 	// Panel: for unit panel
 	const PANEL_H: Pixel = CELL_H * 2;
@@ -568,7 +570,7 @@
 			super(pow(path.length - 1, UNIT_STEP_POW) * UNIT_STEP_DURATION);
 		}
 
-		onGetXY(unit: Unit, scene: Scene, progress: number): XY {
+		onGetXY(_unit: Unit, scene: Scene, progress: number): XY {
 			let steps = this.path.length - 1;
 			let i = floor(steps * progress);
 			let hexFrom = this.path[i];
@@ -616,7 +618,7 @@
 			super.commit();
 		}
 
-		onGetXY(unit: Unit, scene: Scene, progress: number): XY {
+		onGetXY(_unit: Unit, scene: Scene, progress: number): XY {
 			let { hexFrom, hexTo } = this;
 			let xFrom = scene.toX(hexFrom);
 			let yFrom = scene.toY(hexFrom);
@@ -908,7 +910,7 @@
 			}
 		}
 
-		drawBars(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, deltaHP?: number, deltaSP?: number): void {
+		drawBars(g: CanvasRenderingContext2D, _when: Timestamp, scene: Scene, deltaHP?: number, deltaSP?: number): void {
 			let { hex } = this;
 			let x = scene.toX(hex) + UNIT_BAR_X;
 			let y = scene.toY(hex) + UNIT_BAR_Y;
@@ -975,13 +977,13 @@
 		g.restore();
 	}
 
-	function drawHP(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, unit: Unit, hex: Hex) {
+	function drawHP(g: CanvasRenderingContext2D, _when: Timestamp, scene: Scene, unit: Unit, hex: Hex) {
 		let x = scene.toX(hex) + UNIT_BAR_X;
 		let y = scene.toY(hex) + UNIT_BAR_Y;
 		drawBar(g, x, y, UNIT_BAR_W, UNIT_BAR_H, unit.HP, unit.maxHP, undefined, BAR_STYLE_HP);
 	}
 
-	function drawSP(g: CanvasRenderingContext2D, when: Timestamp, scene: Scene, unit: Unit, hex: Hex, remainSP: number) {
+	function drawSP(g: CanvasRenderingContext2D, _when: Timestamp, scene: Scene, unit: Unit, hex: Hex, remainSP: number) {
 		let x = scene.toX(hex) + UNIT_BAR_X;
 		let y = scene.toY(hex) + UNIT_BAR_Y + UNIT_BAR_H;
 		drawBar(g, x, y, UNIT_BAR_W, UNIT_BAR_H, unit.SP, unit.maxSP, remainSP - unit.SP, BAR_STYLE_SP);
@@ -1539,7 +1541,7 @@
 		get controller(): Controller { return this.children[this.team] as any; }
 		get numScrollsPerTurn(): number { return this.stage.numScrollsPerTurn; }
 
-		getLevel(tagbits?: number): number {
+		getLevel(_tagbits?: number): number {
 			let { level, numScrollsPerTurn } = this.stage;
 			if (numScrollsPerTurn > 0) {
 				level += (this.field.depth / numScrollsPerTurn) * LEVEL_PER_DEPTH;
@@ -2075,8 +2077,8 @@
 				if (effect) {
 					markerStyle = TARGET;
 					// XXX: Should repeat inflate animation?
-					inflateW = CELL_W / 4 * (1 - progress);
-					inflateH = CELL_H / 4 * (1 - progress);
+					inflateW = CELL_INFLATE_W * (1 - progress);
+					inflateH = CELL_INFLATE_H * (1 - progress);
 				} else if (SP >= cost) {
 					markerStyle = MARKER_WALK;
 				} else if (SP >= 0) {
@@ -2475,49 +2477,49 @@
 				let scene = this.parent as Scene;
 				let { focus, field } = scene;
 				if (this.mode === Caret.Unlocked) {
-					drawCaret(g, scene, caret, CARET_SELECT);
+					drawCaret(g, when, scene, caret, CARET_SELECT);
 				} else if (focus) {
 					let map = scene.mapFor(focus);
 					if (map) {
-						let r = map.get(caret);
 						// Path to walk
 						let path = map.getPath(caret, field);
 						if (path && path.length >= 2) {
 							drawPath(g, scene, path);
 						}
 						// Caret(s)
+						let r = map.get(caret);
 						if (r.effect) {
 							let { skill } = focus;
 							switch (skill.usage) {
 								case USAGE.SINGLE_HOSTILE:
-									drawCaret(g, scene, caret, CARET_HOSTILE);
+									drawCaret(g, when, scene, caret, CARET_HOSTILE);
 									break;
 								case USAGE.SINGLE_FRIENDLY:
-									drawCaret(g, scene, caret, CARET_FRIENDLY);
+									drawCaret(g, when, scene, caret, CARET_FRIENDLY);
 									break;
 								case USAGE.STRAIGHT_HOSTILE:
-									field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
+									field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
 									break;
 								case USAGE.STRAIGHT_FRIENDLY:
-									field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
+									field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
 									break;
 								case USAGE.SURROUND_HOSTILE:
-									field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, scene, hex, CARET_HOSTILE));
+									field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
 									break;
 								case USAGE.SURROUND_FRIENDLY:
-									field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, scene, hex, CARET_FRIENDLY));
+									field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
 									break;
 							}
 						} else if (r.SP >= 0) {
-							drawCaret(g, scene, caret, CARET_WALK);
+							drawCaret(g, when, scene, caret, CARET_WALK);
 						} else {
-							drawCaret(g, scene, caret, CARET_SELECT);
+							drawCaret(g, when, scene, caret, CARET_SELECT);
 						}
 					}
 				}
 			}
 
-			function drawCaret(g: CanvasRenderingContext2D, scene: Scene, hex: Hex, caretStyle: CaretStyle): void {
+			function drawCaret(g: CanvasRenderingContext2D, _when: Timestamp, scene: Scene, hex: Hex, caretStyle: CaretStyle): void {
 				let width = CARET_LINE_INNER + CARET_LINE_OUTER / 2;
 				let x = scene.toX(hex) + width;
 				let y = scene.toY(hex) + width;
@@ -2614,7 +2616,7 @@
 
 		caret?: Hex;
 
-		dose(unit: Unit, skill: Skill): void {
+		dose(_unit: Unit, _skill: Skill): void {
 			throw new Error("not implemented");	// TODO: allow CPU to dose.
 		}
 
@@ -2720,7 +2722,7 @@
 						// Walk and use skill; Score the position shot from.
 						score = scorePosition(unit, shotFrom.xH, shotFrom.yH, minXH, maxXH, edge);
 						// Score the shot at destionation.
-						score += scoreSkill(scene, unit, xH, yH, effect);
+						score += scoreSkill(scene, unit, effect);
 						// Calc remaining SP.
 						SP = map.get(shotFrom).SP - cost;
 					} else if (SP >= 0 && field.get(xH, yH).empty) {
@@ -2788,7 +2790,7 @@
 				return min(1, best);
 			}
 
-			function scoreSkill(scene: Scene, me: Unit, xH: Coord, yH: Coord, effect: SkillEffect): number {
+			function scoreSkill(scene: Scene, me: Unit, effect: SkillEffect): number {
 				let you = effect.target;
 				let yourValue = valueOfUnit(scene, you, me);
 				let deltaHP = (effect.deltaHP || 0);
@@ -2806,7 +2808,7 @@
 	// Effects for Skills
 	//================================================================================
 
-	function calcDamage(scene: Scene, unit: Unit, skill: Skill, target: Unit): number {
+	function calcDamage(_scene: Scene, unit: Unit, skill: Skill, target: Unit): number {
 		let { tagbits } = skill;
 		let power = unit.powerOf(skill);
 		let diff = unit.level + unit.getOffenceLevel(tagbits) - target.level - target.getDefenceLevel(tagbits);
@@ -3141,7 +3143,7 @@
 			}
 		},
 		// Action for SURROUND
-		Nova: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
+		Nova: function (scene: Scene, unit: Unit, _target: Unit, skill: Skill): Job {
 			return standardNova(scene, unit, skill, unit.hex, unit.rangeOf(skill) || 0);
 		},
 		// Just popup the effect.

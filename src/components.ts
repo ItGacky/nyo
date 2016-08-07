@@ -90,7 +90,7 @@ class Animation extends Component implements Job {
 	}
 
 	// called with (Animation, [0, 1]) and with 'progress' = 1 at the end.
-	onAnimation(progress: number, g: CanvasRenderingContext2D, when: Timestamp) {
+	onAnimation(_progress: number, _g: CanvasRenderingContext2D, _when: Timestamp) {
 	}
 
 	// Job routine
@@ -706,7 +706,7 @@ class ListView<T> extends Widget {
 		this.scrolling = undefined;
 	}
 
-	onDrag(x: Pixel, y: Pixel): void {
+	onDrag(_x: Pixel, y: Pixel): void {
 		let { headerHeight } = this.design;
 		if (this.scrolling != null) {
 			let nRows = this.rows.length;
@@ -779,7 +779,7 @@ class ListView<T> extends Widget {
 		}
 	}
 
-	onDraw(g: CanvasRenderingContext2D, when: Timestamp): void {
+	onDraw(g: CanvasRenderingContext2D, _when: Timestamp): void {
 		let { design } = this;
 		let { headerHeight, scrollBarWidth } = design;
 		let nRows = this.rows.length;
@@ -1069,7 +1069,7 @@ class Slider extends Widget {
 
 	static defaultDesign: SliderDesign = {
 		knobWidth: 12,
-		draw: function(g: CanvasRenderingContext2D, when: Timestamp, owner: Slider): void {
+		draw: function(g: CanvasRenderingContext2D, _when: Timestamp, owner: Slider): void {
 			// Background
 			drawRect(g, owner, {
 				fillStyle: rgba(50, 50, 50, 0.8),
@@ -1130,7 +1130,7 @@ class Slider extends Widget {
 		}
 	}
 
-	onUp(x: Pixel, y: Pixel): void {
+	onUp(_x: Pixel, _y: Pixel): void {
 		this.dragged = false;
 	}
 

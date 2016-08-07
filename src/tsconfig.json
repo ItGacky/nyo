@@ -7,7 +7,7 @@
 		"noImplicitReturns": true,
 		"noImplicitThis": true,
 		"noUnusedLocals": false,
-		"noUnusedParameters": false,
+		"noUnusedParameters": true,
 		"preserveConstEnums": false,
 		"removeComments": true,
 		"sourceMap": false,
