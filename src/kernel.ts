@@ -34,8 +34,6 @@ interface System {
 	setLocalStorage(key: string, value: string): void;
 	getRoamingStorage(key: string): Optional<string>;
 	setRoamingStorage(key: string, value: Optional<string>): void;
-	getFullScreen(): boolean;
-	setFullScreenn(value: boolean): void;
 }
 
 declare var System: System;

@@ -130,20 +130,16 @@ function addConfigButton(parent: Composite): Button {
 		let on = _("Config", "On");
 		let off = _("Config", "Off");
 
-		addToggleButton(2, _("Config", "FullScreen"), on, off,
-			() => System.getFullScreen(),
-			() => { System.setFullScreenn(!System.getFullScreen()); }
-		);
-		addToggleButton(3, _("Config", "MagnifyCanvas"), on, off,
+		addToggleButton(2, _("Config", "MagnifyCanvas"), on, off,
 			() => config.magnifyCanvas,
 			() => { config.magnifyCanvas = !config.magnifyCanvas; }
 		);
-		addToggleButton(4, _("Config", "RefineCanvas"), on, off,
+		addToggleButton(3, _("Config", "RefineCanvas"), on, off,
 			() => config.refineCanvas,
 			() => { config.refineCanvas = !config.refineCanvas; }
 		);
 
-		addButton(5, _("Config", "BackToTitle"),
+		addButton(4, _("Config", "BackToTitle"),
 			() => {
 				self.detach();
 				reset();

@@ -80,34 +80,6 @@
 			now: function () { return new Date().getTime(); }
 		}
 	}
-	// requestFullscreen (IE 11, Android N/A, Safari N/A)
-	if (!Element.prototype.requestFullscreen) {
-		if (Element.prototype.webkitRequestFullscreen) {
-			Element.prototype.requestFullscreen = Element.prototype.webkitRequestFullscreen;
-			Document.prototype.exitFullscreen = Document.prototype.webkitCancelFullScreen;
-			Object.defineProperty(Document.prototype, "fullscreenElement", {
-				get: function () { return this.webkitFullscreenElement; },
-				enumerable: true,
-				configurable: true
-			});
-		} else if (Element.prototype.msRequestFullscreen) {
-			Element.prototype.requestFullscreen = Element.prototype.msRequestFullscreen;
-			Document.prototype.exitFullscreen = Document.prototype.msExitFullscreen;
-			Object.defineProperty(Document.prototype, "fullscreenElement", {
-				get: function () { return this.msFullscreenElement; },
-				enumerable: true,
-				configurable: true
-			});
-		} else if (Element.prototype.mozRequestFullscreen) {
-			Element.prototype.requestFullscreen = Element.prototype.mozRequestFullscreen;
-			Document.prototype.exitFullscreen = Document.prototype.mozCancelFullScreen;
-			Object.defineProperty(Document.prototype, "fullscreenElement", {
-				get: function () { return this.mozFullScreenElement; },
-				enumerable: true,
-				configurable: true
-			});
-		}
-	}
 	// CustomEvent for IE 11 - https://developer.mozilla.org/docs/Web/API/CustomEvent/CustomEvent
 	if (typeof window.CustomEvent !== "function") {
 		function CustomEvent(event, params) {

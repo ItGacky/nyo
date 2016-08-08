@@ -34,16 +34,6 @@
 				localStorage.setItem("roaming/" + key, value);
 			}
 		}
-	},
-	getFullScreen: function() {
-		return document.fullscreenElement != null;
-	},
-	setFullScreenn: function(value) {
-		if (value) {
-			this.canvas.requestFullscreen();
-		} else {
-			document.exitFullscreen();
-		}
 	}
 };
 

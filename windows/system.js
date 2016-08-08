@@ -21,19 +21,6 @@
 		} else {
 			Windows.Storage.ApplicationData.current.roamingSettings.values[key] = value;
 		}
-	},
-	getFullScreen: function() {
-		return document.fullscreenElement != null;
-	},
-	setFullScreenn: function(value) {
-		var view = Windows.UI.ViewManagement.ApplicationView.getForCurrentView();
-		if (value) {
-			view.tryEnterFullScreenMode();
-			this.canvas.requestFullscreen();
-		} else {
-			document.exitFullscreen();
-			view.exitFullScreenMode();
-		}
 	}
 };
 
