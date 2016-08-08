@@ -775,10 +775,8 @@
 		}
 
 		done(scene: Scene): boolean {
-			let { zoc } = scene;
-			if (!zoc) { return false; }
 			let { _hex } = this;
-			return !!_hex && this.SP < this.minCost && this.SP < this.step + zoc[this.team].get(_hex);
+			return scene.enabled && !!_hex && this.SP < this.minCost && this.SP < this.step + scene.zoc[this.team].get(_hex);
 		}
 
 		// Estimate effect of the current skill.
@@ -1038,7 +1036,7 @@
 		constructor(scene: Scene, unit: Unit, baseSP: number) {
 			let { field } = scene;
 			super(field.depth, ActionMap.DUMMY);
-			let zoc = assume(scene.zoc)[unit.team];
+			let zoc = scene.zoc[unit.team];
 			let hex = unit.hex;
 			let { step, skill } = unit;
 			const cost = unit.costOf(skill);
@@ -1504,8 +1502,9 @@
 
 			//========= Target =========
 			let target = (): Optional<Unit> => {
-				let map = this.mapFor(this.focus);
-				if (map) {
+				let { focus } = this;
+				if (focus && this.enabled) {
+					let map = this.mapFor(focus);
 					let { caret } = this.controller;
 					if (caret) {
 						let { effect } = map.get(caret);
@@ -1565,9 +1564,8 @@
 		}
 
 		private _zoc?: ZoC[];
-		get zoc(): Optional<ZoC[]> {
-			if (!this.enabled) { return undefined; }
-
+		get zoc(): ZoC[] {
+			assert(this.enabled);
 			let { _zoc } = this;
 			if (!_zoc) {
 				let { depth } = this.field;
@@ -1588,11 +1586,11 @@
 		}
 
 		private maps?: ActionMaps;
-		mapFor(unit?: Unit): Optional<ActionMap> {	// TODO: remove ? from "unit?"
-			if (!unit || !this.enabled) { return undefined; }
+		mapFor(unit: Unit): ActionMap {
+			assert(this.enabled);
 			let { maps } = this;
 			if (!maps) {
-				this.maps = maps = new HexMap<Optional<ActionMap>>(this.field.depth, undefined);
+				this.maps = maps = new HexMap<ActionMap | undefined>(this.field.depth, undefined);
 			}
 			let { hex } = unit;
 			let map = maps.rawget(hex);
@@ -1624,7 +1622,7 @@
 				hex: unit.hex,
 				SP: unit.SP,
 				maps: assume(this.maps),
-				zoc: assume(this.zoc)
+				zoc: this.zoc
 			});
 		}
 
@@ -1806,7 +1804,7 @@
 			this.focus = unit;
 			let { field } = this;
 			let { skill } = unit;
-			let map = assume(this.mapFor(unit));
+			let map = this.mapFor(unit);
 			let r = map.get(hex);
 			if (r.effect) {
 				assert(unit.SP >= unit.costOf(skill));
@@ -2047,11 +2045,8 @@
 
 			// Markers
 			let { focus } = this;
-			if (focus) {
-				let map = this.mapFor(focus);
-				if (map) {
-					this.drawMarkers(g, when, this.focusTime, map, focus);
-				}
+			if (focus && this.enabled) {
+				this.drawMarkers(g, when, this.focusTime, this.mapFor(focus), focus);
 			}
 
 			// Other components
@@ -2106,7 +2101,8 @@
 
 		// Units (Shadows, Characters, Status)
 		private drawUnits(g: CanvasRenderingContext2D, when: Timestamp, startTime?: Timestamp): void {
-			let { zoc, focus } = this;
+			let { focus } = this;
+			let zoc = (this.enabled ? this.zoc : undefined);
 
 			interface UnitXY extends XY {
 				unit: Unit;
@@ -2141,7 +2137,9 @@
 				if (focus.skill.hostile) {
 					targetOverlay = UNIT_OVERLAY_HOSTILE;
 				}
-				map = this.mapFor(focus);
+				if (this.enabled) {
+					map = this.mapFor(focus);
+				}
 			}
 			for (let {unit, x, y} of units) {
 				let overlayStyle: Optional<CanvasStyle>;
@@ -2171,9 +2169,8 @@
 		}
 
 		private drawBarsOnFocus(g: CanvasRenderingContext2D, when: Timestamp, unit?: Unit, caret?: Hex) {
-			if (!unit) { return; }
+			if (!unit || !this.enabled) { return; }
 			let map = this.mapFor(unit);
-			if (!map) { return; }
 			let { field } = this;
 			map.each(({ effect }) => {
 				if (effect) {
@@ -2360,10 +2357,7 @@
 				return;
 			}
 
-			let map = scene.mapFor(focus);
-			if (!map) { return; }
-
-			let r = map.get(hex);
+			let r = scene.mapFor(focus).get(hex);
 			if (r.effect) {
 				// shoot
 			} else if (r.SP >= 0 && scene.field.get(hex).empty) {
@@ -2478,43 +2472,41 @@
 				let { focus, field } = scene;
 				if (this.mode === Caret.Unlocked) {
 					drawCaret(g, when, scene, caret, CARET_SELECT);
-				} else if (focus) {
+				} else if (focus && scene.enabled) {
 					let map = scene.mapFor(focus);
-					if (map) {
-						// Path to walk
-						let path = map.getPath(caret, field);
-						if (path && path.length >= 2) {
-							drawPath(g, scene, path);
+					// Path to walk
+					let path = map.getPath(caret, field);
+					if (path && path.length >= 2) {
+						drawPath(g, scene, path);
+					}
+					// Caret(s)
+					let r = map.get(caret);
+					if (r.effect) {
+						let { skill } = focus;
+						switch (skill.usage) {
+							case USAGE.SINGLE_HOSTILE:
+								drawCaret(g, when, scene, caret, CARET_HOSTILE);
+								break;
+							case USAGE.SINGLE_FRIENDLY:
+								drawCaret(g, when, scene, caret, CARET_FRIENDLY);
+								break;
+							case USAGE.STRAIGHT_HOSTILE:
+								field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
+								break;
+							case USAGE.STRAIGHT_FRIENDLY:
+								field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
+								break;
+							case USAGE.SURROUND_HOSTILE:
+								field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
+								break;
+							case USAGE.SURROUND_FRIENDLY:
+								field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
+								break;
 						}
-						// Caret(s)
-						let r = map.get(caret);
-						if (r.effect) {
-							let { skill } = focus;
-							switch (skill.usage) {
-								case USAGE.SINGLE_HOSTILE:
-									drawCaret(g, when, scene, caret, CARET_HOSTILE);
-									break;
-								case USAGE.SINGLE_FRIENDLY:
-									drawCaret(g, when, scene, caret, CARET_FRIENDLY);
-									break;
-								case USAGE.STRAIGHT_HOSTILE:
-									field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
-									break;
-								case USAGE.STRAIGHT_FRIENDLY:
-									field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
-									break;
-								case USAGE.SURROUND_HOSTILE:
-									field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
-									break;
-								case USAGE.SURROUND_FRIENDLY:
-									field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
-									break;
-							}
-						} else if (r.SP >= 0) {
-							drawCaret(g, when, scene, caret, CARET_WALK);
-						} else {
-							drawCaret(g, when, scene, caret, CARET_SELECT);
-						}
+					} else if (r.SP >= 0) {
+						drawCaret(g, when, scene, caret, CARET_WALK);
+					} else {
+						drawCaret(g, when, scene, caret, CARET_SELECT);
 					}
 				}
 			}
@@ -2663,7 +2655,7 @@
 			}
 
 			function move(this: CPU, scene: Scene, unit: Unit, ignored: Unit[]): Optional<Job> {
-				let map = assume(scene.mapFor(unit));
+				let map = scene.mapFor(unit);
 				let best = getBestMovement(scene, unit, map);
 				let { hex } = best;
 
@@ -3006,7 +2998,7 @@
 		Knockback: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let hexFrom = unit.hex;
 			let hexTo = target.hex;
-			let hexRear = rearHexOf(scene.field, hexFrom, hexTo);
+			const hexRear = rearHexOf(scene.field, hexFrom, hexTo);
 			if (!hexRear) {
 				return standardCharge(scene, unit, target, skill);	// no space; just charge
 			}
@@ -3018,7 +3010,7 @@
 
 			unit.state = action;
 			action.hit(() => {
-				scene.setUnit(target, hexRear!);	// FIXME: retandant ! for bug in strictNullChecks
+				scene.setUnit(target, hexRear);
 				target.state = knockback;
 			});
 			knockback.then(() => popup.attach(scene));

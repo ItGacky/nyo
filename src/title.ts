@@ -20,14 +20,14 @@
 			super();
 			new Gallery(0, 0, SCREEN_W, SCREEN_H, new Picture(URL_SCENE + "title.jpg")).attach(this);
 
-			let loaded = loadData();
+			const loaded = loadData();
 			let goTown = (data: Data) => FadeOut.go(this, new Town.Home(data));
 
 			let label: Word;
 			let click: Slot;
 			if (loaded) {
 				label = _("Title", "Continue");
-				click = () => goTown(loaded!);		// FIXME: retandant ! for bug in strictNullChecks
+				click = () => goTown(loaded);
 				new Button(TITLE_DELETE_X, TITLE_DELETE_Y, TITLE_DELETE_W, TITLE_DELETE_H, new Label(_("Title", "Delete")), () => {
 					Dialog.confirm(this, _("Title", "ConfirmDelete"),
 						{

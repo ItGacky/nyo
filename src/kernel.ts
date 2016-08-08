@@ -71,7 +71,7 @@ function clamp<T>(lo: T, hi: T, value: T): T {
 	return value < lo ? lo : value > hi ? hi : value;
 }
 
-function coalesce<A1, A2>(a1: A1, a2: A2): A1 | A2 {
+function coalesce<A1, A2>(a1: A1 | undefined, a2: A2): A1 | A2 {
 	return a1 != null ? a1 : a2;
 }
 

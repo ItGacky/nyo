@@ -237,11 +237,11 @@ class Dialog extends Composite {
 		let MODAL_BUTTON_MARGIN = MODAL_BUTTON_W / 8;
 		let MODAL_BUTTON_X = (SCREEN_W - MODAL_BUTTON_W * length - MODAL_BUTTON_MARGIN * (length - 1)) / 2;
 		for (let i = 0; i < length; ++i) {
-			let { label, click, mnemonic } = options[i];
+			const { label, click, mnemonic } = options[i];
 			new Button(MODAL_BUTTON_X + (MODAL_BUTTON_W + MODAL_BUTTON_MARGIN) * i, CONFIRM_BUTTON_Y, MODAL_BUTTON_W, CONFIRM_BUTTON_H,
 				new Label(label),
 				click
-					? () => { self.detach(); click!(); }	// FIXME: retandant ! for bug in strictNullChecks
+					? () => { self.detach(); click(); }
 					: () => { self.detach(); },
 				mnemonic
 			).attach(self);
@@ -467,9 +467,9 @@ class Button extends Widget {
 	}
 
 	onClick(): void {
-		let { click } = this;
+		const { click } = this;
 		if (click) {
-			committed.then(() => click!.call(this));	// FIXME: retandant ! for bug in strictNullChecks
+			committed.then(() => click.call(this));
 		}
 	}
 
