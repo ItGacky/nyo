@@ -100,7 +100,7 @@ interface ToJSON<JSON> {
 	toJSON(): JSON;
 }
 
-function toJSON<JSON, ALT>(arr: ToJSON<JSON>[], alt: ALT): (JSON | ALT)[] {
+function toJSON<JSON, ALT>(arr: (ToJSON<JSON> | undefined)[], alt: ALT): (JSON | ALT)[] {
 	if (!arr) { return []; }
 	return arr.map(item => (item != null ? item.toJSON() : alt));
 }
@@ -109,7 +109,7 @@ interface FromJSON<JSON, TYPE> {
 	fromJSON(json: JSON): TYPE;
 }
 
-function fromJSON<JSON, TYPE, ALT>(type: FromJSON<JSON, TYPE>, arr: JSON[], alt: ALT): (TYPE | ALT)[] {
+function fromJSON<JSON, TYPE, ALT>(type: FromJSON<JSON, TYPE>, arr: (JSON | undefined)[], alt: ALT): (TYPE | ALT)[] {
 	if (!arr) { return []; }
 	return arr.map(json => (json != null ? type.fromJSON(json) : alt));
 }

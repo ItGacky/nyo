@@ -22,7 +22,7 @@ config = new class implements Config {
 	set magnifyCanvas(value: boolean) {
 		if (this._magnifyCanvas !== value) {
 			this._magnifyCanvas = value;
-			window.dispatchEvent(new UIEvent("resize"));
+			window.dispatchEvent(new CustomEvent("resize"));
 		}
 	}
 
@@ -31,7 +31,7 @@ config = new class implements Config {
 	set refineCanvas(value: boolean) {
 		if (this._refineCanvas !== value) {
 			this._refineCanvas = value;
-			window.dispatchEvent(new UIEvent("resize"));
+			window.dispatchEvent(new CustomEvent("resize"));
 		}
 	}
 
