@@ -829,7 +829,7 @@
 					}
 				}
 				if (deltaHP !== 0) {
-					let popup = scene.promiseEffect(this, { target: this, deltaHP });
+					let popup = scene.promiseEffect({ target: this, deltaHP }, this.hex);
 					popup.attach(scene);
 					return popup;
 				}
@@ -1931,11 +1931,12 @@
 		}
 
 		// return an animation that damages or heals target and raises a popup on attach.
-		promiseEffect(target: Unit, effect: SkillEffect, hex?: Hex): Animation {
+		promiseEffect(effect: SkillEffect, hex: Hex): Animation {
+			let { target } = effect;
 			let deltaHP = (effect.deltaHP || 0);
 			let text = abs(deltaHP).toString();
 			let color = (deltaHP > 0 ? POPUP_COLOR_HEAL : POPUP_COLOR_DAMAGE);
-			let popup = this.createPopup(text, color, hex || target.hex);
+			let popup = this.createPopup(text, color, hex);
 			let { attach } = popup;
 			popup.attach = (parent: Composite) => {
 				let deltaSP = (effect.deltaSP || 0);
@@ -2908,7 +2909,7 @@
 		let hexFrom = unit.hex;
 		let hexTo = target.hex;
 		let effect = unit.estimate(scene, target, skill);
-		let popup = scene.promiseEffect(target, effect);
+		let popup = scene.promiseEffect(effect, hexTo);
 		let action = new UnitCharge(scene, hexFrom, hexTo);
 		unit.state = action;
 		action.hit(() => popup.attach(scene));
@@ -2962,7 +2963,7 @@
 						effect.deltaSP = factor(effect.deltaSP, steps);
 					}
 				}
-				let popup = scene.promiseEffect(target, effect);
+				let popup = scene.promiseEffect(effect, hex);
 				popup.attach(scene);
 				effects.push(popup);
 			}
@@ -3004,7 +3005,7 @@
 			}
 
 			let effect = unit.estimate(scene, target, skill);
-			let popup = scene.promiseEffect(target, effect, hexRear);
+			let popup = scene.promiseEffect(effect, hexRear);
 			let action = new UnitCharge(scene, hexFrom, hexTo);
 			let knockback = new UnitWalk([hexTo, hexRear]);
 
@@ -3025,7 +3026,7 @@
 				return standardCharge(scene, unit, target, skill);	// no space; just charge
 			}
 			let effect = unit.estimate(scene, target, skill);
-			let popup = scene.promiseEffect(target, effect);
+			let popup = scene.promiseEffect(effect, hexTo);
 			let action = new UnitWalk([hexFrom, hexTo]);
 			scene.setUnit(unit, hexRear);
 			unit.state = action;
@@ -3041,7 +3042,7 @@
 				return standardCharge(scene, unit, target, skill);	// no space; just charge
 			}
 			let effect = unit.estimate(scene, target, skill);
-			let popup = scene.promiseEffect(target, effect, hexRear);
+			let popup = scene.promiseEffect(effect, hexRear);
 			let action = new UnitWalk([hexFrom, hexTo]);
 			let knockback = new UnitWalk([hexTo, hexTo, hexRear]);	// HACK: use the first hex twice to delay animation
 			scene.setUnit(target, hexRear);
@@ -3056,7 +3057,7 @@
 			let hexFrom = unit.hex;
 			let hexTo = target.hex;
 			let effect = unit.estimate(scene, target, skill);
-			let popup = scene.promiseEffect(target, effect);
+			let popup = scene.promiseEffect(effect, hexTo);
 			let action = shootProjectile(scene, hexFrom, hexTo, skill);
 			action.then(() => popup.attach(scene));
 			return (config.wait.POPUP ? popup : action);
@@ -3066,11 +3067,8 @@
 			let hexFrom = target.hex;
 			let hexTo = unit.hex;
 			let effect = unit.estimate(scene, target, skill);
-			let damage = scene.promiseEffect(target, effect);
-			let heal = scene.promiseEffect(unit, {
-				target: unit,
-				deltaHP: -effect.deltaHP
-			});
+			let damage = scene.promiseEffect(effect, hexFrom);
+			let heal = scene.promiseEffect({ target: unit, deltaHP: -effect.deltaHP }, hexTo);
 			let action = shootProjectile(scene, hexFrom, hexTo, skill);
 			action.then(() => heal.attach(scene));
 			damage.attach(scene);
@@ -3098,7 +3096,7 @@
 				let target = unit.getTarget(field, hex);
 				if (target) {
 					let effect = unit.estimate(scene, target, skill);
-					let popup = scene.promiseEffect(target, effect);
+					let popup = scene.promiseEffect(effect, hex);
 					popup.attach(scene);
 					effects.push(popup);
 				}
@@ -3141,7 +3139,7 @@
 		// Just popup the effect.
 		Dose: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let effect = unit.estimate(scene, target, skill);
-			let popup = scene.promiseEffect(target, effect);
+			let popup = scene.promiseEffect(effect, target.hex);
 			popup.attach(scene);
 			return (config.wait.POPUP ? popup : committed);
 		}

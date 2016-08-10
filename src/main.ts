@@ -263,11 +263,11 @@ function loadData(): Optional<Data> {
 		if (!value) { return undefined; }
 		let json = parse(value) as DataArchive;
 		return {
-			shop: json.shop,
+			shop: json.shop || {},
 			warehouse: fromJSON(Item, json.warehouse, never),
 			reservers: fromJSON(Character, json.reservers, never),
 			party: fromJSON(Character, json.party, undefined),
-			gold: json.gold
+			gold: json.gold || 0
 		};
 	} catch (e) {
 		logger.error(e);

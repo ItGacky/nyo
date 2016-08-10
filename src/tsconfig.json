@@ -1,5 +1,6 @@
 ﻿{
 	"compilerOptions": {
+		"allowUnreachableCode": false,
 		"newLine": "LF",
 		"noEmitOnError": true,
 		"noFallthroughCasesInSwitch": true,
