@@ -11,7 +11,7 @@ function enchantAddedATK(value: number, ATK: number): number {
 
 const ENCHANTS: { [EID: string/*EnchantID*/]: EnchantDef } = {
 	AddedFire: {
-		tags: [TAG.MELEE, TAG.THROW, TAG.SHOOT],
+		tags: [TAG.Melee, TAG.Throw, TAG.Shoot],
 		min: 5,
 		max: 10,
 		ATK: enchantAddedATK

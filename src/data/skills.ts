@@ -19,7 +19,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Charge"
 	},
 	Swing: {
-		tags: [TAG.MELEE],
+		tags: [TAG.Melee],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 100,
 		cost: 14,
@@ -28,7 +28,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Charge"
 	},
 	Slash: {
-		tags: [TAG.MELEE, TAG.SLASH],
+		tags: [TAG.Melee, TAG.Slash],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 110,
 		cost: 15,
@@ -37,7 +37,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Charge"
 	},
 	CutThrough: {
-		tags: [TAG.MELEE, TAG.SLASH],
+		tags: [TAG.Melee, TAG.Slash],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 100,
 		cost: 20,
@@ -46,7 +46,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "GoBehind"
 	},
 	Sweep: {
-		tags: [TAG.MELEE, TAG.SLASH],
+		tags: [TAG.Melee, TAG.Slash],
 		usage: USAGE.SURROUND_HOSTILE,
 		power: 100,
 		cost: 20,
@@ -55,7 +55,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Nova"
 	},
 	Crash: {
-		tags: [TAG.MELEE, TAG.BLUNT],
+		tags: [TAG.Melee, TAG.Blunt],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 110,
 		cost: 15,
@@ -64,7 +64,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Charge"
 	},
 	Bash: {
-		tags: [TAG.MELEE, TAG.BLUNT],
+		tags: [TAG.Melee, TAG.Blunt],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 100,
 		cost: 20,
@@ -73,7 +73,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Knockback"
 	},
 	Stab: {
-		tags: [TAG.MELEE, TAG.PIERCE],
+		tags: [TAG.Melee, TAG.Pierce],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 110,
 		cost: 15,
@@ -82,7 +82,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Charge"
 	},
 	Thrust: {
-		tags: [TAG.MELEE, TAG.PIERCE],
+		tags: [TAG.Melee, TAG.Pierce],
 		usage: USAGE.STRAIGHT_HOSTILE,
 		power: 100,
 		cost: 15,
@@ -91,7 +91,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Laser"
 	},
 	ShieldBash: {
-		tags: [TAG.SHIELD],
+		tags: [TAG.Shield],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 100,
 		cost: 20,
@@ -100,7 +100,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Charge"
 	},
 	ShieldCharge: {
-		tags: [TAG.SHIELD],
+		tags: [TAG.Shield],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 100,
 		cost: 24,
@@ -109,7 +109,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Trample"
 	},
 	Shoot: {
-		tags: [TAG.SHOOT],
+		tags: [TAG.Shoot],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 100,
 		cost: 20,
@@ -118,7 +118,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Shoot"
 	},
 	PoisonArrow: {
-		tags: [TAG.SHOOT],
+		tags: [TAG.Shoot],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 60,
 		cost: 20,
@@ -128,7 +128,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	},
 	// MAGIC
 	IceSpear: {
-		tags: [TAG.MAGIC, TAG.COLD],
+		tags: [TAG.Magic, TAG.Cold],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 80,
 		cost: 16,
@@ -137,7 +137,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Shoot"
 	},
 	DrainLife: {
-		tags: [TAG.MAGIC, TAG.LIFE],
+		tags: [TAG.Magic, TAG.Life],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 80,
 		cost: 16,
@@ -146,7 +146,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Drain"
 	},
 	FireBall: {
-		tags: [TAG.MAGIC, TAG.FIRE],
+		tags: [TAG.Magic, TAG.Fire],
 		usage: USAGE.SINGLE_HOSTILE,
 		power: 100,
 		cost: 16,
@@ -155,7 +155,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Explode"
 	},
 	LightningLaser: {
-		tags: [TAG.MAGIC, TAG.LIGHTNING],
+		tags: [TAG.Magic, TAG.Lightning],
 		usage: USAGE.STRAIGHT_HOSTILE,
 		power: 100,
 		cost: 16,
@@ -164,7 +164,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Laser"
 	},
 	FireNova: {
-		tags: [TAG.MAGIC, TAG.FIRE],
+		tags: [TAG.Magic, TAG.Fire],
 		usage: USAGE.SURROUND_HOSTILE,
 		power: 100,
 		cost: 16,
@@ -173,7 +173,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Nova"
 	},
 	Heal: {
-		tags: [TAG.MAGIC, TAG.LIFE],
+		tags: [TAG.Magic, TAG.Life],
 		usage: USAGE.SINGLE_FRIENDLY,
 		power: 100,
 		cost: 24,
@@ -182,7 +182,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Shoot"
 	},
 	PartyHeal: {
-		tags: [TAG.MAGIC, TAG.LIFE],
+		tags: [TAG.Magic, TAG.Life],
 		usage: USAGE.SURROUND_FRIENDLY,
 		power: 100,
 		cost: 24,
@@ -191,7 +191,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Nova"
 	},
 	FirstAid: {
-		tags: [TAG.ALCHEMY, TAG.LIFE],
+		tags: [TAG.Alchemy, TAG.Life],
 		usage: USAGE.SINGLE_FRIENDLY,
 		power: 50,
 		cost: 24,
@@ -200,7 +200,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Charge"
 	},
 	PotionOfHealth: {
-		tags: [TAG.ALCHEMY, TAG.LIFE],
+		tags: [TAG.Alchemy, TAG.Life],
 		usage: USAGE.DOSE,
 		power: 100,
 		cost: 24,
@@ -208,7 +208,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Dose"
 	},
 	PotionOfRegeneration: {
-		tags: [TAG.ALCHEMY, TAG.LIFE],
+		tags: [TAG.Alchemy, TAG.Life],
 		usage: USAGE.DOSE,
 		power: 75,
 		cost: 24,
@@ -219,7 +219,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	// Passive Skills - power: 1=7%, 2=15%, 3=23%, 4=32%
 	//================================================================================
 	PathToWarrior: {
-		tags: [TAG.MELEE],
+		tags: [TAG.Melee],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -227,7 +227,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Offence"
 	},
 	PathToNinja: {
-		tags: [TAG.THROW],
+		tags: [TAG.Throw],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -235,7 +235,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Offence"
 	},
 	PathToArcher: {
-		tags: [TAG.SHOOT],
+		tags: [TAG.Shoot],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -243,7 +243,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Offence"
 	},
 	PathToMage: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.Magic],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -251,7 +251,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Offence"
 	},
 	PathToAlchemist: {
-		tags: [TAG.ALCHEMY],
+		tags: [TAG.Alchemy],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -260,7 +260,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	},
 
 	Defence: {
-		tags: [TAG.MELEE],
+		tags: [TAG.Melee],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -268,7 +268,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Defence"
 	},
 	Dodge: {
-		tags: [TAG.THROW, TAG.SHOOT],
+		tags: [TAG.Throw, TAG.Shoot],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -276,7 +276,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Defence"
 	},
 	Meditation: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.Magic],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -284,7 +284,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Defence"
 	},
 	Healthy: {
-		tags: [TAG.ALCHEMY],
+		tags: [TAG.Alchemy],
 		usage: USAGE.PASSIVE,
 		power: 2,
 		cost: 10,
@@ -293,7 +293,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	},
 
 	AvatarOfFire: {
-		tags: [TAG.FIRE],
+		tags: [TAG.Fire],
 		usage: USAGE.PASSIVE,
 		power: 4,
 		cost: 10,
@@ -301,7 +301,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Offence"
 	},
 	AvatarOfCold: {
-		tags: [TAG.COLD],
+		tags: [TAG.Cold],
 		usage: USAGE.PASSIVE,
 		power: 4,
 		cost: 10,
@@ -309,7 +309,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Offence"
 	},
 	AvatarOfLightning: {
-		tags: [TAG.LIGHTNING],
+		tags: [TAG.Lightning],
 		usage: USAGE.PASSIVE,
 		power: 4,
 		cost: 10,
@@ -318,7 +318,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	},
 
 	ResistFire: {
-		tags: [TAG.FIRE],
+		tags: [TAG.Fire],
 		usage: USAGE.PASSIVE,
 		power: 4,
 		cost: 10,
@@ -326,7 +326,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Defence"
 	},
 	ResistCold: {
-		tags: [TAG.COLD],
+		tags: [TAG.Cold],
 		usage: USAGE.PASSIVE,
 		power: 4,
 		cost: 10,
@@ -334,7 +334,7 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		action: "Defence"
 	},
 	ResistLightning: {
-		tags: [TAG.LIGHTNING],
+		tags: [TAG.Lightning],
 		usage: USAGE.PASSIVE,
 		power: 4,
 		cost: 10,

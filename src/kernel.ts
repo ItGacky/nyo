@@ -19,7 +19,7 @@ const CANVAS_RESIZE_DELAY: Duration = 300;
 //================================================================================
 
 interface Dictionary {
-	readonly [id: string]: string | Dictionary;
+	readonly[id: string]: string | Dictionary;
 }
 
 interface System {
@@ -84,14 +84,14 @@ const assert = (DEBUG
 );
 
 const assume = (DEBUG
-	? function<T>(o: T | null | undefined): T {
+	? function <T>(o: T | null | undefined): T {
 		if (o == null) {
 			throw new Error("Cannot be null or undefined");
 		} else {
 			return o;
 		}
 	}
-	: function<T>(o: T | null | undefined): T { return o!; }
+	: function <T>(o: T | null | undefined): T { return o!; }
 );
 
 interface ToJSON<JSON> {
@@ -240,6 +240,47 @@ function font(fontSize?: Pixel, fontFamily?: string): string {
 function getFontSize(_g: CanvasRenderingContext2D, style?: TextStyle): Pixel {
 	// TODO: extract size in g.font.
 	return (style && style.fontSize || DEFAULT_FONT_SIZE);
+}
+
+//================================================================================
+// range
+//================================================================================
+
+class NumberRange {
+	constructor(
+		readonly min: number,
+		readonly max: number
+	) {
+	}
+
+	map<T, THIS>(map: (this: THIS, n: number) => T, thisArg?: THIS): T[] {
+		const { min, max } = this;
+		let arr: T[] = new Array(max - min);
+		for (let i = min; i < max; ++i) {
+			arr[i] = map.call(thisArg, i);
+		}
+		return arr;
+	}
+
+	toArray(): number[] {
+		const { min, max } = this;
+		let arr: number[] = new Array(max - min);
+		for (let i = min; i < max; ++i) {
+			arr[i] = i;
+		}
+		return arr;
+	}
+}
+
+
+function range(max: number): NumberRange;
+function range(min: number, max: number): NumberRange;
+function range(first: number, second?: number): NumberRange {
+	if (second === undefined) {
+		return new NumberRange(0, first);
+	} else {
+		return new NumberRange(first, second);
+	}
 }
 
 //================================================================================

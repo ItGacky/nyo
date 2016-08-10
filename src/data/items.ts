@@ -10,117 +10,117 @@ interface ItemDef {
 const ITEMS: { [IID: string/*ItemID*/]: ItemDef } = {
 	// MELLE
 	Dagger: {
-		tags: [TAG.MELEE, TAG.SLASH],
+		tags: [TAG.Melee, TAG.Slash],
 		weight: 13,
 		price: 100,
 		ATK: 30
 	},
 	ShortSword: {
-		tags: [TAG.MELEE, TAG.SLASH],
+		tags: [TAG.Melee, TAG.Slash],
 		weight: 15,
 		price: 100,
 		ATK: 40
 	},
 	LongSword: {
-		tags: [TAG.MELEE, TAG.SLASH],
+		tags: [TAG.Melee, TAG.Slash],
 		weight: 16,
 		price: 100,
 		ATK: 50
 	},
 	Katana: {
-		tags: [TAG.MELEE, TAG.SLASH],
+		tags: [TAG.Melee, TAG.Slash],
 		weight: 15,
 		price: 100,
 		ATK: 45
 	},
 	Axe: {
-		tags: [TAG.MELEE, TAG.SLASH, TAG.BLUNT],
+		tags: [TAG.Melee, TAG.Slash, TAG.Blunt],
 		weight: 18,
 		price: 100,
 		ATK: 45
 	},
 	Mace: {
-		tags: [TAG.MELEE, TAG.BLUNT],
+		tags: [TAG.Melee, TAG.Blunt],
 		weight: 16,
 		price: 100,
 		ATK: 40
 	},
 	Spear: {
-		tags: [TAG.MELEE, TAG.PIERCE],
+		tags: [TAG.Melee, TAG.Pierce],
 		weight: 20,
 		price: 100,
 		ATK: 50
 	},
 	Halberd: {
-		tags: [TAG.MELEE, TAG.SLASH, TAG.BLUNT, TAG.PIERCE],
+		tags: [TAG.Melee, TAG.Slash, TAG.Blunt, TAG.Pierce],
 		weight: 30,
 		price: 100,
 		ATK: 50
 	},
 	// SHOOT
 	ShortBow: {
-		tags: [TAG.SHOOT, TAG.PIERCE],
+		tags: [TAG.Shoot, TAG.Pierce],
 		weight: 18,
 		price: 100,
 		ATK: 30
 	},
 	LongBow: {
-		tags: [TAG.SHOOT, TAG.PIERCE],
+		tags: [TAG.Shoot, TAG.Pierce],
 		weight: 20,
 		price: 100,
 		ATK: 40
 	},
 	// MAGIC
 	Staff: {
-		tags: [TAG.MELEE, TAG.BLUNT, TAG.MAGIC],
+		tags: [TAG.Melee, TAG.Blunt, TAG.Magic],
 		weight: 20,
 		price: 100,
 		ATK: 20
 	},
 	Wand: {
-		tags: [TAG.MAGIC],
+		tags: [TAG.Magic],
 		weight: 16,
 		price: 100,
 		ATK: 25
 	},
 	// ALCHEMY
 	FirstAidKit: {
-		tags: [TAG.ALCHEMY],
+		tags: [TAG.Alchemy],
 		weight: 10,
 		price: 100,
 		ATK: 20
 	},
 	// SHIELD
 	Buckler: {
-		tags: [TAG.SHIELD],
+		tags: [TAG.Shield],
 		weight: 20,
 		price: 100,
 		ATK: 10,
 		DEF: 10
 	},
 	RoundShield: {
-		tags: [TAG.SHIELD],
+		tags: [TAG.Shield],
 		weight: 25,
 		price: 100,
 		ATK: 15,
 		DEF: 15
 	},
 	SpikedShield: {
-		tags: [TAG.SHIELD],
+		tags: [TAG.Shield],
 		weight: 30,
 		price: 100,
 		ATK: 30,
 		DEF: 15
 	},
 	KiteShield: {
-		tags: [TAG.SHIELD],
+		tags: [TAG.Shield],
 		weight: 35,
 		price: 100,
 		ATK: 20,
 		DEF: 20
 	},
 	TowerShield: {
-		tags: [TAG.SHIELD],
+		tags: [TAG.Shield],
 		weight: 40,
 		price: 100,
 		ATK: 30,
@@ -128,74 +128,74 @@ const ITEMS: { [IID: string/*ItemID*/]: ItemDef } = {
 	},
 	// HEAD
 	Circlet: {
-		tags: [TAG.HEAD],
+		tags: [TAG.Head],
 		weight: 5,
 		price: 100,
 		DEF: 2
 	},
 	LeatherHood: {
-		tags: [TAG.HEAD],
+		tags: [TAG.Head],
 		weight: 10,
 		price: 100,
 		DEF: 4
 	},
 	Mask: {
-		tags: [TAG.HEAD],
+		tags: [TAG.Head],
 		weight: 15,
 		price: 100,
 		DEF: 6
 	},
 	Sallet: {
-		tags: [TAG.HEAD],
+		tags: [TAG.Head],
 		weight: 20,
 		price: 100,
 		DEF: 8
 	},
 	Bascinet: {
-		tags: [TAG.HEAD],
+		tags: [TAG.Head],
 		weight: 25,
 		price: 100,
 		DEF: 10
 	},
 	Helmet: {
-		tags: [TAG.HEAD],
+		tags: [TAG.Head],
 		weight: 30,
 		price: 100,
 		DEF: 12
 	},
 	// BODY
 	Robe: {
-		tags: [TAG.BODY],
+		tags: [TAG.Body],
 		weight: 20,
 		price: 100,
 		DEF: 10
 	},
 	LetherArmor: {
-		tags: [TAG.BODY],
+		tags: [TAG.Body],
 		weight: 25,
 		price: 100,
 		DEF: 15
 	},
 	ScaleArmor: {
-		tags: [TAG.BODY],
+		tags: [TAG.Body],
 		weight: 30,
 		price: 100,
 		DEF: 20
 	},
 	Chainmail: {
-		tags: [TAG.BODY],
+		tags: [TAG.Body],
 		weight: 35,
 		price: 100,
 		DEF: 22
 	},
 	LamellarArmor: {
-		tags: [TAG.BODY],
+		tags: [TAG.Body],
 		weight: 40,
 		price: 100,
 		DEF: 25
 	},
 	PlateArmor: {
-		tags: [TAG.BODY],
+		tags: [TAG.Body],
 		weight: 45,
 		price: 100,
 		DEF: 30
@@ -203,50 +203,50 @@ const ITEMS: { [IID: string/*ItemID*/]: ItemDef } = {
 	//Vest Jerkin Tunic Garb Vestment Hauberk Coat Jacket
 	// ARMS
 	Gloves: {
-		tags: [TAG.ARMS],
+		tags: [TAG.Arms],
 		weight: 10,
 		price: 100,
 		DEF: 4
 	},
 	Mittens: {
-		tags: [TAG.ARMS],
+		tags: [TAG.Arms],
 		weight: 20,
 		price: 100,
 		DEF: 6
 	},
 	Gauntlets: {
-		tags: [TAG.ARMS],
+		tags: [TAG.Arms],
 		weight: 30,
 		price: 100,
 		DEF: 8
 	},
 	// LEGS
 	Slippers: {
-		tags: [TAG.LEGS],
+		tags: [TAG.Legs],
 		weight: 5,
 		price: 100,
 		DEF: 2
 	},
 	Sandals: {
-		tags: [TAG.LEGS],
+		tags: [TAG.Legs],
 		weight: 10,
 		price: 100,
 		DEF: 4
 	},
 	Shoes: {
-		tags: [TAG.LEGS],
+		tags: [TAG.Legs],
 		weight: 15,
 		price: 100,
 		DEF: 6
 	},
 	Boots: {
-		tags: [TAG.LEGS],
+		tags: [TAG.Legs],
 		weight: 20,
 		price: 100,
 		DEF: 8
 	},
 	Greaves: {
-		tags: [TAG.LEGS],
+		tags: [TAG.Legs],
 		weight: 25,
 		price: 100,
 		DEF: 10

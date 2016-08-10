@@ -7,27 +7,39 @@ Word.path = URL_ASSETS + "lang/";
 Word.languages["en"] = undefined;
 Word.languages["ja"] = undefined;
 
-const enum TAG {
+const MNEMONIC_CONFIG = [KEY.ESCAPE];
+const MNEMONIC_START = [KEY.ENTER, KEY.SPACE];
+const MNEMONIC_BACK = [KEY.BACKSPACE, KEY.TAB, KEY.ESCAPE, KEY.DELETE];
+const MNEMONIC_PREV = [KEY.PAGE_UP, KEY.HOME, KEY.LEFT, KEY.UP];
+const MNEMONIC_NEXT = [KEY.PAGE_DOWN, KEY.END, KEY.RIGHT, KEY.DOWN];
+
+const MNEMONIC_OK = MNEMONIC_START.concat(MNEMONIC_BACK);
+const MNEMONIC_YES = MNEMONIC_START.concat(KEY.Y);
+const MNEMONIC_NO = MNEMONIC_BACK.concat(KEY.N);
+
+enum TAG {
 	// Weapon Attributes
-	MELEE,
-	THROW,
-	SHOOT,
-	MAGIC,
-	ALCHEMY,
-	SLASH,
-	BLUNT,
-	PIERCE,
+	Melee,
+	Throw,
+	Shoot,
+	Magic,
+	Alchemy,
+	Slash,
+	Blunt,
+	Pierce,
 	// Armor Parts
-	SHIELD,
-	HEAD,
-	BODY,
-	ARMS,
-	LEGS,
+	Shield,
+	Head,
+	Body,
+	Arms,
+	Legs,
 	// Effect Types
-	FIRE,
-	COLD,
-	LIGHTNING,
-	LIFE
+	Fire,
+	Cold,
+	Lightning,
+	Life,
+	//
+	MAX
 }
 
 const enum USAGE {
@@ -62,8 +74,6 @@ const BAR_STYLE_SP: UnitBarStyle = {
 	full: rgb(0, 153, 255)
 };
 
-// config.effects
-
 interface EfeectConfig {
 	readonly PICK: Duration;	// delay per pick
 	readonly WALK: boolean;		// wait walking animation?
@@ -93,19 +103,6 @@ const CPU_WAIT: EfeectConfig[] = [
 	}
 ];
 
-const MNEMONIC_OK = [KEY.BACKSPACE, KEY.TAB, KEY.ENTER, KEY.ESCAPE, KEY.SPACE, KEY.DELETE];
-const MNEMONIC_YES = [KEY.ENTER, KEY.SPACE, KEY.Y];
-const MNEMONIC_NO = [KEY.BACKSPACE, KEY.TAB, KEY.ESCAPE, KEY.DELETE, KEY.N];
-const MNEMONIC_CONFIG = [KEY.ESCAPE];
-
-const MNEMONIC_START = [KEY.ENTER, KEY.SPACE];
-
-const MNEMONIC_BACK = [KEY.BACKSPACE, KEY.TAB, KEY.ESCAPE, KEY.DELETE];
-const MNEMONIC_PREV = [KEY.PAGE_UP, KEY.HOME, KEY.LEFT, KEY.UP];
-const MNEMONIC_NEXT = [KEY.PAGE_DOWN, KEY.END, KEY.RIGHT, KEY.DOWN];
-
-let logger: Logger;
-
 interface Config extends CanvasConfig {
 	readonly volume: Integer;
 	readonly effects: Integer;
@@ -113,3 +110,4 @@ interface Config extends CanvasConfig {
 }
 
 let config: Config;
+let logger: Logger;

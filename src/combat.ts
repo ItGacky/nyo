@@ -2873,13 +2873,13 @@
 
 	function colorOf(skill: Skill): RGB {
 		let { tagbits } = skill;
-		if (match(tagbits, TAG.FIRE)) {
+		if (match(tagbits, TAG.Fire)) {
 			return { r: 255, g: 128, b: 0 };
-		} else if (match(tagbits, TAG.COLD)) {
+		} else if (match(tagbits, TAG.Cold)) {
 			return { r: 0, g: 128, b: 255 };
-		} else if (match(tagbits, TAG.LIGHTNING)) {
+		} else if (match(tagbits, TAG.Lightning)) {
 			return { r: 255, g: 255, b: 0 };
-		} else if (match(tagbits, TAG.LIFE)) {
+		} else if (match(tagbits, TAG.Life)) {
 			if (skill.hostile) {
 				return { r: 255, g: 0, b: 128 };
 			} else {

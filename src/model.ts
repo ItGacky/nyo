@@ -9,31 +9,9 @@ const ITEM_DISCOUNT_TO_SELL = 0.5;
 // Tag
 //================================================================================
 
-let TAG2NAME: Word[];
+const TAG2NAME = range(TAG.MAX).map(n => _("Tag", TAG[n]));
 
 function tags2str(tags: TAG[]): string {
-	if (!TAG2NAME) {
-		// NOTE: Order of tag names must match with TAG.
-		TAG2NAME = [
-			_("Tag", "Melee"),
-			_("Tag", "Throw"),
-			_("Tag", "Shoot"),
-			_("Tag", "Magic"),
-			_("Tag", "Alchemy"),
-			_("Tag", "Slash"),
-			_("Tag", "Blunt"),
-			_("Tag", "Pierce"),
-			_("Tag", "Shield"),
-			_("Tag", "Head"),
-			_("Tag", "Body"),
-			_("Tag", "Arms"),
-			_("Tag", "Legs"),
-			_("Tag", "Fire"),
-			_("Tag", "Cold"),
-			_("Tag", "Lightning"),
-			_("Tag", "Life")
-		];
-	}
 	return tags.map(tag => TAG2NAME[tag].localized).join(", ");
 }
 
@@ -45,8 +23,8 @@ function tags2bits(tags: TAG[]): number {
 	return bits;
 }
 
-const TAGBITS_WEAPON = tags2bits([TAG.MELEE, TAG.THROW, TAG.SHOOT, TAG.MAGIC, TAG.ALCHEMY, TAG.SLASH, TAG.BLUNT, TAG.PIERCE]);
-const TAGBITS_ARMORS = tags2bits([TAG.SHIELD, TAG.HEAD, TAG.BODY, TAG.ARMS, TAG.LEGS]);
+const TAGBITS_WEAPON = tags2bits([TAG.Melee, TAG.Throw, TAG.Shoot, TAG.Magic, TAG.Alchemy, TAG.Slash, TAG.Blunt, TAG.Pierce]);
+const TAGBITS_ARMORS = tags2bits([TAG.Shield, TAG.Head, TAG.Body, TAG.Arms, TAG.Legs]);
 
 //================================================================================
 // Target
