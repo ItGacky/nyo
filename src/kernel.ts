@@ -242,6 +242,10 @@ function getFontSize(_g: CanvasRenderingContext2D, style?: TextStyle): Pixel {
 	return (style && style.fontSize || DEFAULT_FONT_SIZE);
 }
 
+function getStride(g: CanvasRenderingContext2D, style?: TextStyle): Pixel {
+	return 1.2 * getFontSize(g, style);
+}
+
 //================================================================================
 // range
 //================================================================================

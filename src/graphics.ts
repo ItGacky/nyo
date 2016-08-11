@@ -179,7 +179,7 @@ function drawText(
 		draw(g, text, x, y, style);
 	} else {
 		let lines = text.split("\n");
-		let stride = 1.2 * getFontSize(g, style);
+		let stride = getStride(g, style);
 		switch (g.textBaseline) {
 			case "top":
 				for (let line of lines) {
@@ -252,7 +252,7 @@ function drawTextBox(
 		draw(g, text, tx, ty, w, style);
 	} else {
 		let lines = text.split("\n");
-		let stride = 1.2 * getFontSize(g, style);
+		let stride = getStride(g, style);
 		switch (g.textBaseline) {
 			case "middle":
 				ty = y + (h - stride * (lines.length - 1)) / 2;

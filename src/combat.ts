@@ -678,6 +678,7 @@
 	}
 
 	interface EffectOverTime {
+		spec: string;
 		duration: number;
 		deltaHPoT?: number;
 	}
@@ -1483,7 +1484,7 @@
 			barsOnFocus.attach(componentsForFocus);
 
 			let panelForFocus = new Widget(PANEL_LX, PANEL_Y, PANEL_LW, PANEL_H);
-			panelForFocus.onDraw = (g, when) => this.drawPanel(g, when, panelForFocus, this.focus);
+			panelForFocus.onDraw = (g, when) => this.drawPanel(g, when, panelForFocus, assume(this.focus));
 			panelForFocus.attach(componentsForFocus);
 
 			//========= Skills =========
@@ -1518,7 +1519,7 @@
 
 			let panelForTarget = new Widget(PANEL_RX, PANEL_Y, PANEL_RW, PANEL_H);
 			defineGetSet(panelForTarget, "visible", () => !!target());
-			panelForTarget.onDraw = (g, when) => this.drawPanel(g, when, panelForTarget, target());
+			panelForTarget.onDraw = (g, when) => this.drawPanel(g, when, panelForTarget, assume(target()));
 			panelForTarget.attach(this);
 
 			//========= Fades and Others =========
@@ -1950,11 +1951,12 @@
 				if (target.HP <= 0) {
 					this.kill(target);
 				} else {
-					let { duration } = effect;
-					if (duration != null) {
+					let { duration, deltaHPoT } = effect;
+					if (duration != null && deltaHPoT !== 0) {
 						target.effectsOverTime.push({
+							spec: `HP: ${deltaHPoT > 0 ? "+" : ""} ${deltaHPoT}`,
 							duration,
-							deltaHPoT: effect.deltaHPoT
+							deltaHPoT
 						});
 					}
 				}
@@ -2202,28 +2204,31 @@
 			}
 		}
 
-		private drawPanel(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH, unit?: Unit): void {
-			if (unit) {
-				drawRect(g, rect, PANEL_BKGND_STYLE[unit.team]);
+		private drawPanel(g: CanvasRenderingContext2D, when: Timestamp, rect: XYWH, unit: Unit): void {
+			drawRect(g, rect, PANEL_BKGND_STYLE[unit.team]);
 
-				let { ch } = unit;
-				let chRect = scaleProportionally(ch, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
-				chRect.x = rect.x + MARGIN + (CELL_W - chRect.w) / 2;
-				chRect.y = rect.y + (rect.h - chRect.h) / 2;
-				ch.draw(g, when, chRect);
+			let { ch } = unit;
+			let chRect = scaleProportionally(ch, UNIT_MAX_W, UNIT_MAX_H) as XYWH;
+			chRect.x = rect.x + MARGIN + (CELL_W - chRect.w) / 2;
+			chRect.y = rect.y + (rect.h - chRect.h) / 2;
+			ch.draw(g, when, chRect);
 
-				const PANEL_NAME_X: Pixel = UNIT_MAX_W + MARGIN * 2;
-				const PANAL_NAME_Y: Pixel = MARGIN;
-				let cost = unit.costOf(unit.skill);
-				let MVW = (unit.SP >= cost ? floor((unit.SP - cost) / unit.step) : "-");
-				let ATK = unit.powerOf(unit.skill);
+			const PANEL_NAME_X: Pixel = UNIT_MAX_W + MARGIN * 2;
+			const PANEL_NAME_Y: Pixel = MARGIN;
+			let cost = unit.costOf(unit.skill);
+			let MVW = (unit.SP >= cost ? floor((unit.SP - cost) / unit.step) : "-");
+			drawText(g,
+				`${unit.name} / Lv: ${toFixed(unit.level)}\n` +
+				`HP: ${unit.HP} / SP: ${unit.SP}`,
+				rect.x + PANEL_NAME_X, rect.y + PANEL_NAME_Y, PANEL_TEXT_STYLE
+			);
+
+			let { effectsOverTime } = unit;
+			for (let i = 0, len = effectsOverTime.length; i < len; ++i) {
+				let effect = effectsOverTime[i];
 				drawText(g,
-					`${unit.name} / Lv: ${toFixed(unit.level)}\n` +
-					`HP: ${unit.HP} / ${unit.maxHP}\n` +
-					`SP: ${unit.SP} / ${unit.maxSP}\n` +
-					`MOVE: ${MVW}/${floor(unit.SP / unit.step)}\n` +
-					`ATK/DEF: ${toFixed(ATK)} / ${unit.DEF.toFixed(1)}`,
-					rect.x + PANEL_NAME_X, rect.y + PANAL_NAME_Y, PANEL_TEXT_STYLE
+					`[${effect.duration}] ${effect.spec}`,
+					rect.x + PANEL_NAME_X, rect.y + PANEL_NAME_Y + getStride(g, PANEL_TEXT_STYLE.fontSize) * (i + 2), PANEL_TEXT_STYLE
 				);
 			}
 

@@ -1181,7 +1181,7 @@ class ScreenLogger extends Widget implements Logger {
 			let len = logs.length;
 			if (len > 0) {
 				let { style } = this;
-				let stride = 1.2 * getFontSize(g, style);
+				let stride = getStride(g, style);
 				for (let i = 0; i < len; ++i) {
 					let { message } = logs[i];
 					drawTextBox(g, message, this.x, this.y + i * stride, this.w, stride, style);
