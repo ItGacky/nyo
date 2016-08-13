@@ -28,8 +28,8 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		INT: 6,
 		DEX: 2,
 		STR: 7,
-		equipments: ["Spear", "LamellarArmor", "KiteShield"],
-		skills: ["Swing", "Stab", "Thrust", "ShieldBash", "ShieldCharge"],
+		equipments: ["Spear", "LamellarArmor", "KiteShield", "FirstAidKit"],
+		skills: ["Swing", "Stab", "Thrust", "ShieldBash", "ShieldCharge", "PotionOfStrength"],
 		image: "toramaru"
 	},
 	Thief: {
@@ -37,7 +37,7 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		DEX: 6,
 		STR: 6,
 		equipments: ["LongBow", "LetherArmor", "FirstAidKit"],
-		skills: ["Shoot", "PoisonArrow", "FirstAid"],
+		skills: ["Shoot", "PoisonArrow", "FirstAid", "PotionOfDexterity"],
 		image: "marisa"
 	},
 	Healer: {
@@ -45,15 +45,15 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		DEX: 3,
 		STR: 5,
 		equipments: ["Staff", "Robe"],
-		skills: ["Swing", "Heal", "PartyHeal"],
+		skills: ["Swing", "Heal", "PartyHeal", "Empower", "Enhance", "Enlighten", "Absorber", "Shelter", "Barrier"],
 		image: "reimu"
 	},
 	Mage: {
 		INT: 8,
 		DEX: 4,
 		STR: 3,
-		equipments: ["Wand", "Robe"],
-		skills: ["FireBall", "IceSpear", "DrainLife", "LightningLaser", "FireNova"],
+		equipments: ["Wand", "Robe", "FirstAidKit"],
+		skills: ["FireBall", "IceSpear", "DrainLife", "LightningLaser", "FireNova", "PotionOfIntelligence"],
 		image: "utsuho"
 	}
 };
@@ -72,7 +72,7 @@ const MONSTERS: { [key: string]: CharacterDef } = {
 		DEX: 3,
 		STR: 3,
 		equipments: ["Wand", "LetherArmor"],
-		skills: ["FireBall", "ResistFire"],
+		skills: ["FireBall", "AffinityToFire"],
 		image: "elemental.png"
 	},
 	Frog: {

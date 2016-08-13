@@ -276,7 +276,6 @@ class NumberRange {
 	}
 }
 
-
 function range(max: number): NumberRange;
 function range(min: number, max: number): NumberRange;
 function range(first: number, second?: number): NumberRange {

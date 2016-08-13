@@ -1,4 +1,7 @@
-﻿// Path
+﻿type Percentage = number;	// 100 = 1.0
+type Turns = number;		// number of turns
+
+// Path
 const STORAGE_KEY = "NYO";
 const URL_ASSETS = "assets/";
 const URL_CHAR = URL_ASSETS + "char/";
@@ -42,16 +45,8 @@ enum TAG {
 	MAX
 }
 
-const enum USAGE {
-	PASSIVE,
-	DOSE,
-	SINGLE_HOSTILE,
-	SINGLE_FRIENDLY,
-	STRAIGHT_HOSTILE,
-	STRAIGHT_FRIENDLY,
-	SURROUND_HOSTILE,
-	SURROUND_FRIENDLY
-}
+type ShotUsage = "single-hostile" | "single-friendly" | "straight-hostile" | "straight-friendly" | "surround-hostile" | "surround-friendly";
+type Usage = "passive" | "dose" | ShotUsage;
 
 interface UnitBarStyle {
 	bkgnd: CanvasStyle;

@@ -93,7 +93,9 @@
 		Name: "Name",
 		INT: "INT",
 		DEX: "DEX",
-		STR: "STR"
+		STR: "STR",
+		outgoing: "OUT",
+		incoming: "IN"
 	},
 	Tag: {
 		Melee: "Melee",
@@ -376,6 +378,30 @@
 			Name: "First Aid",
 			Spec: "Heal a member of your party, and also heals over time."
 		},
+		Empower: {
+			Name: "Empower",
+			Spec: "Increase power of melee by a member."
+		},
+		Enhance: {
+			Name: "Enhance",
+			Spec: "Increase power of throwing and shooting by a member."
+		},
+		Enlighten: {
+			Name: "Enlighten",
+			Spec: "Increase power of magic by a member."
+		},
+		Absorber: {
+			Name: "Absorber",
+			Spec: "Increase resistance of melee by a member."
+		},
+		Shelter: {
+			Name: "Shelter",
+			Spec: "Increase resistance of throwing and shooting by a member."
+		},
+		Barrier: {
+			Name: "Barrier",
+			Spec: "Increase resistance of magic by a member."
+		},
 		PotionOfHealth: {
 			Name: "Potion of Health",
 			Spec: "Heal self."
@@ -383,6 +409,18 @@
 		PotionOfRegeneration: {
 			Name: "Potion of Regeneration",
 			Spec: "Heal self, and also heals over time."
+		},
+		PotionOfStrength: {
+			Name: "Potion of Strength",
+			Spec: "Increase power of melee by self."
+		},
+		PotionOfDexterity: {
+			Name: "Potion of Dexterity",
+			Spec: "Increase power of throwing and shooting by self."
+		},
+		PotionOfIntelligence: {
+			Name: "Potion of Intelligence",
+			Spec: "Increase power of magic by self."
 		},
 		PathToWarrior: {
 			Name: "Path to Warrior",
@@ -420,29 +458,17 @@
 			Name: "Healthy",
 			Spec: "Increase resistance to alchemy."
 		},
-		AvatarOfFire: {
-			Name: "Avatar of Fire",
-			Spec: "Increase power of fire."
+		AffinityToFire: {
+			Name: "Affinity to Fire",
+			Spec: "Increase power and resistance of fire, but decrease power of cold and lightning."
 		},
-		AvatarOfCold: {
-			Name: "Avatar of Cold",
-			Spec: "Increase power of cold."
+		AffinityToCold: {
+			Name: "Affinity to Cold",
+			Spec: "Increase power and resistance of cold, but decrease power of fire and lightning."
 		},
-		AvatarOfLightning: {
-			Name: "Avatar of Lightning",
-			Spec: "Increase power of lightning."
-		},
-		ResistFire: {
-			Name: "Resist Fire",
-			Spec: "Increase resistance to fire."
-		},
-		ResistCold: {
-			Name: "Resist Cold",
-			Spec: "Increase resistance to cold."
-		},
-		ResistLightning: {
-			Name: "Resist Lightning",
-			Spec: "Increase resistance to lightning."
+		AffinityToLightning: {
+			Name: "Affinity to Lightning",
+			Spec: "Increase power and resistance of lightning, but decrease power of fire and cold."
 		}
 	},
 	Adventurer: {

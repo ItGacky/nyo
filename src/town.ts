@@ -137,7 +137,7 @@
 		];
 	}
 
-	function createColumnsForSkills(label: Word): ListViewColumn<Skill>[] {
+	function createColumnsForSkills(label: Word, ch: Character): ListViewColumn<Skill>[] {
 		return [
 			{
 				name: label,
@@ -146,23 +146,23 @@
 			},
 			{
 				name: _("Town", "Required"),
-				extract: row => tags2str(row.tags)
+				extract: row => (row.tags ? tags2str(row.tags) : "-")
 			},
 			{
 				name: _("Town", "Cost"),
-				extract: row => row.rawCost,
+				extract: row => ch.costOf(row),
 				width: ROW_W_FOR_NUBMER,
 				align: "right"
 			},
 			{
 				name: _("Town", "Range"),
-				extract: row => row.rawRange,
+				extract: row => ch.rangeOf(row),
 				width: ROW_W_FOR_NUBMER,
 				align: "right"
 			},
 			{
 				name: _("Town", "Power"),
-				extract: row => row.rawPower,
+				extract: row => row.def.deltaHP,
 				width: ROW_W_FOR_NUBMER,
 				align: "right"
 			},
@@ -280,10 +280,10 @@
 				let y = PORTRAIT_Y + (PORTRAIT_H + PORTRAIT_MARGIN) * r + DH * c;
 				new SwappableButton(x, y, PORTRAIT_W, PORTRAIT_H, portraits,
 					new Portrait(party, i),
-					function(this: SwappableButton) {
+					function (this: SwappableButton) {
 						scene.onPortraitClick((this.drawable as Portrait).index);
 					},
-					function(this: SwappableButton, that: SwappableButton) {
+					function (this: SwappableButton, that: SwappableButton) {
 						let L = this.drawable as Portrait;
 						let R = that.drawable as Portrait;
 						// swap index and character
@@ -493,9 +493,9 @@
 	function removeConflictedItems(items: Item[], tagbits: number): Item[] {
 		let conflicted: Item[] = [];
 		tagbits &= TAGBITS_ARMORS;
-		if (tagbits !== 0) {
+		if (tagbits) {
 			for (let i = 0; i < items.length;) {
-				if ((items[i].tagbits & tagbits) !== 0) {
+				if (items[i].tags.bits & tagbits) {
 					conflicted.push(items[i]);
 					items.splice(i, 1);
 				} else {
@@ -516,14 +516,25 @@
 			let sz = scaleProportionally(ch, SCREEN_W, SCREEN_H, true);
 			new Gallery(0, 0, sz.w, sz.h, ch).attach(this);	// character large image
 			new Gallery(0, 0, 200, 40, new Label(`${ch.name} / Lv: ${ch.level}`)).attach(this);
-			new Gallery(0, 40, 200, 40, new Label("INT: " + ch.INT)).attach(this);
-			new Gallery(100, 40, 200, 40, new Label("DEX: " + ch.DEX)).attach(this);
-			new Gallery(200, 40, 200, 40, new Label("STR: " + ch.STR)).attach(this);
 
-			new Gallery(0, 80, 200, 40, new Label(() => `HP: ${ch.HP}`)).attach(this);
-			new Gallery(0, 120, 200, 40, new Label(() => `SP: ${ch.SP}`)).attach(this);
-			new Gallery(0, 160, 200, 40, new Label(() => `WT: ${ch.weight}/${ch.maxWeight}`)).attach(this);
-			new Gallery(0, 200, 200, 40, new Label(() => `DEF: ${ch.DEF.toFixed(1)}`)).attach(this);
+			let style: TextStyle = { textAlign: "left" };
+			new Gallery(0, 40, 200, 40, new Label("INT: " + ch.INT, style)).attach(this);
+			new Gallery(100, 40, 200, 40, new Label("DEX: " + ch.DEX, style)).attach(this);
+			new Gallery(200, 40, 200, 40, new Label("STR: " + ch.STR, style)).attach(this);
+
+			new Gallery(0, 80, 200, 40, new Label(() => `HP: ${ch.HP}`, style)).attach(this);
+			new Gallery(0, 120, 200, 40, new Label(() => SP(ch), style)).attach(this);
+			new Gallery(0, 160, 200, 40, new Label(() => `WT: ${ch.weight}/${ch.maxWeight}`, style)).attach(this);
+			new Gallery(0, 200, 200, 40, new Label(() => `DEF: ${ch.DEF.toFixed(1)}`, style)).attach(this);
+
+			function SP(ch: Character): string {
+				let { reservedSP } = ch;
+				if (reservedSP > 0) {
+					return `SP: ${ch.SP - reservedSP} (${reservedSP} reserved)`;
+				} else {
+					return `SP: ${ch.SP}`;
+				}
+			}
 
 			let equipments = new Composite([
 				new ListView<Item>(TOWN_LISTVIEW_X, TOWN_LISTVIEW_Y, TOWN_LISTVIEW_W, ListView.heightOf(10),
@@ -539,7 +550,7 @@
 					warehouse,
 					(item: Item, index: number) => {	// Equip an item
 						warehouse.splice(index, 1);
-						let conflicted = removeConflictedItems(ch.equipments, item.tagbits);
+						let conflicted = removeConflictedItems(ch.equipments, item.tags.bits);
 						ch.equipments.push(item);
 						warehouse.push.call(warehouse, ...conflicted);
 					}
@@ -549,7 +560,7 @@
 
 			let skills = new Composite([
 				new ListView<Skill>(TOWN_LISTVIEW_X, TOWN_LISTVIEW_Y, TOWN_LISTVIEW_W, ListView.heightOf(10),
-					createColumnsForSkills(_("Town", "Skills")),
+					createColumnsForSkills(_("Town", "Skills"), ch),
 					ch.skills,
 					(skill, index) => {	// Unimplement a skill
 						ch.skills.splice(index, 1);
@@ -557,7 +568,7 @@
 					}
 				),
 				new ListView<Skill>(TOWN_LISTVIEW_X, SCREEN_H / 2, TOWN_LISTVIEW_W, ListView.heightOf(10),
-					createColumnsForSkills(_("Town", "Knowns")),
+					createColumnsForSkills(_("Town", "Knowns"), ch),
 					ch.known,
 					(skill, index) => {	// Implement a skill
 						ch.known.splice(index, 1);

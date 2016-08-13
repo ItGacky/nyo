@@ -1,344 +1,426 @@
-interface SkillDef {
-	readonly tags: TAG[];
-	readonly usage: USAGE;
-	readonly power: number;
-	readonly cost: number;
-	readonly range?: number;
-	readonly effect: string;
-	readonly action: string;
+type InOut = "outgoing" | "incoming";
+
+interface Modifier {
+	readonly type: InOut;
+	readonly level: number;
+	readonly tags: Tags;
 }
+
+type ShotID = "Charge" | "Knockback" | "GoBehind" | "Trample" | "Shoot" | "Drain" | "Explode" | "Laser" | "Nova";
+type ActionID = ShotID | "Dose";
+
+interface DoseSkillDef {
+	readonly usage: "dose";
+	readonly range?: never;
+	readonly cost: number;
+
+	// instant effect
+	readonly tags?: Tags;			// tags for deltaHP, deltaSP, deltaHPoT, and deltaSPoT.
+	readonly deltaHP?: Percentage;	// negative for damage / positive for heal
+	readonly deltaSP?: Percentage;	// negative for damage / positive for heal
+
+	// over-time effect
+	readonly turns?: Turns;
+	readonly deltaHPoT?: Percentage;
+	readonly deltaSPoT?: Percentage;
+	readonly mods?: Modifier[];
+
+	readonly AID: "Dose";
+}
+
+interface ShotSkillDef {
+	readonly usage: ShotUsage;
+	readonly range: number;
+	readonly cost: number;
+
+	// instant effect
+	readonly tags?: Tags;			// tags for deltaHP, deltaSP, deltaHPoT, and deltaSPoT.
+	readonly deltaHP?: Percentage;	// negative for damage / positive for heal
+	readonly deltaSP?: Percentage;	// negative for damage / positive for heal
+
+	// over-time effect
+	readonly turns?: Turns;
+	readonly deltaHPoT?: Percentage;
+	readonly deltaSPoT?: Percentage;
+	readonly mods?: Modifier[];
+
+	readonly AID: ShotID;
+}
+
+type ActiveSkillDef = DoseSkillDef | ShotSkillDef;
+
+interface PassiveSkillDef {
+	readonly usage: "passive";
+	readonly range?: never;
+	readonly cost: number;
+
+	// instant effect
+	readonly tags?: never;
+	readonly deltaHP?: never;
+	readonly deltaSP?: never;
+
+	// over-time effect
+	readonly turns?: never;
+	readonly deltaHPoT?: never;
+	readonly deltaSPoT?: never;
+	readonly mods: Modifier[];
+
+	readonly AID?: never;
+}
+
+type SkillDef = ActiveSkillDef | PassiveSkillDef;
 
 const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 	Dummy: {
-		tags: [],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 0,
-		cost: 999,
+		usage: "single-hostile",
 		range: 0,
-		effect: "Damage",
-		action: "Charge"
+		cost: 999,
+		AID: "Charge"
 	},
 	Swing: {
-		tags: [TAG.Melee],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 100,
-		cost: 14,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Charge"
+		cost: 14,
+		tags: tags(TAG.Melee),
+		deltaHP: -100,
+		AID: "Charge"
 	},
 	Slash: {
-		tags: [TAG.Melee, TAG.Slash],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 110,
-		cost: 15,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Charge"
+		cost: 15,
+		tags: tags(TAG.Melee, TAG.Slash),
+		deltaHP: -110,
+		AID: "Charge"
 	},
 	CutThrough: {
-		tags: [TAG.Melee, TAG.Slash],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 100,
-		cost: 20,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "GoBehind"
+		cost: 20,
+		tags: tags(TAG.Melee, TAG.Slash),
+		deltaHP: -100,
+		AID: "GoBehind"
 	},
 	Sweep: {
-		tags: [TAG.Melee, TAG.Slash],
-		usage: USAGE.SURROUND_HOSTILE,
-		power: 100,
-		cost: 20,
+		usage: "surround-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Nova"
+		cost: 20,
+		tags: tags(TAG.Melee, TAG.Slash),
+		deltaHP: -100,
+		AID: "Nova"
 	},
 	Crash: {
-		tags: [TAG.Melee, TAG.Blunt],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 110,
-		cost: 15,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Charge"
+		cost: 15,
+		tags: tags(TAG.Melee, TAG.Blunt),
+		deltaHP: -110,
+		AID: "Charge"
 	},
 	Bash: {
-		tags: [TAG.Melee, TAG.Blunt],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 100,
-		cost: 20,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Knockback"
+		cost: 20,
+		tags: tags(TAG.Melee, TAG.Blunt),
+		deltaHP: -100,
+		AID: "Knockback"
 	},
 	Stab: {
-		tags: [TAG.Melee, TAG.Pierce],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 110,
-		cost: 15,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Charge"
+		cost: 15,
+		tags: tags(TAG.Melee, TAG.Pierce),
+		deltaHP: -110,
+		AID: "Charge"
 	},
 	Thrust: {
-		tags: [TAG.Melee, TAG.Pierce],
-		usage: USAGE.STRAIGHT_HOSTILE,
-		power: 100,
-		cost: 15,
+		usage: "straight-hostile",
 		range: 2,
-		effect: "Damage",
-		action: "Laser"
+		cost: 15,
+		tags: tags(TAG.Melee, TAG.Pierce),
+		deltaHP: -100,
+		AID: "Laser"
 	},
 	ShieldBash: {
-		tags: [TAG.Shield],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 100,
-		cost: 20,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Charge"
+		cost: 20,
+		tags: tags(TAG.Shield),
+		deltaHP: -100,
+		AID: "Charge"
 	},
 	ShieldCharge: {
-		tags: [TAG.Shield],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 100,
-		cost: 24,
+		usage: "single-hostile",
 		range: 1,
-		effect: "Damage",
-		action: "Trample"
+		cost: 24,
+		tags: tags(TAG.Shield),
+		deltaHP: -100,
+		AID: "Trample"
 	},
 	Shoot: {
-		tags: [TAG.Shoot],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 100,
-		cost: 20,
+		usage: "single-hostile",
 		range: 3,
-		effect: "Damage",
-		action: "Shoot"
+		cost: 20,
+		tags: tags(TAG.Shoot),
+		deltaHP: -100,
+		AID: "Shoot"
 	},
 	PoisonArrow: {
-		tags: [TAG.Shoot],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 60,
-		cost: 20,
+		usage: "single-hostile",
 		range: 3,
-		effect: "DamageOverTime",
-		action: "Shoot"
+		cost: 20,
+		tags: tags(TAG.Shoot),
+		deltaHP: -60,
+		turns: 2,
+		deltaHPoT: -30,
+		AID: "Shoot"
 	},
 	// MAGIC
 	IceSpear: {
-		tags: [TAG.Magic, TAG.Cold],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 80,
-		cost: 16,
+		usage: "single-hostile",
 		range: 5,
-		effect: "DamageHPandSP",
-		action: "Shoot"
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Cold),
+		deltaHP: -80,
+		deltaSP: -40,
+		AID: "Shoot"
 	},
 	DrainLife: {
-		tags: [TAG.Magic, TAG.Life],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 80,
-		cost: 16,
+		usage: "single-hostile",
 		range: 5,
-		effect: "Damage",
-		action: "Drain"
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		deltaHP: -80,
+		AID: "Drain"
 	},
 	FireBall: {
-		tags: [TAG.Magic, TAG.Fire],
-		usage: USAGE.SINGLE_HOSTILE,
-		power: 100,
-		cost: 16,
+		usage: "single-hostile",
 		range: 5,
-		effect: "Damage",
-		action: "Explode"
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Fire),
+		deltaHP: -100,
+		AID: "Explode"
 	},
 	LightningLaser: {
-		tags: [TAG.Magic, TAG.Lightning],
-		usage: USAGE.STRAIGHT_HOSTILE,
-		power: 100,
-		cost: 16,
+		usage: "straight-hostile",
 		range: 5,
-		effect: "Damage",
-		action: "Laser"
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Lightning),
+		deltaHP: -100,
+		AID: "Laser"
 	},
 	FireNova: {
-		tags: [TAG.Magic, TAG.Fire],
-		usage: USAGE.SURROUND_HOSTILE,
-		power: 100,
-		cost: 16,
+		usage: "surround-hostile",
 		range: 2,
-		effect: "Damage",
-		action: "Nova"
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Fire),
+		deltaHP: -100,
+		AID: "Nova"
 	},
+	//================================================================================
+	// Heal Skills
+	//================================================================================
 	Heal: {
-		tags: [TAG.Magic, TAG.Life],
-		usage: USAGE.SINGLE_FRIENDLY,
-		power: 100,
-		cost: 24,
+		usage: "single-friendly",
 		range: 3,
-		effect: "Heal",
-		action: "Shoot"
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		deltaHP: 100,
+		AID: "Shoot"
 	},
 	PartyHeal: {
-		tags: [TAG.Magic, TAG.Life],
-		usage: USAGE.SURROUND_FRIENDLY,
-		power: 100,
-		cost: 24,
+		usage: "surround-friendly",
 		range: 1,
-		effect: "Heal",
-		action: "Nova"
+		cost: 24,
+		tags: tags(TAG.Magic, TAG.Life),
+		deltaHP: 100,
+		AID: "Nova"
 	},
 	FirstAid: {
-		tags: [TAG.Alchemy, TAG.Life],
-		usage: USAGE.SINGLE_FRIENDLY,
-		power: 50,
-		cost: 24,
+		usage: "single-friendly",
 		range: 1,
-		effect: "HealOverTime",
-		action: "Charge"
-	},
-	PotionOfHealth: {
-		tags: [TAG.Alchemy, TAG.Life],
-		usage: USAGE.DOSE,
-		power: 100,
 		cost: 24,
-		effect: "Heal",
-		action: "Dose"
+		tags: tags(TAG.Alchemy, TAG.Life),
+		deltaHP: 50,
+		turns: 2,
+		deltaHPoT: 25,
+		AID: "Charge"
+	},
+	//================================================================================
+	// Buff Skills
+	//================================================================================
+	Empower: {
+		usage: "single-friendly",
+		range: 3,
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		turns: 2,
+		mods: [{ type: "outgoing", level: 4, tags: tags(TAG.Melee) }],
+		AID: "Shoot"
+	},
+	Enhance: {
+		usage: "single-friendly",
+		range: 3,
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		turns: 2,
+		mods: [{ type: "outgoing", level: 4, tags: tags(TAG.Throw, TAG.Shoot) }],
+		AID: "Shoot"
+	},
+	Enlighten: {
+		usage: "single-friendly",
+		range: 3,
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		turns: 2,
+		mods: [{ type: "outgoing", level: 4, tags: tags(TAG.Magic) }],
+		AID: "Shoot"
+	},
+	Absorber: {
+		usage: "single-friendly",
+		range: 3,
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		turns: 2,
+		mods: [{ type: "incoming", level: 4, tags: tags(TAG.Melee) }],
+		AID: "Shoot"
+	},
+	Shelter: {
+		usage: "single-friendly",
+		range: 3,
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		turns: 2,
+		mods: [{ type: "incoming", level: 4, tags: tags(TAG.Throw, TAG.Shoot) }],
+		AID: "Shoot"
+	},
+	Barrier: {
+		usage: "single-friendly",
+		range: 3,
+		cost: 16,
+		tags: tags(TAG.Magic, TAG.Life),
+		turns: 2,
+		mods: [{ type: "incoming", level: 4, tags: tags(TAG.Magic) }],
+		AID: "Shoot"
+	},
+	//================================================================================
+	// Dose Skills
+	//================================================================================
+	PotionOfHealth: {
+		usage: "dose",
+		cost: 24,
+		tags: tags(TAG.Alchemy, TAG.Life),
+		deltaHP: 100,
+		AID: "Dose"
 	},
 	PotionOfRegeneration: {
-		tags: [TAG.Alchemy, TAG.Life],
-		usage: USAGE.DOSE,
-		power: 75,
+		usage: "dose",
 		cost: 24,
-		effect: "HealOverTime",
-		action: "Dose"
+		tags: tags(TAG.Alchemy, TAG.Life),
+		deltaHP: 50,
+		turns: 2,
+		deltaHPoT: 50,
+		AID: "Dose"
+	},
+	PotionOfStrength: {
+		usage: "dose",
+		cost: 24,
+		tags: tags(TAG.Alchemy, TAG.Life),
+		turns: 3,
+		mods: [{ type: "outgoing", level: 4, tags: tags(TAG.Melee) }],
+		AID: "Dose"
+	},
+	PotionOfDexterity: {
+		usage: "dose",
+		cost: 24,
+		tags: tags(TAG.Alchemy, TAG.Life),
+		turns: 3,
+		mods: [{ type: "outgoing", level: 4, tags: tags(TAG.Throw, TAG.Shoot) }],
+		AID: "Dose"
+	},
+	PotionOfIntelligence: {
+		usage: "dose",
+		cost: 24,
+		tags: tags(TAG.Alchemy, TAG.Life),
+		turns: 3,
+		mods: [{ type: "outgoing", level: 4, tags: tags(TAG.Magic) }],
+		AID: "Dose"
 	},
 	//================================================================================
-	// Passive Skills - power: 1=7%, 2=15%, 3=23%, 4=32%
+	// Passive Skills - level: 1=7%, 2=15%, 3=23%, 4=32%
 	//================================================================================
 	PathToWarrior: {
-		tags: [TAG.Melee],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
+		mods: [{ type: "outgoing", level: 2, tags: tags(TAG.Melee) }]
 	},
 	PathToNinja: {
-		tags: [TAG.Throw],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
+		mods: [{ type: "outgoing", level: 2, tags: tags(TAG.Throw) }]
 	},
 	PathToArcher: {
-		tags: [TAG.Shoot],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
+		mods: [{ type: "outgoing", level: 2, tags: tags(TAG.Shoot) }]
 	},
 	PathToMage: {
-		tags: [TAG.Magic],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
+		mods: [{ type: "outgoing", level: 2, tags: tags(TAG.Magic) }]
 	},
 	PathToAlchemist: {
-		tags: [TAG.Alchemy],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
+		mods: [{ type: "outgoing", level: 2, tags: tags(TAG.Alchemy) }]
 	},
 
 	Defence: {
-		tags: [TAG.Melee],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Defence"
+		mods: [{ type: "incoming", level: 2, tags: tags(TAG.Melee) }]
 	},
 	Dodge: {
-		tags: [TAG.Throw, TAG.Shoot],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Defence"
+		mods: [{ type: "incoming", level: 2, tags: tags(TAG.Throw, TAG.Shoot) }]
 	},
 	Meditation: {
-		tags: [TAG.Magic],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Defence"
+		mods: [{ type: "incoming", level: 2, tags: tags(TAG.Magic) }]
 	},
 	Healthy: {
-		tags: [TAG.Alchemy],
-		usage: USAGE.PASSIVE,
-		power: 2,
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Defence"
+		mods: [{ type: "incoming", level: 2, tags: tags(TAG.Alchemy) }]
 	},
 
-	AvatarOfFire: {
-		tags: [TAG.Fire],
-		usage: USAGE.PASSIVE,
-		power: 4,
+	AffinityToFire: {
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
+		mods: [
+			{ type: "outgoing", level: 3, tags: tags(TAG.Fire) },
+			{ type: "outgoing", level: -3, tags: tags(TAG.Cold, TAG.Lightning) },
+			{ type: "incoming", level: 3, tags: tags(TAG.Fire) }
+		]
 	},
-	AvatarOfCold: {
-		tags: [TAG.Cold],
-		usage: USAGE.PASSIVE,
-		power: 4,
+	AffinityToCold: {
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
+		mods: [
+			{ type: "outgoing", level: 3, tags: tags(TAG.Cold) },
+			{ type: "outgoing", level: -3, tags: tags(TAG.Fire, TAG.Lightning) },
+			{ type: "incoming", level: 3, tags: tags(TAG.Cold) }
+		]
 	},
-	AvatarOfLightning: {
-		tags: [TAG.Lightning],
-		usage: USAGE.PASSIVE,
-		power: 4,
+	AffinityToLightning: {
+		usage: "passive",
 		cost: 10,
-		effect: "Aura",
-		action: "Offence"
-	},
-
-	ResistFire: {
-		tags: [TAG.Fire],
-		usage: USAGE.PASSIVE,
-		power: 4,
-		cost: 10,
-		effect: "Aura",
-		action: "Defence"
-	},
-	ResistCold: {
-		tags: [TAG.Cold],
-		usage: USAGE.PASSIVE,
-		power: 4,
-		cost: 10,
-		effect: "Aura",
-		action: "Defence"
-	},
-	ResistLightning: {
-		tags: [TAG.Lightning],
-		usage: USAGE.PASSIVE,
-		power: 4,
-		cost: 10,
-		effect: "Aura",
-		action: "Defence"
+		mods: [
+			{ type: "outgoing", level: 3, tags: tags(TAG.Lightning) },
+			{ type: "outgoing", level: -3, tags: tags(TAG.Fire, TAG.Cold) },
+			{ type: "incoming", level: 3, tags: tags(TAG.Lightning) }
+		]
 	}
 };

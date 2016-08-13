@@ -2,7 +2,7 @@ type Gold = number;
 type Weight = number;
 
 const PARTY_MAX = 6;	// maximum number of active party members.
-const SKILL_MAX = 6;	// maximum number of active skills per character.
+const SKILL_MAX = 10;	// maximum number of active skills per character.
 const ITEM_DISCOUNT_TO_SELL = 0.5;
 
 //================================================================================
@@ -11,8 +11,9 @@ const ITEM_DISCOUNT_TO_SELL = 0.5;
 
 const TAG2NAME = range(TAG.MAX).map(n => _("Tag", TAG[n]));
 
-function tags2str(tags: TAG[]): string {
-	return tags.map(tag => TAG2NAME[tag].localized).join(", ");
+interface Tags {
+	tags: TAG[];
+	bits: number;
 }
 
 function tags2bits(tags: TAG[]): number {
@@ -23,21 +24,32 @@ function tags2bits(tags: TAG[]): number {
 	return bits;
 }
 
+function tags(...tags: TAG[]): Tags {
+	return {
+		tags: tags,
+		bits: tags2bits(tags)
+	};
+}
+
 const TAGBITS_WEAPON = tags2bits([TAG.Melee, TAG.Throw, TAG.Shoot, TAG.Magic, TAG.Alchemy, TAG.Slash, TAG.Blunt, TAG.Pierce]);
 const TAGBITS_ARMORS = tags2bits([TAG.Shield, TAG.Head, TAG.Body, TAG.Arms, TAG.Legs]);
+
+function tags2str(tags: Tags): string {
+	return tags.tags.map(tag => TAG2NAME[tag].localized).join(", ");
+}
 
 //================================================================================
 // Target
 //================================================================================
 
-function isHostile(target: USAGE): boolean {
+function isHostile(target: Usage): boolean {
 	switch (target) {
-		case USAGE.SINGLE_FRIENDLY:
-		case USAGE.STRAIGHT_FRIENDLY:
-		case USAGE.SURROUND_FRIENDLY:
-			return false;
-		default:
+		case "single-hostile":
+		case "straight-hostile":
+		case "surround-hostile":
 			return true;
+		default:
+			return false;
 	}
 }
 
@@ -115,23 +127,24 @@ interface ItemArchive {
 }
 
 class Item implements ToJSON<ItemArchive> {
-	private def: ItemDef;
-	public baseName: Word;
-	public spec: Word;
-	public tagbits: number;
+	public readonly IID: ItemID;
+	public readonly def: ItemDef;
+	public readonly baseName: Word;
+	public readonly spec: Word;
 	public enchants: Enchant[];
 
 	constructor(
-		public IID: ItemID,
+		IID: ItemID,
 		enchants?: Enchant[]
 	) {
-		this.def = ITEMS[IID];
-		if (!this.def) {
+		let def = ITEMS[IID];
+		if (!def) {
 			throw new RangeError(`Item not found: "${IID}"`);
 		}
+		this.IID = IID;
+		this.def = def;
 		this.baseName = Item.nameOf(IID);
 		this.spec = Item.specOf(IID);
-		this.tagbits = tags2bits(this.def.tags);
 		if (enchants) {
 			this.enchants = enchants;
 		} else if (this.def.enchants) {
@@ -216,36 +229,34 @@ interface SkillArchive {
 }
 
 class Skill implements ToJSON<SkillArchive> {
-	private def: SkillDef;
-	public name: Word;
-	public spec: Word;
-	public tagbits: number;
+	public readonly SID: SkillID;
+	public readonly def: SkillDef;
+	public readonly name: Word;
+	public readonly spec: Word;
 
-	constructor(public SID: SkillID) {
-		this.def = SKILLS[SID];
-		if (!this.def) {
+	constructor(SID: SkillID) {
+		let def = SKILLS[SID];
+		if (!def) {
 			throw new RangeError(`Skill not found: "${SID}"`);
 		}
+		this.SID = SID;
+		this.def = def;
 		this.name = Skill.nameOf(SID);
 		this.spec = Skill.specOf(SID);
-		this.tagbits = tags2bits(this.def.tags);
 	}
 
 	get tags() { return this.def.tags; }
-	get rawCost() { return this.def.cost; }
-	get rawRange() { return this.def.range; }
-	get rawPower() { return this.def.power; }
 	get usage() { return this.def.usage; }
 	get hostile() { return isHostile(this.def.usage); }
-	get effect() { return this.def.effect; }
-	get action() { return this.def.action; }
+	get action() { return this.def.AID; }
 
-	get isActive(): boolean { return this.effect !== "Aura"; }
-	get isPassive(): boolean { return this.effect === "Aura"; }
+	get isActive(): boolean { return this.usage !== "passive"; }
+	get isPassive(): boolean { return this.usage === "passive"; }
 
 	match(item: Item): boolean {
-		let required = (this.tagbits & TAGBITS_WEAPON);
-		return (required & item.tagbits) === required;
+		if (!this.def.tags) { return true; }
+		let required = (this.def.tags.bits & TAGBITS_WEAPON);
+		return (required & item.def.tags.bits) === required;
 	}
 
 	static nameOf(SID: SkillID): Word {
@@ -464,18 +475,12 @@ class Character implements ToJSON<CharacterArchive>, WH {
 
 	costOf(skill: Skill): Optional<number> {
 		if (!skill) { return undefined; }
-		return skill.rawCost - this.INT;	// XXX: Handle passive skills that increase or decrease cost of skills.
+		return skill.def.cost - this.INT;	// XXX: Handle passive skills that increase or decrease cost of skills.
 	}
 
 	rangeOf(skill: Skill): Optional<number> {
 		if (!skill) { return undefined; }
-		return skill.rawRange;	// XXX: Handle passive skills and equipments that increase range of skills.
-	}
-
-	// TODO: 攻撃力算出式を考える。基礎パラメータ値も加味すべきか？それとも武器の装備時にすでにパラメータは要求されているので不要か？
-	powerOf(skill: Skill): Optional<number> {
-		let item = this.itemFor(skill);
-		return item ? (item.ATK * skill.rawPower / 100) : undefined;
+		return skill.def.range;	// XXX: Handle passive skills and equipments that increase range of skills.
 	}
 
 	itemFor(skill: Skill): Optional<Item> {

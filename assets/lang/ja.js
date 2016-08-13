@@ -93,7 +93,9 @@
 		Name: "名前",
 		INT: "知力",
 		DEX: "敏捷",
-		STR: "筋力"
+		STR: "筋力",
+		outgoing: "効力",
+		incoming: "耐性"
 	},
 	Tag: {
 		Melee: "近接",
@@ -376,6 +378,30 @@
 			Name: "応急手当",
 			Spec: "味方単体のHPを回復し、さらに継続的に回復します。"
 		},
+		Empower: {
+			Name: "増強",
+			Spec: "味方単体の近接効力を増加させます。"
+		},
+		Enhance: {
+			Name: "研摩",
+			Spec: "味方単体の投擲・射撃効力を増加させます。"
+		},
+		Enlighten: {
+			Name: "啓発",
+			Spec: "味方単体の魔術効力を増加させます。"
+		},
+		Absorber: {
+			Name: "緩衝",
+			Spec: "味方単体の近接耐性を増加させます。"
+		},
+		Shelter: {
+			Name: "庇護",
+			Spec: "味方単体の投擲・射撃耐性を増加させます。"
+		},
+		Barrier: {
+			Name: "結界",
+			Spec: "味方単体の魔術耐性を増加させます。"
+		},
 		PotionOfHealth: {
 			Name: "傷薬",
 			Spec: "自分自身のHPを回復します。"
@@ -383,6 +409,18 @@
 		PotionOfRegeneration: {
 			Name: "再生薬",
 			Spec: "自分自身のHPを回復し、さらに継続的に回復します。"
+		},
+		PotionOfStrength: {
+			Name: "筋力薬",
+			Spec: "自分自身の近接効力を増加させます。"
+		},
+		PotionOfDexterity: {
+			Name: "敏捷薬",
+			Spec: "自分自身の投擲・射撃効力を増加させます。"
+		},
+		PotionOfIntelligence: {
+			Name: "知力薬",
+			Spec: "自分自身の魔術効力を増加させます。"
 		},
 		PathToWarrior: {
 			Name: "戦士の心得",
@@ -420,29 +458,17 @@
 			Name: "健康",
 			Spec: "薬物耐性が上昇します。"
 		},
-		AvatarOfFire: {
-			Name: "火炎の化身",
-			Spec: "火炎効力が上昇します。"
+		AffinityToFire: {
+			Name: "火炎親和性",
+			Spec: "火炎の効力と耐性が上昇しますが、冷気と電気の効力が低下します。"
 		},
-		AvatarOfCold: {
-			Name: "冷気の化身",
-			Spec: "冷気効力が上昇します。"
+		AffinityToCold: {
+			Name: "冷気親和性",
+			Spec: "冷気の効力と耐性が上昇しますが、火炎と電気の効力が低下します。"
 		},
-		AvatarOfLightning: {
-			Name: "電気の化身",
-			Spec: "電気効力が上昇します。"
-		},
-		ResistFire: {
-			Name: "火炎耐性",
-			Spec: "火炎耐性が上昇します。"
-		},
-		ResistCold: {
-			Name: "冷気耐性",
-			Spec: "冷気耐性が上昇します。"
-		},
-		ResistLightning: {
-			Name: "電気耐性",
-			Spec: "電気耐性が上昇します。"
+		AffinityToLightning: {
+			Name: "電気親和性",
+			Spec: "電気の効力と耐性が上昇しますが、火炎と冷気の効力が低下します。"
 		}
 	},
 	Adventurer: {
