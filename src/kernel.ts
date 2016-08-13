@@ -3,7 +3,6 @@ const DEBUG = (typeof NDEBUG === "undefined");
 const TOUCH_ONLY = false;	// set true to emulate touch-only devices.
 
 type Optional<T> = T | undefined;
-const never = undefined as never;	// HACK: used in toJSON/fromJSON.
 
 //interface Timestamp extends Number { Timestamp; };
 type Timestamp = number;
@@ -98,18 +97,22 @@ interface ToJSON<JSON> {
 	toJSON(): JSON;
 }
 
-function toJSON<JSON, ALT>(arr: (ToJSON<JSON> | undefined)[], alt: ALT): (JSON | ALT)[] {
+function toJSON<JSON>(arr: ToJSON<JSON>[]): JSON[];
+function toJSON<JSON>(arr: (ToJSON<JSON> | undefined)[]): (JSON | undefined)[];
+function toJSON<JSON>(arr: (ToJSON<JSON> | undefined)[]) {
 	if (!arr) { return []; }
-	return arr.map(item => (item != null ? item.toJSON() : alt));
+	return arr.map(item => (item != null ? item.toJSON() : undefined));
 }
 
 interface FromJSON<JSON, TYPE> {
 	fromJSON(json: JSON): TYPE;
 }
 
-function fromJSON<JSON, TYPE, ALT>(type: FromJSON<JSON, TYPE>, arr: (JSON | undefined)[], alt: ALT): (TYPE | ALT)[] {
+function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: JSON[]): TYPE[];
+function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: (JSON | undefined)[]): (TYPE | undefined)[];
+function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: (JSON | undefined)[]) {
 	if (!arr) { return []; }
-	return arr.map(json => (json != null ? type.fromJSON(json) : alt));
+	return arr.map(json => (json != null ? type.fromJSON(json) : undefined));
 }
 
 function str(value: any): string {

@@ -264,9 +264,9 @@ function loadData(): Optional<Data> {
 		let json = parse(value) as DataArchive;
 		return {
 			shop: json.shop || {},
-			warehouse: fromJSON(Item, json.warehouse, never),
-			reservers: fromJSON(Character, json.reservers, never),
-			party: fromJSON(Character, json.party, undefined),
+			warehouse: fromJSON(Item, json.warehouse),
+			reservers: fromJSON(Character, json.reservers),
+			party: fromJSON(Character, json.party),
 			gold: json.gold || 0
 		};
 	} catch (e) {

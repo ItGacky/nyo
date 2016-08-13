@@ -205,14 +205,14 @@ class Item implements ToJSON<ItemArchive> {
 	static fromJSON(o: ItemArchive): Item {
 		return new Item(
 			o.IID,
-			fromJSON(Enchant, o.enchants, never)
+			fromJSON(Enchant, o.enchants)
 		);
 	}
 
 	toJSON(): ItemArchive {
 		return {
 			IID: this.IID,
-			enchants: toJSON(this.enchants, never)
+			enchants: toJSON(this.enchants)
 		};
 	}
 }
@@ -537,9 +537,9 @@ class Character implements ToJSON<CharacterArchive>, WH {
 			o.INT,
 			o.DEX,
 			o.STR,
-			fromJSON(Item, o.equipments, never),
-			fromJSON(Skill, o.skills, never),
-			fromJSON(Skill, o.known, never),
+			fromJSON(Item, o.equipments),
+			fromJSON(Skill, o.skills),
+			fromJSON(Skill, o.known),
 			o.image
 		);
 	}
@@ -551,9 +551,9 @@ class Character implements ToJSON<CharacterArchive>, WH {
 			INT: this.INT,
 			DEX: this.DEX,
 			STR: this.STR,
-			equipments: toJSON(this.equipments, never),
-			skills: toJSON(this.skills, never),
-			known: toJSON(this.known, never),
+			equipments: toJSON(this.equipments),
+			skills: toJSON(this.skills),
+			known: toJSON(this.known),
 			image: this.src
 		};
 	}
