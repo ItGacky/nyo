@@ -60,6 +60,10 @@ const { keys } = Object;
 const { abs, min, max, floor, ceil, round, pow, sin, cos, atan2, PI, random } = Math;
 const { parse, stringify } = JSON;
 
+function map<T, U>(arr: T[] | undefined, fn: (o: T) => U): U[] | undefined {
+	return arr ? arr.map(fn) : undefined;
+}
+
 // XXX: should keep the last 'when' in onDraw and return the value instead?
 function now(): Timestamp {
 	return performance.now() as Timestamp;	// NOTE: required performance as "this".

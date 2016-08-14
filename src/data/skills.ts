@@ -56,13 +56,13 @@ interface PassiveSkillDef {
 
 	// instant effect
 	readonly tags?: never;
-	readonly deltaHP?: never;
-	readonly deltaSP?: never;
+	readonly deltaHP?: never;	// TODO: should mean incleasing maxHP.
+	readonly deltaSP?: never;	// XXX: not sure the reasonable meaning. note that incleasing maxSP can be done by negative cost.
 
 	// over-time effect
 	readonly turns?: never;
-	readonly deltaHPoT?: never;
-	readonly deltaSPoT?: never;
+	readonly deltaHPoT?: never;	// TODO: should mean continuous regeneration
+	readonly deltaSPoT?: never; // XXX: not sure the reasonable meaning.
 	readonly mods: Modifier[];
 
 	readonly AID?: never;

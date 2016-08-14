@@ -856,53 +856,46 @@
 		// Estimate effect of the current skill.
 		estimate(scene: Scene, target: Unit, skill: Skill): SkillEffect {
 			assert(this.isTarget(target, skill));
-			let item = this.ch.itemFor(skill);
-			let ATK = (item ? item.ATK : 0);
-			let DEF = target.DEF;
+			let item = assume(this.ch.itemFor(skill));
+			let { ATK } = item;
+			let { DEF } = target;
 			let { def } = skill;
 			let tagbits = def.tags ? def.tags.bits : 0;
 			let lvOut = this.getOutgoingLevel(tagbits);
 			let lvIn = target.getIncomingLevel(tagbits);
-			let lvInv = scene.getLevel(tagbits);
-			let turns = def.turns;
+			let lvEnv = scene.getLevel(tagbits);
 
-			let deltaHP = calcDelta(def.deltaHP, ATK, DEF, lvOut, lvIn, lvInv);
-			let deltaSP = calcDelta(def.deltaSP, ATK, DEF, lvOut, lvIn, lvInv);
-			let eot: EffectOverTime | undefined;
-			if (turns) {
-				let deltaHPoT = calcDelta(def.deltaHPoT, ATK, DEF, lvOut, lvIn, lvInv);
-				let deltaSPoT = calcDelta(def.deltaSPoT, ATK, DEF, lvOut, lvIn, lvInv);
-				let { mods } = def;
-				if (mods) {
-					mods = mods.map(m => ({
-						type: m.type,
-						level: adjustByLevel(m.level, lvOut, lvIn, lvInv),
-						tags: m.tags
-					}));
-				}
-				eot = {
-					turns,
-					deltaHPoT,
-					deltaSPoT,
-					mods
-				};
-			}
-			return {
-				target,
-				deltaHP,
-				deltaSP,
-				eot
-			};
-
-			function adjustByLevel(value: number, lvOut: number, lvIn: number, lvEnv: number): number {
+			function adjustByLevel(value: number): number {
+				// Use the target level for hostile skills, and the scene level for friendly skills.
 				let diff = lvOut - (value < 0 ? lvIn : lvEnv);
 				return ceil(value * pow(BASE_FOR_LEVEL, diff));
 			}
 
-			function calcDelta(delta: number | undefined, ATK: number, DEF: number, lvOut: number, lvIn: number, lvEnv: number): number | undefined {
+			function calcDelta(delta?: number): number | undefined {
 				if (!delta) { return undefined; }
-				return adjustByLevel(ATK * delta / 100 * (100 - DEF) / 100, lvOut, lvIn, lvEnv);
+				return adjustByLevel(ATK * delta / 100 * (100 - DEF) / 100);
 			}
+
+			function calcEoT(turns?: Turns): EffectOverTime | undefined {
+				if (!turns) { return undefined; }
+				return {
+					turns,
+					deltaHPoT: calcDelta(def.deltaHPoT),
+					deltaSPoT: calcDelta(def.deltaSPoT),
+					mods: map(def.mods, m => ({
+						type: m.type,
+						level: adjustByLevel(m.level),
+						tags: m.tags
+					}))
+				};
+			}
+
+			return {
+				target,
+				deltaHP: calcDelta(def.deltaHP),
+				deltaSP: calcDelta(def.deltaSP),
+				eot: calcEoT(def.turns)
+			};
 		}
 
 		// Use the skill to the target.
