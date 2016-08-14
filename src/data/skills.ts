@@ -175,6 +175,16 @@ const SKILLS: { [SID: string/*SkillID*/]: SkillDef } = {
 		deltaHPoT: -30,
 		AID: "Shoot"
 	},
+	OilArrow: {
+		usage: "single-hostile",
+		range: 3,
+		cost: 20,
+		tags: tags(TAG.Shoot),
+		deltaHP: -60,
+		turns: 2,
+		mods: [{ type: "incoming", level: -4, tags: tags(TAG.Fire) }],
+		AID: "Shoot"
+	},
 	// MAGIC
 	IceSpear: {
 		usage: "single-hostile",

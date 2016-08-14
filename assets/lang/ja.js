@@ -45,6 +45,7 @@
 		Clear: "全員を外す",
 		Revert: "元に戻す",
 		PartyFull: "パーティがいっぱいです。",
+		SkillFull: "スキル枠がいっぱいです",
 
 		Dungeon: "ダンジョン",
 
@@ -344,6 +345,10 @@
 		PoisonArrow: {
 			Name: "毒矢",
 			Spec: "敵単体に毒矢を放ち、継続ダメージを与えます。"
+		},
+		OilArrow: {
+			Name: "油矢",
+			Spec: "敵単体に矢を放ち、ダメージと共に火炎耐性を減少させます。"
 		},
 
 		IceSpear: {

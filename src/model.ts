@@ -248,7 +248,7 @@ class Skill implements ToJSON<SkillArchive> {
 	get tags() { return this.def.tags; }
 	get usage() { return this.def.usage; }
 	get hostile() { return isHostile(this.def.usage); }
-	get action() { return this.def.AID; }
+	get AID() { return this.def.AID; }
 
 	get isActive(): boolean { return this.usage !== "passive"; }
 	get isPassive(): boolean { return this.usage === "passive"; }
@@ -469,7 +469,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 		return this.equipments.reduce((total, item) => total + item.weight, 0);
 	}
 
-	get DEF(): number {
+	get DEF(): Percentage {
 		return 100 * (1 - this.equipments.reduce((total, item) => total * (1 - item.DEF / 100), 1));
 	}
 
@@ -495,7 +495,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 				}
 			}
 		}
-		return best;	/// XXX: Should return BareHands instead of undefined?
+		return best;	/// XXX: Should return "BareHands" instead of undefined?
 	}
 
 	static adventurer(key: string): Character {

@@ -46,7 +46,8 @@ interface String {
 	endsWith(searchString: string, position?: number): boolean;
 }
 
-interface Array<T> {
+// FIXME: noUnusedLocals complains 'unused T' in v2.0.0. The bug will be fixed in v2.1.0.
+interface ArrayES6<T> extends Array<T> {
 	find<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): T | undefined;
 	findIndex<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): number;
 }
@@ -60,8 +61,28 @@ const { keys } = Object;
 const { abs, min, max, floor, ceil, round, pow, sin, cos, atan2, PI, random } = Math;
 const { parse, stringify } = JSON;
 
-function map<T, U>(arr: T[] | undefined, fn: (o: T) => U): U[] | undefined {
-	return arr ? arr.map(fn) : undefined;
+function find<T, THIS>(
+	array: T[] | undefined,
+	predicate: (this: THIS, value: T, index: number, array: T[]) => boolean,
+	thisArg?: THIS
+): T | undefined {
+	return array ? (array as ArrayES6<T>).find(predicate, thisArg) : undefined;
+}
+
+function findIndex<T, THIS>(
+	array: T[] | undefined,
+	predicate: (this: THIS, value: T, index: number, array: T[]) => boolean,
+	thisArg?: THIS
+): number {
+	return array ? (array as ArrayES6<T>).findIndex(predicate, thisArg) : -1;
+}
+
+function map<T, U, THIS>(
+	array: T[] | undefined,
+	callback: (this: THIS, value: T, index: number, array: T[]) => U,
+	thisArg?: THIS
+): U[] | undefined {
+	return array ? array.map(callback, thisArg) : undefined;
 }
 
 // XXX: should keep the last 'when' in onDraw and return the value instead?
@@ -105,7 +126,6 @@ interface ToJSON<JSON> {
 function toJSON<JSON>(arr: ToJSON<JSON>[]): JSON[];
 function toJSON<JSON>(arr: (ToJSON<JSON> | undefined)[]): (JSON | undefined)[];
 function toJSON<JSON>(arr: (ToJSON<JSON> | undefined)[]) {
-	if (!arr) { return []; }
 	return arr.map(item => (item != null ? item.toJSON() : undefined));
 }
 
@@ -116,7 +136,6 @@ interface FromJSON<JSON, TYPE> {
 function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: JSON[]): TYPE[];
 function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: (JSON | undefined)[]): (TYPE | undefined)[];
 function fromJSON<JSON, TYPE>(type: FromJSON<JSON, TYPE>, arr: (JSON | undefined)[]) {
-	if (!arr) { return []; }
 	return arr.map(json => (json != null ? type.fromJSON(json) : undefined));
 }
 
@@ -696,23 +715,11 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 	assert(logicalHeight > 0);
 
 	function canvasX(e: MouseEvent): Pixel {
-		let x: number;
-		if (e.pageX === undefined) {
-			x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - canvas.offsetLeft;
-		} else {
-			x = e.pageX - canvas.offsetLeft;
-		}
-		return x * logicalWidth / canvas.offsetWidth;
+		return (e.pageX - canvas.offsetLeft) * logicalWidth / canvas.offsetWidth;
 	}
 
 	function canvasY(e: MouseEvent): Pixel {
-		let y: number;
-		if (e.pageY === undefined) {
-			y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop - canvas.offsetTop;
-		} else {
-			y = e.pageY - canvas.offsetTop;
-		}
-		return y * logicalHeight / canvas.offsetHeight;
+		return (e.pageY - canvas.offsetTop) * logicalHeight / canvas.offsetHeight;
 	}
 
 	function onMove(e: MouseEvent) {

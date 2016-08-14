@@ -514,7 +514,7 @@ class SwappableButton extends Button {
 		super.onDrag(x, y);
 		let { dragged, swapping} = this;
 		if (dragged && !swapping) {
-			let that = this.group.find(o => o !== this && o.contains(x, y) && !o.swapping);
+			let that = find(this.group, o => o !== this && o.contains(x, y) && !o.swapping);
 			if (that) {
 				let when = now();
 				this.onSwap(that, when);
@@ -1172,7 +1172,7 @@ class ScreenLogger extends Widget implements Logger {
 		let { logs } = this;
 		if (logs.length > 0) {
 			let expired = when - this.duration;
-			let keep = logs.findIndex(value => value.when > expired);
+			let keep = findIndex(logs, value => value.when > expired);
 			if (keep < 0) {
 				logs.length = 0;
 			} else {

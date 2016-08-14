@@ -121,7 +121,7 @@ function addConfigButton(parent: Composite): Button {
 				Word.language = row.src[1];
 			}
 		);
-		lang.selected = lang.rows.find(o => o.src[1] === Word.language);
+		lang.selected = find(lang.rows, o => o.src[1] === Word.language);
 		lang.attach(self);
 
 		addSlider(0, _("Config", "Volume"), config.volume);
@@ -190,17 +190,14 @@ function addConfigButton(parent: Composite): Button {
 
 //================================================================================
 
-System.main = function(canvas: HTMLCanvasElement, _resume: boolean): void {
+System.main = function(canvas: HTMLCanvasElement, resume: boolean): void {
 	let dummy = new Image();
 	dummy.src = URL_ASSETS + "dummy.png";
 	Picture.DUMMY = dummy;
 
 	let root = new Composite();
 
-	// TODO: If resume === true, should restore components. It requires deserialize from class name.
-	//root.children = fromJSON(Component, parse(System.getLocalStorage(CHECKPOINT_KEY)));
-
-	let scene = new Composite();
+	let scene = (resume ? loadGame() : newGame());
 	scene.attach(root);
 	let log = new ScreenLogger(LOG_X, LOG_Y, LOG_W, LOG_H, LOG_DURATION, LOG_STYLE);
 	log.attach(root);
@@ -216,17 +213,32 @@ System.main = function(canvas: HTMLCanvasElement, _resume: boolean): void {
 		new FadeIn(new Title.Scene()).attach(scene);
 	};
 
-	loadConfig();
-
-	reset();
-	run(canvas, root, config);
-
 	System.checkpoint = function(): void {
 		saveConfig();
-		// TODO: This should save components. It requires serialize with class name.
-		//System.setLocalStorage(CHECKPOINT_KEY, stringify( { root: toJSON(root.children) } ));
+		saveGame(scene);
 	};
+
+	loadConfig();
+	reset();
+	run(canvas, root, config);
 };
+
+//================================================================================
+
+function newGame(): Composite {
+	return new Composite();
+}
+
+function loadGame(): Composite {
+	// TODO: should deserialize all objects.
+	// return fromJSON(Component, parse(System.getLocalStorage(CHECKPOINT_KEY)));
+	return newGame();
+}
+
+function saveGame(_scene: Component): void {
+	// TODO: This should serialize all objects.
+	// System.setLocalStorage(CHECKPOINT_KEY, stringify( { scene: toJSON(scene.children) } ));
+}
 
 //================================================================================
 

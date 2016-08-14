@@ -45,6 +45,7 @@
 		Clear: "Clear",
 		Revert: "Revert",
 		PartyFull: "Party is full.",
+		SkillFull: "Skill is full.",
 
 		Dungeon: "Dungeon",
 
@@ -345,6 +346,10 @@
 			Name: "Poison Arrow",
 			Spec: "Shoot a projectile to an enemy, and also deals damage over time."
 		},
+		OilArrow: {
+			Name: "Oil Arrow",
+			Spec: "Shoot a projectile to an enemy, and decrease resistance to fire."
+		},
 
 		IceSpear: {
 			Name: "Ice Spear",
@@ -392,15 +397,15 @@
 		},
 		Absorber: {
 			Name: "Absorber",
-			Spec: "Increase resistance of melee by a member."
+			Spec: "Increase resistance to melee by a member."
 		},
 		Shelter: {
 			Name: "Shelter",
-			Spec: "Increase resistance of throwing and shooting by a member."
+			Spec: "Increase resistance to throwing and shooting by a member."
 		},
 		Barrier: {
 			Name: "Barrier",
-			Spec: "Increase resistance of magic by a member."
+			Spec: "Increase resistance to magic by a member."
 		},
 		PotionOfHealth: {
 			Name: "Potion of Health",
@@ -460,15 +465,15 @@
 		},
 		AffinityToFire: {
 			Name: "Affinity to Fire",
-			Spec: "Increase power and resistance of fire, but decrease power of cold and lightning."
+			Spec: "Increase power and resistance to fire, but decrease power of cold and lightning."
 		},
 		AffinityToCold: {
 			Name: "Affinity to Cold",
-			Spec: "Increase power and resistance of cold, but decrease power of fire and lightning."
+			Spec: "Increase power and resistance to cold, but decrease power of fire and lightning."
 		},
 		AffinityToLightning: {
 			Name: "Affinity to Lightning",
-			Spec: "Increase power and resistance of lightning, but decrease power of fire and cold."
+			Spec: "Increase power and resistance to lightning, but decrease power of fire and cold."
 		}
 	},
 	Adventurer: {

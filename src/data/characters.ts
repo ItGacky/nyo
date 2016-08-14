@@ -12,7 +12,7 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		INT: 4,
 		DEX: 4,
 		STR: 7,
-		equipments: ["Mace", "PlateArmor", "Mace", "FirstAidKit"],
+		equipments: ["Mace", "PlateArmor", "FirstAidKit"],
 		skills: ["Swing", "Crash", "Bash", "PathToWarrior", "PotionOfRegeneration"],
 		image: "nazrin"
 	},
@@ -37,7 +37,7 @@ const ADVENTURERS: { [key: string]: CharacterDef } = {
 		DEX: 6,
 		STR: 6,
 		equipments: ["LongBow", "LetherArmor", "FirstAidKit"],
-		skills: ["Shoot", "PoisonArrow", "FirstAid", "PotionOfDexterity"],
+		skills: ["Shoot", "PoisonArrow", "OilArrow", "FirstAid", "PotionOfDexterity"],
 		image: "marisa"
 	},
 	Healer: {

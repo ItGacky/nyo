@@ -309,8 +309,8 @@
 
 	// Dense hex-coordinate
 	interface Hex {
-		xH: Coord;
-		yH: Coord;
+		readonly xH: Coord;
+		readonly yH: Coord;
 	}
 
 	function shift({ xH, yH }: Hex, dir: DIR): Hex {
@@ -775,24 +775,24 @@
 			this.skill = (primary || Skill.DUMMY);
 		}
 
-		get name(): string { return this.ch.name; }
-		get level(): number { return this.ch.level; }
-		get INT(): number { return this.ch.INT; }
-		get DEX(): number { return this.ch.DEX; }
-		get STR(): number { return this.ch.STR; }
-		get maxHP(): number { return this.ch.HP; }
-		get maxSP(): number { return this.ch.SP; }
-		get availSP(): number { return max(0, this.ch.SP - this.ch.reservedSP); }
+		get name() { return this.ch.name; }
+		get level() { return this.ch.level; }
+		get INT() { return this.ch.INT; }
+		get DEX() { return this.ch.DEX; }
+		get STR() { return this.ch.STR; }
+		get maxHP() { return this.ch.HP; }
+		get maxSP() { return this.ch.SP; }
+		get availSP() { return max(0, this.ch.SP - this.ch.reservedSP); }
 
-		get step(): number { return this.ch.step; }
-		get ZoC(): number { return this.ch.ZoC; }
-		get DEF(): number { return this.ch.DEF; }
+		get step() { return this.ch.step; }
+		get ZoC() { return this.ch.ZoC; }
+		get DEF() { return this.ch.DEF; }
 
 		// TODO: ch.skills と対応したキャッシュ構造を持たせる。スキルに最適な武器や攻撃力をキャッシュしておく。
-		get skills(): Skill[] { return this.ch.skills; }
+		get skills() { return this.ch.skills; }
 
 		costOf(skill: Skill) { return this.ch.costOf(skill); }
-		rangeOf(skill: Skill) { return this.ch.rangeOf(skill); }
+		rangeOf(skill: Skill) { return this.ch.rangeOf(skill) || 0; }
 
 		getModsLevel(tagbits: number, type: InOut): number {
 			let total = this.level;
@@ -819,8 +819,8 @@
 			}
 		}
 
-		getOutgoingLevel(tagbits: number): number { return this.getModsLevel(tagbits, "outgoing"); }
-		getIncomingLevel(tagbits: number): number { return this.getModsLevel(tagbits, "incoming"); }
+		getOutgoingLevel(tagbits: number) { return this.getModsLevel(tagbits, "outgoing"); }
+		getIncomingLevel(tagbits: number) { return this.getModsLevel(tagbits, "incoming"); }
 
 		isEnemy(other?: Unit): boolean {
 			return !!other && this.team !== other.team;
@@ -903,7 +903,7 @@
 			assert(this.isTarget(target, skill));
 			let cost = this.costOf(skill);
 			assert(this.SP >= cost);
-			let action = getAction(skill.action);
+			let action = getAction(skill.AID);
 			let job = action(scene, this, target, skill);
 			this.SP -= cost;
 			return job;
@@ -961,10 +961,13 @@
 			if (!pt) {
 				let { _hex } = this;
 				if (_hex) {
+					// Use default position if not specified by the current state.
 					pt = {
 						x: scene.toX(_hex) + CELL_W / 2,
 						y: scene.toY(_hex) + CELL_H
 					};
+				} else {
+					// Already dead and dying animation has finished.
 				}
 			}
 			return pt;
@@ -1152,7 +1155,7 @@
 			let hex = unit.hex;
 			let { step, skill } = unit;
 			const cost = unit.costOf(skill);
-			const range = unit.rangeOf(skill) || 0;
+			const range = unit.rangeOf(skill);
 			this.ensure(hex).SP = baseSP;
 			// walk/dash
 			if (baseSP >= step + zoc.get(hex)) {
@@ -1295,7 +1298,7 @@
 							// Active Skills
 							let selected = (focus.skill === skill);
 							let cost = focus.costOf(skill);
-							let range = focus.rangeOf(skill) || 0;
+							let range = focus.rangeOf(skill);
 							let power = abs(skill.def.deltaHP || 0);	// TODO: support deltaSP and oT
 							return `${selected ? "E " : ""}${skill.name.localized}\n${cost} / ${range} / ${toFixed(power)}`;
 						}
@@ -2284,7 +2287,6 @@
 		private drawBarsOnFocus(g: CanvasRenderingContext2D, when: Timestamp, unit?: Unit, caret?: Hex) {
 			if (!unit || !this.enabled) { return; }
 			let map = this.mapFor(unit);
-			let { field } = this;
 			map.each(({ effect }) => {
 				if (effect) {
 					effect.target.drawBars(g, when, this, effect.deltaHP, effect.deltaSP);
@@ -2302,7 +2304,7 @@
 						drawSP(g, when, this, unit, shotFrom, map.get(shotFrom).SP - cost);
 					}
 				} else {
-					if (r.SP > 0 && field.get(caret).empty) {
+					if (r.SP > 0 && this.field.get(caret).empty) {
 						drawHP(g, when, this, unit, unit.hex);
 						drawSP(g, when, this, unit, caret, r.SP);
 					} else {
@@ -2605,16 +2607,16 @@
 								drawCaret(g, when, scene, caret, CARET_FRIENDLY);
 								break;
 							case "straight-hostile":
-								field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
+								field.straight(r.shotFrom!, caret, focus.rangeOf(skill), hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
 								break;
 							case "straight-friendly":
-								field.straight(r.shotFrom!, caret, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
+								field.straight(r.shotFrom!, caret, focus.rangeOf(skill), hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
 								break;
 							case "surround-hostile":
-								field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
+								field.surround(r.shotFrom!, focus.rangeOf(skill), hex => drawCaret(g, when, scene, hex, CARET_HOSTILE));
 								break;
 							case "surround-friendly":
-								field.surround(r.shotFrom!, focus.rangeOf(skill) !, hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
+								field.surround(r.shotFrom!, focus.rangeOf(skill), hex => drawCaret(g, when, scene, hex, CARET_FRIENDLY));
 								break;
 						}
 					} else if (r.SP >= 0) {
@@ -3126,7 +3128,7 @@
 		Explode: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let hexFrom = unit.hex;
 			let hexTo = target.hex;
-			let radius = 1;
+			let radius = 1;	// TODO: skill.radius
 			let action = shootProjectile(scene, hexFrom, hexTo, skill);
 			let nova = delay(() => standardNova(scene, unit, skill, hexTo, radius, (deltaHP, steps) => floor(deltaHP / (1 + steps))));
 			action.then(nova);
@@ -3135,7 +3137,7 @@
 		// Action for STRAIGHT
 		Laser: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {
 			let { field } = scene;
-			let range = unit.rangeOf(skill) || 0;
+			let range = unit.rangeOf(skill);
 
 			let hexFrom = unit.hex;
 			let hexTo: Hex;
@@ -3182,7 +3184,8 @@
 		},
 		// Action for SURROUND
 		Nova: function (scene: Scene, unit: Unit, _target: Unit, skill: Skill): Job {
-			return standardNova(scene, unit, skill, unit.hex, unit.rangeOf(skill) || 0);
+			let radius = unit.rangeOf(skill);
+			return standardNova(scene, unit, skill, unit.hex, radius);
 		},
 		// Just popup the effect.
 		Dose: function (scene: Scene, unit: Unit, target: Unit, skill: Skill): Job {

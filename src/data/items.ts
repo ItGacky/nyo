@@ -3,7 +3,7 @@ interface ItemDef {
 	readonly weight: Weight;
 	readonly price: Gold;
 	readonly ATK?: number;	// damage
-	readonly DEF?: number;	// defence 1-100
+	readonly DEF?: Percentage;	// defence 1-100
 	readonly enchants?: EnchantID[];
 }
 

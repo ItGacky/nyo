@@ -571,8 +571,12 @@
 					createColumnsForSkills(_("Town", "Knowns"), ch),
 					ch.known,
 					(skill, index) => {	// Implement a skill
-						ch.known.splice(index, 1);
-						ch.skills.push(skill);
+						if (ch.skills.length < SKILL_MAX) {
+							ch.known.splice(index, 1);
+							ch.skills.push(skill);
+						} else {
+							logger.error(_("Town", "SkillFull"));
+						}
 					}
 				)
 			]);

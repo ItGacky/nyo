@@ -1,7 +1,4 @@
-﻿type Percentage = number;	// 100 = 1.0
-type Turns = number;		// number of turns
-
-// Path
+﻿// Path
 const STORAGE_KEY = "NYO";
 const URL_ASSETS = "assets/";
 const URL_CHAR = URL_ASSETS + "char/";
@@ -12,13 +9,16 @@ Word.languages["ja"] = undefined;
 
 const MNEMONIC_CONFIG = [KEY.ESCAPE];
 const MNEMONIC_START = [KEY.ENTER, KEY.SPACE];
-const MNEMONIC_BACK = [KEY.BACKSPACE, KEY.TAB, KEY.ESCAPE, KEY.DELETE];
+const MNEMONIC_BACK = [KEY.BACKSPACE, KEY.TAB, KEY.DELETE];
 const MNEMONIC_PREV = [KEY.PAGE_UP, KEY.HOME, KEY.LEFT, KEY.UP];
 const MNEMONIC_NEXT = [KEY.PAGE_DOWN, KEY.END, KEY.RIGHT, KEY.DOWN];
 
 const MNEMONIC_OK = MNEMONIC_START.concat(MNEMONIC_BACK);
 const MNEMONIC_YES = MNEMONIC_START.concat(KEY.Y);
 const MNEMONIC_NO = MNEMONIC_BACK.concat(KEY.N);
+
+type Percentage = number;	// 100 = 1.0
+type Turns = number;		// number of turns
 
 enum TAG {
 	// Weapon Attributes
