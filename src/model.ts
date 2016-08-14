@@ -473,19 +473,17 @@ class Character implements ToJSON<CharacterArchive>, WH {
 		return 100 * (1 - this.equipments.reduce((total, item) => total * (1 - item.DEF / 100), 1));
 	}
 
-	costOf(skill: Skill): Optional<number> {
-		if (!skill) { return undefined; }
+	costOf(skill: Skill) {
 		return skill.def.cost - this.INT;	// XXX: Handle passive skills that increase or decrease cost of skills.
 	}
 
-	rangeOf(skill: Skill): Optional<number> {
-		if (!skill) { return undefined; }
+	rangeOf(skill: Skill) {
 		return skill.def.range;	// XXX: Handle passive skills and equipments that increase range of skills.
 	}
 
 	itemFor(skill: Skill): Optional<Item> {
-		let best: Optional<Item> = undefined;
-		if (skill) {
+		let best: Optional<Item>;
+		if (skill && skill.isActive) {
 			let max: number = 0;
 			for (let item of this.equipments) {
 				if (skill.match(item)) {
@@ -533,7 +531,7 @@ class Character implements ToJSON<CharacterArchive>, WH {
 	static fromJSON(o: CharacterArchive): Character {
 		return new Character(
 			o.name,
-			o.level || 0,
+			o.level,
 			o.INT,
 			o.DEX,
 			o.STR,

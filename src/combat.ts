@@ -757,18 +757,22 @@
 		) {
 			this._hex = hex;
 			this.idleOffset = random();
-			this.skill = (ch.skills.find(skill => ch.rangeOf(skill) > 0) || Skill.DUMMY);
+			this.effectsOverTime = [];
 			this.HP = this.maxHP;
-			this.minCost = this.SP = this.availSP;
+			let SP = this.minCost = this.SP = this.availSP;
+			let primary: Optional<Skill>;
 			for (let skill of ch.skills) {
-				if (skill.isActive) {
+				if (ch.itemFor(skill)) {
 					let cost = this.costOf(skill);
-					if (cost && cost < this.minCost) {
+					if (!primary && ch.rangeOf(skill) > 0 && cost <= SP) {
+						primary = skill;
+					}
+					if (cost < this.minCost) {
 						this.minCost = cost;
 					}
 				}
 			}
-			this.effectsOverTime = [];
+			this.skill = (primary || Skill.DUMMY);
 		}
 
 		get name(): string { return this.ch.name; }
@@ -1334,12 +1338,8 @@
 			let { focus } = this.scene;
 			if (focus) {
 				let skill = focus.skills[this.index];
-				if (skill) {
-					if (skill.usage === "dose") {
-						return focus.SP >= focus.costOf(skill);
-					} else {
-						return focus.rangeOf(skill) > 0;
-					}
+				if (skill && focus.ch.itemFor(skill)) {
+					return focus.SP >= focus.costOf(skill);
 				}
 			}
 			return false;
