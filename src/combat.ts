@@ -348,7 +348,7 @@
 		}
 	}
 
-	function same(lhs: Optional<Hex>, rhs: Optional<Hex>): boolean {
+	function same(lhs?: Hex, rhs?: Hex): boolean {
 		return (lhs === rhs) || (!!lhs && !!rhs && lhs.xH === rhs.xH && lhs.yH === rhs.yH);
 	}
 

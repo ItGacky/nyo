@@ -892,13 +892,10 @@ class ListView<T> extends Widget {
 
 	extract(row: T, col: ListViewColumn<T>): any {
 		let { extract } = col;
-		switch (typeof extract) {
-			case "function":
-				return (extract as (row: T) => any)(row);
-			case "number":
-				return (row as any)[extract as number];
-			default:
-				return (row as any)[extract as string];
+		if (typeof extract === "function") {
+			return extract(row);
+		} else {
+			return (row as any)[extract];
 		}
 	}
 

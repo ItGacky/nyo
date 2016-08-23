@@ -30,9 +30,9 @@ interface System {
 	readonly canvas: HTMLCanvasElement;
 	exit(): void;
 	getLocalStorage(key: string): Optional<string>;
-	setLocalStorage(key: string, value: string): void;
+	setLocalStorage(key: string, value?: string): void;
 	getRoamingStorage(key: string): Optional<string>;
-	setRoamingStorage(key: string, value: Optional<string>): void;
+	setRoamingStorage(key: string, value?: string): void;
 }
 
 declare var System: System;
