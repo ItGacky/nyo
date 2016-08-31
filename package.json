@@ -24,7 +24,7 @@
     "gulp-newer": "^1.2.0",
     "gulp-open": "^2.0.0",
     "gulp-typescript": "^2.13.6",
-    "typescript": "^2.0.0"
+    "typescript": "^2.0.2"
   },
   "optionalDependencies": {
     "tslint": "^3.14.0"

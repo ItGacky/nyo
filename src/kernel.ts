@@ -46,8 +46,7 @@ interface String {
 	endsWith(searchString: string, position?: number): boolean;
 }
 
-// FIXME: noUnusedLocals complains 'unused T' in v2.0.0. The bug will be fixed in v2.1.0.
-interface ArrayES6<T> extends Array<T> {
+interface Array<T> {
 	find<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): T | undefined;
 	findIndex<THIS>(callback: (this: THIS, value: T, index: number, list: T[]) => boolean, thisArg?: THIS): number;
 }
@@ -66,7 +65,7 @@ function find<T, THIS>(
 	predicate: (this: THIS, value: T, index: number, array: T[]) => boolean,
 	thisArg?: THIS
 ): T | undefined {
-	return array ? (array as ArrayES6<T>).find(predicate, thisArg) : undefined;
+	return array ? array.find(predicate, thisArg) : undefined;
 }
 
 function findIndex<T, THIS>(
@@ -74,7 +73,7 @@ function findIndex<T, THIS>(
 	predicate: (this: THIS, value: T, index: number, array: T[]) => boolean,
 	thisArg?: THIS
 ): number {
-	return array ? (array as ArrayES6<T>).findIndex(predicate, thisArg) : -1;
+	return array ? array.findIndex(predicate, thisArg) : -1;
 }
 
 function map<T, U, THIS>(

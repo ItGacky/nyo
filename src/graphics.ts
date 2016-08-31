@@ -444,7 +444,7 @@ class Picture implements Drawable, WH, Job {
 	}
 
 	preload(): void {
-		if (this._image !== undefined) { return; }
+		if (this._image !== undefined || !this.src) { return; }
 
 		let assign = (image: HTMLImageElement | null) => {
 			this._image = image;
@@ -456,9 +456,7 @@ class Picture implements Drawable, WH, Job {
 		let image = new Image();
 		image.addEventListener("load", () => assign(image));
 		image.addEventListener("error", () => assign(Picture.DUMMY));
-		if (this.src) {
-			image.src = this.src;
-		}
+		image.src = this.src;
 	}
 
 	get image() {
