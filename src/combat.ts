@@ -3008,8 +3008,8 @@
 						if (effect.eot.deltaHPoT) {
 							effect.eot.deltaHPoT = factor(effect.eot.deltaHPoT, steps);
 						}
-						if (effect.eot.deltaHPoT) {
-							effect.eot.deltaHPoT = factor(effect.eot.deltaHPoT, steps);
+						if (effect.eot.deltaSPoT) {
+							effect.eot.deltaSPoT = factor(effect.eot.deltaSPoT, steps);
 						}
 					}
 				}
@@ -3042,7 +3042,7 @@
 		}
 	}
 
-	const ACTIONS: { [AID: string/*AID*/]: Action } = {
+	const ACTIONS: { [AID: string/*ActionID*/]: Action } = {
 		// Charge tha target and come back.
 		Charge: standardCharge,
 		// Knockback the target.

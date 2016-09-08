@@ -63,7 +63,9 @@ function setupStyle(g: CanvasRenderingContext2D, style: any) {
 				}
 				break;
 			default:
-				(g as any)[key] = style[key];
+				if (key in g) {
+					(g as any)[key] = style[key];
+				}
 				break;
 		}
 	}
