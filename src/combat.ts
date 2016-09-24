@@ -1300,15 +1300,11 @@
 							let cost = focus.costOf(skill);
 							let range = focus.rangeOf(skill);
 							let power = abs(skill.def.deltaHP || 0);	// TODO: support deltaSP and oT
-							return `${selected ? "E " : ""}${skill.name.localized}\n${cost} / ${range} / ${toFixed(power)}`;
+							return `${selected ? "E " : ""}${skill.name.localized}\n${cost} / ${range} / ${toFixed(power, 1)}`;
 						}
 					}
 				}
 				return undefined;
-
-				function toFixed(n?: number): string {
-					return n != null ? n.toFixed(1) : "-";
-				}
 			}
 
 			function equip(this: SkillButton) {
@@ -2328,7 +2324,7 @@
 			const PANEL_NAME_X: Pixel = UNIT_MAX_W + MARGIN * 2;
 			const PANEL_NAME_Y: Pixel = MARGIN;
 			drawText(g,
-				`${unit.name} / Lv: ${toFixed(unit.level)}\n` +
+				`${unit.name} / Lv: ${toFixed(unit.level, 1)}\n` +
 				`HP: ${unit.HP} / SP: ${unit.SP}`,
 				rect.x + PANEL_NAME_X, rect.y + PANEL_NAME_Y, PANEL_TEXT_STYLE
 			);
@@ -2340,10 +2336,6 @@
 					eot2str(eot),
 					rect.x + PANEL_NAME_X, rect.y + PANEL_NAME_Y + getStride(g, PANEL_TEXT_STYLE.fontSize) * (i + 2), PANEL_TEXT_STYLE
 				);
-			}
-
-			function toFixed(n?: number): string {
-				return n != null ? n.toFixed(1) : "-";
 			}
 		}
 	}
