@@ -14,11 +14,12 @@ var del = require("del");
 
 gulp.task("build", function () {
 	var project = ts.createProject("./src/tsconfig.json", {
+		typescript: require('typescript'),
 		outFile: OUT_NAME
 	});
 	return project.src().
 		pipe(newer(DEBUG_DIR + OUT_NAME)).
-		pipe(ts(project)).
+		pipe(project()).
 		pipe(gulp.dest(DEBUG_DIR));
 });
 

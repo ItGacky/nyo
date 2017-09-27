@@ -15,6 +15,7 @@
 		"strictNullChecks": true,
 		"target": "es5"
 	},
+	"compileOnSave": false,
 	"files": [
 		"kernel.ts",
 		"graphics.ts",

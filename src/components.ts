@@ -527,7 +527,7 @@ class SwappableButton extends Button {
 				if (this.swap) {
 					this.swap(that);
 				}
-			} else if (dragged.xDown != null) {
+			} else if (dragged.xDown != null && dragged.yDown != null) {
 				this.x = (dragged.xOrig - dragged.xDown + x);
 				this.y = (dragged.yOrig - dragged.yDown + y);
 			} else if (this.contains(x, y)) {
@@ -986,10 +986,10 @@ class ListView<T> extends Widget {
 
 	refresh() {
 		let len = this.rows.length;
-		if (this.dragged >= len) {
+		if (this.dragged! >= len) {
 			this.dragged = undefined;
 		}
-		if (this.hover >= len) {
+		if (this.hover! >= len) {
 			this.hover = undefined;
 		}
 		this.scrollTo(this.topRow);

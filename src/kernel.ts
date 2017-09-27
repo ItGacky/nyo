@@ -679,7 +679,7 @@ if (DEBUG) {
 	};
 
 	CanvasRenderingContext2D.prototype.restore = function (this: CanvasRenderingContext2D) {
-		this.debugSaveAndRestoreCount = this.debugSaveAndRestoreCount - 1;
+		this.debugSaveAndRestoreCount = (this.debugSaveAndRestoreCount || 0) - 1;
 		restore.call(this);
 	};
 
@@ -796,19 +796,22 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 		}
 		timerResizeCanvas = setTimeout(() => {
 			timerResizeCanvas = undefined;
-			let { clientWidth, clientHeight } = canvas.parentElement;
-			clientHeight -= canvas.offsetTop;
-			if (clientHeight > 0) {
-				if (!config.magnifyCanvas) {
-					clientWidth = min(clientWidth, logicalWidth);
-					clientHeight = min(clientHeight, logicalHeight);
+			let { parentElement } = canvas;
+			if (parentElement) {
+				let { clientWidth, clientHeight } = parentElement;
+				clientHeight -= canvas.offsetTop;
+				if (clientHeight > 0) {
+					if (!config.magnifyCanvas) {
+						clientWidth = min(clientWidth, logicalWidth);
+						clientHeight = min(clientHeight, logicalHeight);
+					}
+					if (clientWidth * logicalHeight > logicalWidth * clientHeight) {
+						clientWidth = round(clientHeight * logicalWidth / logicalHeight);
+					} else {
+						clientHeight = round(clientWidth * logicalHeight / logicalWidth);
+					}
+					resizeCanvas(clientWidth, clientHeight);
 				}
-				if (clientWidth * logicalHeight > logicalWidth * clientHeight) {
-					clientWidth = round(clientHeight * logicalWidth / logicalHeight);
-				} else {
-					clientHeight = round(clientWidth * logicalHeight / logicalWidth);
-				}
-				resizeCanvas(clientWidth, clientHeight);
 			}
 		}, CANVAS_RESIZE_DELAY);
 	};

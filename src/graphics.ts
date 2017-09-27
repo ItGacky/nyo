@@ -91,7 +91,7 @@ function drawRect(
 ): void {
 	let x: Pixel;
 	let y: Pixel;
-	if (w == null) {
+	if (w == null || h == null) {
 		({ x, y, w, h } = x_or_rect as XYWH);
 		style = y_or_style as ShapeStyle;
 	} else {
@@ -124,7 +124,7 @@ function drawRoundedRect(
 ): void {
 	let x: Pixel;
 	let y: Pixel;
-	if (w == null) {
+	if (w == null || h == null) {
 		({ x, y, w, h } = x_or_rect as XYWH);
 		style = y_or_style as ShapeStyle;
 	} else {
@@ -486,7 +486,7 @@ class Picture implements Drawable, WH, Job {
 		let { image } = this;
 		let { x, y, w, h } = rect;
 		if (image && w > 0 && h > 0) {
-			if (!overlayStyle || overlayAlpha <= 0) {
+			if (!overlayStyle || overlayAlpha == null || overlayAlpha <= 0) {
 				g.drawImage(image, x, y, w, h);
 			} else {
 				g.save();

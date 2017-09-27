@@ -274,14 +274,14 @@
 	}
 
 	interface ReadOnlyEffectOverTime {
-		readonly turns?: Turns;			// number of turns for effect over time.
-		readonly deltaHPoT?: number;		// change of target's HP over time.
-		readonly deltaSPoT?: number;		// change of target's SP over time.
+		readonly turns: Turns;			// number of turns for effect over time.
+		readonly deltaHPoT?: number;	// change of target's HP over time.
+		readonly deltaSPoT?: number;	// change of target's SP over time.
 		readonly mods?: Modifier[];
 	}
 
 	interface EffectOverTime extends ReadOnlyEffectOverTime {
-		turns?: Turns;			// number of turns for effect over time.
+		turns: Turns;			// number of turns for effect over time.
 		deltaHPoT?: number;		// change of target's HP over time.
 		deltaSPoT?: number;		// change of target's SP over time.
 		mods?: Modifier[];
@@ -674,13 +674,18 @@
 		}
 
 		onGetXY(unit: Unit, scene: Scene, progress: number): XY {
-			let radius = (1.0 - progress) * UNIT_DAMAGED_RADIUS * this.radius;
-			let theta = progress * PI * this.duration / UNIT_DAMAGED_CYCLE * this.radius;
 			let hex = this.dying || unit.hex;
-			return {
-				x: radius * sin(theta * 4) + scene.toX(hex) + CELL_W / 2,
-				y: radius * sin(theta * 3) + scene.toY(hex) + CELL_H
+			let xy = {
+				x: scene.toX(hex) + CELL_W / 2,
+				y: scene.toY(hex) + CELL_H
 			};
+			if (this.duration) {
+				let radius = (1.0 - progress) * UNIT_DAMAGED_RADIUS * this.radius;
+				let theta = progress * PI * this.duration / UNIT_DAMAGED_CYCLE * this.radius;
+				xy.x += radius * sin(theta * 4);
+				xy.y += radius * sin(theta * 3);
+			}
+			return xy;
 		}
 
 		drawCharacter(unit: Unit, g: CanvasRenderingContext2D, when: Timestamp, x: Pixel, y: Pixel, overlayStyle: CanvasStyle, overlayAlpha: Alpha): void {
@@ -764,7 +769,7 @@
 			for (let skill of ch.skills) {
 				if (ch.itemFor(skill)) {
 					let cost = this.costOf(skill);
-					if (!primary && ch.rangeOf(skill) > 0 && cost <= SP) {
+					if (!primary && ch.rangeOf(skill)! > 0 && cost <= SP) {
 						primary = skill;
 					}
 					if (cost < this.minCost) {
@@ -2026,8 +2031,8 @@
 		// return an animation that damages or heals target and raises a popup on attach.
 		promiseEffect(effect: SkillEffect, hex: Hex): Animation {
 			let { target, eot } = effect;
-			let deltaHP = +effect.deltaHP;
-			let deltaSP = +effect.deltaSP;
+			let deltaHP = effect.deltaHP || 0;
+			let deltaSP = effect.deltaSP || 0;
 			let hostile = (deltaHP < 0 || (!deltaHP && deltaSP < 0));
 
 			// Popup
@@ -2334,7 +2339,7 @@
 				let eot = effectsOverTime[i];
 				drawText(g,
 					eot2str(eot),
-					rect.x + PANEL_NAME_X, rect.y + PANEL_NAME_Y + getStride(g, PANEL_TEXT_STYLE.fontSize) * (i + 2), PANEL_TEXT_STYLE
+					rect.x + PANEL_NAME_X, rect.y + PANEL_NAME_Y + getStride(g, PANEL_TEXT_STYLE) * (i + 2), PANEL_TEXT_STYLE
 				);
 			}
 		}
@@ -3110,7 +3115,7 @@
 			let hexTo = unit.hex;
 			let effect = unit.estimate(scene, target, skill);
 			let damage = scene.promiseEffect(effect, hexFrom);
-			let heal = scene.promiseEffect({ target: unit, deltaHP: -effect.deltaHP }, hexTo);
+			let heal = scene.promiseEffect({ target: unit, deltaHP: -(effect.deltaHP || 0) }, hexTo);
 			let action = shootProjectile(scene, hexFrom, hexTo, skill);
 			action.then(() => heal.attach(scene));
 			damage.attach(scene);
