@@ -273,33 +273,22 @@
 		return team === TEAM.ALLY ? TEAM.ENEMY : TEAM.ALLY;
 	}
 
-	interface ReadOnlyEffectOverTime {
-		readonly turns: Turns;			// number of turns for effect over time.
-		readonly deltaHPoT?: number;	// change of target's HP over time.
-		readonly deltaSPoT?: number;	// change of target's SP over time.
-		readonly mods?: Modifier[];
-	}
-
-	interface EffectOverTime extends ReadOnlyEffectOverTime {
+	interface EffectOverTime {
 		turns: Turns;			// number of turns for effect over time.
 		deltaHPoT?: number;		// change of target's HP over time.
 		deltaSPoT?: number;		// change of target's SP over time.
 		mods?: Modifier[];
 	}
 
-	interface SkillEffectReadOnly {
-		readonly target: Unit;
-		readonly deltaHP?: number;	// change of target's HP.
-		readonly deltaSP?: number;	// change of target's SP.
-		readonly eot?: ReadOnlyEffectOverTime;
-	}
-
-	interface SkillEffect extends SkillEffectReadOnly {
+	interface SkillEffectT<EoT> {
 		target: Unit;
 		deltaHP?: number;	// change of target's HP.
 		deltaSP?: number;	// change of target's SP.
-		eot?: EffectOverTime;
+		eot?: EoT;
 	}
+
+	type SkillEffect = SkillEffectT<EffectOverTime>;
+	type ReadonlySkillEffect = Readonly<SkillEffectT<Readonly<EffectOverTime>>>;
 
 	type Action = (scene: Scene, unit: Unit, target: Unit, skill: Skill) => Job;
 
@@ -1146,7 +1135,7 @@
 		SP: number;			// left SP on the hex, or -1
 		comeFrom?: Hex;		// where come from (always exists if SP >= 0)
 		shotFrom?: Hex;		// where shot from (always exists if effect != null)
-		effect?: SkillEffectReadOnly;
+		effect?: ReadonlySkillEffect;
 	}
 
 	// HexMap of ActionResult
