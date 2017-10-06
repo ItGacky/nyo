@@ -56,7 +56,9 @@ interface Array<T> {
 type Slot = () => void;
 type Signal = undefined | Slot | Slot[];
 
-const { keys } = Object;
+function keys<T>(o: T): (keyof T)[] {
+	return Object.keys(o) as (keyof T)[];
+}
 const { abs, min, max, floor, ceil, round, pow, sin, cos, atan2, PI, random } = Math;
 const { parse, stringify } = JSON;
 
@@ -240,7 +242,7 @@ function compareArrays(lhs: any[], rhs: any[]): number {
 	return 0;
 }
 
-function compareObjects(lhs: any, rhs: any): number {
+function compareObjects<L, R>(lhs: L, rhs: R): number {
 	let keysL = keys(lhs).sort();
 	let keysR = keys(rhs).sort();
 	let lenL = keysL.length;
@@ -249,8 +251,8 @@ function compareObjects(lhs: any, rhs: any): number {
 	for (let i = 0; i < len; ++i) {
 		let keyL = keysL[i];
 		let keyR = keysR[i];
-		if (keyL < keyR) { return -1; }
-		if (keyL > keyR) { return -1; }
+		if ((keyL as string) < (keyR as string)) { return -1; }
+		if ((keyL as string) > (keyR as string)) { return -1; }
 		let cmp = compare(lhs[keyL], rhs[keyR]);
 		if (cmp !== 0) { return cmp; }
 	}
@@ -408,7 +410,7 @@ function delay(fn: () => Job): Job & Slot {
 	function thenBefore(this: Job, slot: Slot): Job {
 		sig = connect(sig, slot);
 		return this;
-	};
+	}
 
 	function thenAfter(this: Job, slot: Slot): Job {
 		committed.then(slot);
@@ -787,7 +789,7 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 				canvas.height = h;
 			}
 		}
-	};
+	}
 
 	let timerResizeCanvas: Optional<number>;
 	function requestResizeCanvas() {
@@ -814,7 +816,7 @@ function run(canvas: HTMLCanvasElement, root: Component, config: CanvasConfig): 
 				}
 			}
 		}, CANVAS_RESIZE_DELAY);
-	};
+	}
 	window.addEventListener("resize", requestResizeCanvas);
 	if (document.readyState === "complete") {
 		requestResizeCanvas();
